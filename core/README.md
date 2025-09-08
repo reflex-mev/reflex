@@ -71,33 +71,11 @@ Handles distribution of captured profits:
 6. **Profit Distribution**: Captured profits are split between recipient and fund distribution
 7. **Failsafe**: Any errors are caught to prevent disruption
 
-## 🛠️ Technical Features
+## 🔐 Authorization System
 
-### Enable/Disable Functionality
-
-```solidity
-// Enable or disable MEV capture at runtime
-function setReflexEnabled(bool _enabled) external;
-
-// Check current state
-function reflexEnabled() external view returns (bool);
-```
-
-### Profit Sharing Configuration
-
-```solidity
-// Set percentage of profits to send directly to swap recipient
-function setRecipientShare(uint256 _recipientShareBps) external;
-
-// Maximum 50% (5000 basis points) allowed
-// Remaining profits go to FundsSplitter distribution
-```
-
-### Authorization System
-
-- Flexible role-based access control
-- Secure, upgradeable authorization framework
-- Administrative functions protected by access controls
+- **Flexible role-based access control**: Secure permission management for administrative functions
+- **Upgradeable authorization framework**: Extensible system that can adapt to different protocol requirements
+- **Administrative functions protection**: All sensitive operations are protected by access controls
 
 ## Testing
 

@@ -7,7 +7,7 @@
 ![DeFi](https://img.shields.io/badge/DeFi-Integration-purple.svg)
 ![Coverage](https://img.shields.io/badge/Coverage-94%25-brightgreen.svg)
 
-**Reflex** is a sophisticated on-chain MEV (Maximum Extractable Value) capture engine designed for seamless integration into DEX protocols, specifically optimized for Algebra-based AMM systems. The system captures MEV opportunities while maintaining safety, decentralization, and ensuring zero interference with pool state or user experience.
+**Reflex** is a sophisticated on-chain MEV (Maximum Extractable Value) capture engine designed for seamless integration into DEX protocols and AMM systems. The system captures MEV opportunities while maintaining safety, decentralization, and ensuring zero interference with pool state or user experience.
 
 ## 📁 Monorepo Structure
 
@@ -37,7 +37,6 @@ reflex/
 The foundational Solidity contracts that power the Reflex MEV system:
 
 - **ReflexRouter**: Main router contract handling backrun execution and profit distribution
-- **AlgebraBasePluginV3**: Algebra protocol integration with sliding fees and MEV hooks
 - **ReflexAfterSwap**: Abstract base for MEV capture logic
 - **FundsSplitter**: Multi-party profit distribution system
 - **Comprehensive Test Suite**: 322+ tests ensuring system reliability and security
