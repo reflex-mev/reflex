@@ -1,0 +1,41 @@
+# Source files (only dist/ should be published)
+src/
+tests/
+examples/
+
+# Development files
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+jest.config.js
+tsconfig.json
+.eslintrc.json
+.prettierrc.json
+.prettierignore
+
+# CI/CD
+.github/
+.gitignore
+
+# Node modules and build artifacts
+node_modules/
+coverage/
+*.tgz
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
