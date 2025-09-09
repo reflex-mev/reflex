@@ -17,11 +17,13 @@ interface IReflexRouter {
     /// @param swapAmountIn The amount to swap in
     /// @param token0In Whether token0 is being swapped in
     /// @param recipient The address to receive the profit
+    /// @param configId The configuration ID for profit splitting (optional, uses default if not provided)
     struct BackrunParams {
         bytes32 triggerPoolId;
         uint112 swapAmountIn;
         bool token0In;
         address recipient;
+        bytes32 configId;
     }
 
     /// @notice Triggers a backrun swap the profit created by the swap.
@@ -29,8 +31,9 @@ interface IReflexRouter {
     /// @param swapAmountIn The amount to swap in.
     /// @param token0In Whether token0 is being swapped in.
     /// @param recipient The address to receive the profit.
+    /// @param configId The configuration ID for profit splitting (optional, uses default if bytes32(0)).
     /// @return  profit The profit made from the backrun swap.
-    function triggerBackrun(bytes32 triggerPoolId, uint112 swapAmountIn, bool token0In, address recipient)
+    function triggerBackrun(bytes32 triggerPoolId, uint112 swapAmountIn, bool token0In, address recipient, bytes32 configId)
         external
         returns (uint256 profit, address profitToken);
 

@@ -198,11 +198,16 @@ contract ReflexRouterTest is Test {
         emit BackrunExecuted(triggerPoolId, swapAmountIn, token0In, expectedProfit, address(token0), alice);
 
         (uint256 profit, address profitToken) =
-            reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, token0In, alice);
+            reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, token0In, alice, bytes32(0));
 
         assertEq(profit, expectedProfit);
         assertEq(profitToken, address(token0));
-        assertEq(token0.balanceOf(alice), expectedProfit);
+        
+        // With the ConfigurableRevenueDistributor:
+        // - 80% goes to the router owner (deployer)
+        // - 20% goes to the dust recipient (alice)
+        uint256 expectedAliceShare = (expectedProfit * 2000) / 10000; // 20% as dust recipient
+        assertEq(token0.balanceOf(alice), expectedAliceShare);
     }
 
     function test_triggerBackrun_success_token1In() public {
@@ -256,11 +261,17 @@ contract ReflexRouterTest is Test {
         vm.expectEmit(true, true, true, true);
         emit BackrunExecuted(triggerPoolId, swapAmountIn, token0In, expectedProfit, address(token1), bob);
 
-        (uint256 profit, address profitToken) = reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, token0In, bob);
+        (uint256 profit, address profitToken) =
+            reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, token0In, bob, bytes32(0));
 
         assertEq(profit, expectedProfit);
         assertEq(profitToken, address(token1));
-        assertEq(token1.balanceOf(bob), expectedProfit);
+        
+        // With the ConfigurableRevenueDistributor:
+        // - 80% goes to the router owner (deployer)
+        // - 20% goes to the dust recipient (bob)
+        uint256 expectedBobShare = (expectedProfit * 2000) / 10000; // 20% as dust recipient
+        assertEq(token1.balanceOf(bob), expectedBobShare);
     }
 
     function test_triggerBackrun_noProfitFound() public {
@@ -269,7 +280,8 @@ contract ReflexRouterTest is Test {
 
         // No quote configured, so getQuote will return 0 profit
 
-        (uint256 profit, address profitToken) = reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, true, alice);
+        (uint256 profit, address profitToken) =
+            reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, true, alice, bytes32(0));
 
         assertEq(profit, 0);
         assertEq(profitToken, address(0));
@@ -374,7 +386,7 @@ contract ReflexRouterTest is Test {
         // For now, we'll just verify the guard is in place by checking
         // that a simple call succeeds
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(mockV2Pair))));
-        (uint256 profit,) = reflexRouter.triggerBackrun(triggerPoolId, 100, true, alice);
+        (uint256 profit,) = reflexRouter.triggerBackrun(triggerPoolId, 100, true, alice, bytes32(0));
         assertEq(profit, 0); // No quote set, so no profit
     }
 
@@ -389,7 +401,8 @@ contract ReflexRouterTest is Test {
             triggerPoolId,
             0, // zero amount
             true,
-            alice
+            alice,
+            bytes32(0)
         );
 
         assertEq(profit, 0);
@@ -400,7 +413,7 @@ contract ReflexRouterTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(mockV2Pair))));
 
         (uint256 profit, address profitToken) =
-            reflexRouter.triggerBackrun(triggerPoolId, type(uint112).max, true, alice);
+            reflexRouter.triggerBackrun(triggerPoolId, type(uint112).max, true, alice, bytes32(0));
 
         assertEq(profit, 0);
         assertEq(profitToken, address(0));
@@ -410,7 +423,7 @@ contract ReflexRouterTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(mockV2Pair))));
 
         // Should not revert even with zero address recipient
-        (uint256 profit,) = reflexRouter.triggerBackrun(triggerPoolId, 1000, true, address(0));
+        (uint256 profit,) = reflexRouter.triggerBackrun(triggerPoolId, 1000, true, address(0), bytes32(0));
 
         assertEq(profit, 0);
     }
@@ -421,7 +434,7 @@ contract ReflexRouterTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(mockV2Pair))));
 
         vm.expectRevert("MockReflexQuoter: forced revert");
-        reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice);
+        reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0));
     }
 
     // =============================================================================
@@ -434,7 +447,7 @@ contract ReflexRouterTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(mockV2Pair))));
 
         (uint256 profit, address profitToken) =
-            reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, token0In, alice);
+            reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, token0In, alice, bytes32(0));
 
         // Without a configured quote, profit should be 0
         assertEq(profit, 0);
@@ -446,7 +459,7 @@ contract ReflexRouterTest is Test {
 
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(mockV2Pair))));
 
-        (uint256 profit,) = reflexRouter.triggerBackrun(triggerPoolId, 1000 * 10 ** 18, true, recipient);
+        (uint256 profit,) = reflexRouter.triggerBackrun(triggerPoolId, 1000 * 10 ** 18, true, recipient, bytes32(0));
 
         assertEq(profit, 0);
     }
@@ -528,11 +541,17 @@ contract ReflexRouterTest is Test {
         vm.expectEmit(true, true, true, true);
         emit BackrunExecuted(triggerPoolId, swapAmountIn, true, expectedProfit, address(token0), alice);
 
-        (uint256 profit, address profitToken) = reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, true, alice);
+        (uint256 profit, address profitToken) =
+            reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, true, alice, bytes32(0));
 
         assertEq(profit, expectedProfit);
         assertEq(profitToken, address(token0));
-        assertEq(token0.balanceOf(alice), initialBalance + expectedProfit);
+        
+        // With the ConfigurableRevenueDistributor:
+        // - 80% goes to the router owner (deployer)
+        // - 20% goes to the dust recipient (alice)
+        uint256 expectedAliceShare = (expectedProfit * 2000) / 10000; // 20% as dust recipient
+        assertEq(token0.balanceOf(alice), initialBalance + expectedAliceShare);
     }
 
     // =============================================================================
@@ -543,7 +562,7 @@ contract ReflexRouterTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(mockV2Pair))));
 
         uint256 gasBefore = gasleft();
-        reflexRouter.triggerBackrun(triggerPoolId, 1000 * 10 ** 18, true, alice);
+        reflexRouter.triggerBackrun(triggerPoolId, 1000 * 10 ** 18, true, alice, bytes32(0));
         uint256 gasUsed = gasBefore - gasleft();
 
         // Gas usage should be reasonable (this is a baseline test)
@@ -601,7 +620,7 @@ contract ReflexRouterTest is Test {
         vm.expectEmit(true, true, true, true);
         emit BackrunExecuted(triggerPoolId, swapAmountIn, token0In, expectedProfit, address(token0), alice);
 
-        reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, token0In, alice);
+        reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, token0In, alice, bytes32(0));
     }
 
     // =============================================================================
@@ -632,7 +651,8 @@ contract ReflexRouterTest is Test {
             triggerPoolId: triggerPoolId,
             swapAmountIn: swapAmountIn,
             token0In: token0In,
-            recipient: alice
+            recipient: alice,
+            configId: bytes32(0)
         });
 
         // Fund the router with ETH
@@ -719,7 +739,8 @@ contract ReflexRouterTest is Test {
             triggerPoolId: triggerPoolId,
             swapAmountIn: swapAmountIn,
             token0In: true,
-            recipient: bob
+            recipient: bob,
+            configId: bytes32(0)
         });
 
         // Execute the function
@@ -766,7 +787,8 @@ contract ReflexRouterTest is Test {
             triggerPoolId: triggerPoolId,
             swapAmountIn: swapAmountIn,
             token0In: token0In,
-            recipient: alice
+            recipient: alice,
+            configId: bytes32(0)
         });
 
         // Expect the function to revert with "Initial call failed"
@@ -797,7 +819,8 @@ contract ReflexRouterTest is Test {
             triggerPoolId: triggerPoolId,
             swapAmountIn: swapAmountIn,
             token0In: token0In,
-            recipient: alice
+            recipient: alice,
+            configId: bytes32(0)
         });
 
         // Expect BackrunExecuted event to be emitted
@@ -871,7 +894,8 @@ contract ReflexRouterTest is Test {
             triggerPoolId: triggerPoolId,
             swapAmountIn: swapAmountIn,
             token0In: true,
-            recipient: bob
+            recipient: bob,
+            configId: bytes32(0)
         });
 
         // Fund the router with ETH
@@ -957,7 +981,8 @@ contract ReflexRouterTest is Test {
             triggerPoolId: triggerPoolId,
             swapAmountIn: swapAmountIn,
             token0In: true,
-            recipient: alice
+            recipient: alice,
+            configId: bytes32(0)
         });
 
         // Execute the function
@@ -1002,7 +1027,8 @@ contract ReflexRouterTest is Test {
             triggerPoolId: triggerPoolId,
             swapAmountIn: swapAmountIn,
             token0In: token0In,
-            recipient: alice
+            recipient: alice,
+            configId: bytes32(0)
         });
 
         // First call should succeed
@@ -1130,13 +1156,15 @@ contract ReflexRouterTest is Test {
             triggerPoolId: triggerPoolId1,
             swapAmountIn: swapAmountIn1,
             token0In: true,
-            recipient: alice
+            recipient: alice,
+            configId: bytes32(0)
         });
         backrunParams[1] = IReflexRouter.BackrunParams({
             triggerPoolId: triggerPoolId2,
             swapAmountIn: swapAmountIn2,
             token0In: true, // Changed to true to match the quote setup
-            recipient: bob
+            recipient: bob,
+            configId: bytes32(0)
         });
 
         // Execute the function with multiple backruns
@@ -1186,13 +1214,15 @@ contract ReflexRouterTest is Test {
             triggerPoolId: triggerPoolId1,
             swapAmountIn: swapAmountIn1,
             token0In: true,
-            recipient: alice
+            recipient: alice,
+            configId: bytes32(0)
         });
         backrunParams[1] = IReflexRouter.BackrunParams({
             triggerPoolId: triggerPoolId2,
             swapAmountIn: swapAmountIn2,
             token0In: true,
-            recipient: bob
+            recipient: bob,
+            configId: bytes32(0)
         });
 
         // Execute the function with multiple backruns (expecting failsafe to handle second failure)

@@ -144,12 +144,18 @@ contract ReflexRouterIntegrationTest is Test {
             triggerPoolId,
             uint112(swapAmount),
             true, // token0In (tokenA)
-            recipient
+            recipient,
+            bytes32(0)
         );
 
         assertEq(profit, expectedProfit);
         assertEq(profitToken, address(tokenA));
-        assertEq(tokenA.balanceOf(recipient), initialBalance + expectedProfit);
+        
+        // With the ConfigurableRevenueDistributor:
+        // - 80% goes to the router owner (deployer)
+        // - 20% goes to the dust recipient (recipient)
+        uint256 expectedRecipientShare = (expectedProfit * 2000) / 10000; // 20% as dust recipient
+        assertEq(tokenA.balanceOf(recipient), initialBalance + expectedRecipientShare);
     }
 
     function test_three_hop_arbitrage_mixed_dex() public {
@@ -193,11 +199,16 @@ contract ReflexRouterIntegrationTest is Test {
         uint256 initialBalance = tokenA.balanceOf(recipient);
 
         (uint256 profit, address profitToken) =
-            reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient);
+            reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient, bytes32(0));
 
         assertEq(profit, expectedProfit);
         assertEq(profitToken, address(tokenA));
-        assertEq(tokenA.balanceOf(recipient), initialBalance + expectedProfit);
+        
+        // With the ConfigurableRevenueDistributor:
+        // - 80% goes to the router owner (deployer)
+        // - 20% goes to the dust recipient (recipient)
+        uint256 expectedRecipientShare = (expectedProfit * 2000) / 10000; // 20% as dust recipient
+        assertEq(tokenA.balanceOf(recipient), initialBalance + expectedRecipientShare);
     }
 
     // =============================================================================
@@ -238,7 +249,7 @@ contract ReflexRouterIntegrationTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(poolAB_V2))));
 
         uint256 gasBefore = gasleft();
-        reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient);
+        reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient, bytes32(0));
         uint256 gasUsed = gasBefore - gasleft();
 
         emit log_named_uint("Gas used for 2-hop arbitrage", gasUsed);
@@ -291,7 +302,7 @@ contract ReflexRouterIntegrationTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(poolAB_V2))));
 
         uint256 gasBefore = gasleft();
-        reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient);
+        reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient, bytes32(0));
         uint256 gasUsed = gasBefore - gasleft();
 
         emit log_named_uint("Gas used for 4-hop arbitrage", gasUsed);
@@ -340,7 +351,8 @@ contract ReflexRouterIntegrationTest is Test {
 
         // Execute 10 arbitrages sequentially
         for (uint256 i = 0; i < 10; i++) {
-            (uint256 profit,) = reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient);
+            (uint256 profit,) =
+                reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient, bytes32(0));
             totalProfit += profit;
         }
 
@@ -385,7 +397,7 @@ contract ReflexRouterIntegrationTest is Test {
 
         // Execute 5 rapid arbitrages
         for (uint256 i = 0; i < 5; i++) {
-            reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient);
+            reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient, bytes32(0));
         }
 
         uint256 gasUsed = gasBefore - gasleft();
@@ -449,7 +461,7 @@ contract ReflexRouterIntegrationTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(poolAB_V2))));
 
         (uint256 profit, address profitToken) =
-            reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient);
+            reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient, bytes32(0));
 
         // Should return no profit due to price impact
         assertEq(profit, 0);
@@ -499,7 +511,7 @@ contract ReflexRouterIntegrationTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(poolAB_V2))));
 
         (uint256 profit, address profitToken) =
-            reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient);
+            reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient, bytes32(0));
 
         // Should handle gracefully when opportunity disappears
         assertEq(profit, 0);
@@ -546,7 +558,7 @@ contract ReflexRouterIntegrationTest is Test {
         vm.expectEmit(true, true, true, true);
         emit BackrunExecuted(triggerPoolId, uint112(swapAmount), true, expectedProfit, address(tokenA), recipient);
 
-        reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient);
+        reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient, bytes32(0));
     }
 
     // =============================================================================
@@ -559,7 +571,7 @@ contract ReflexRouterIntegrationTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(poolAB_V2))));
 
         (uint256 profit, address profitToken) =
-            reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, true, recipient);
+            reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, true, recipient, bytes32(0));
 
         // Without configured quotes, should return no profit
         assertEq(profit, 0);
@@ -572,7 +584,7 @@ contract ReflexRouterIntegrationTest is Test {
 
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(poolAB_V2))));
 
-        (uint256 profit,) = reflexRouter.triggerBackrun(triggerPoolId, 1000 * 10 ** 18, true, _recipient);
+        (uint256 profit,) = reflexRouter.triggerBackrun(triggerPoolId, 1000 * 10 ** 18, true, _recipient, bytes32(0));
 
         assertEq(profit, 0);
     }

@@ -18,6 +18,9 @@ interface IConfigurableRevenueDistributor {
     /// @notice Emitted when shares are updated by the admin
     event SharesUpdated(bytes32 indexed configId, address[] recipients, uint256[] sharesBps, uint256 dustShareBps);
 
+    /// @notice Emitted when the default configuration is updated
+    event DefaultConfigUpdated(address[] recipients, uint256[] sharesBps, uint256 dustShareBps);
+
     /// @notice Emitted after a successful split operation (ETH or ERC20)
     event SplitExecuted(bytes32 indexed configId, address indexed token, uint256 totalAmount, address[] recipients, uint256[] amounts, address dustRecipient, uint256 dustAmount);
 
