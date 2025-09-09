@@ -37,9 +37,10 @@ reflex/
 The foundational Solidity contracts that power the Reflex MEV system:
 
 - **ReflexRouter**: Main router contract handling backrun execution and profit distribution
-- **ReflexAfterSwap**: Abstract base for MEV capture logic
+- **ReflexAfterSwap**: Abstract base for MEV capture logic with configurable profit distribution
+- **ConfigurableRevenueDistributor**: Advanced multi-configuration profit distribution system
 - **FundsSplitter**: Multi-party profit distribution system
-- **Comprehensive Test Suite**: 322+ tests ensuring system reliability and security
+- **Comprehensive Test Suite**: 368+ tests ensuring system reliability and security
 
 [→ See Core Documentation](/core/README.md)
 
