@@ -160,6 +160,7 @@ contract ReflexAfterSwapTest is Test {
 
         // Set up mock router to return zero profit
         mockRouter.setMockProfit(0);
+        mockRouter.setProfitToken(address(0));
 
         uint256 initialBalance = profitToken.balanceOf(recipient);
 
