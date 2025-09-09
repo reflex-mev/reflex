@@ -30,7 +30,11 @@ contract AlgebraBasePluginV1 is DynamicFeePlugin, FarmingProxyPlugin, Volatility
         AlgebraFeeConfiguration memory _config,
         address _reflexRouter,
         bytes32 _configId
-    ) AlgebraBasePlugin(_pool, _factory, _pluginFactory) DynamicFeePlugin(_config) ReflexAfterSwap(_reflexRouter, _configId) {}
+    )
+        AlgebraBasePlugin(_pool, _factory, _pluginFactory)
+        DynamicFeePlugin(_config)
+        ReflexAfterSwap(_reflexRouter, _configId)
+    {}
 
     // ###### HOOKS ######
 

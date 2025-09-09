@@ -33,9 +33,13 @@ interface IReflexRouter {
     /// @param recipient The address to receive the profit.
     /// @param configId The configuration ID for profit splitting (optional, uses default if bytes32(0)).
     /// @return  profit The profit made from the backrun swap.
-    function triggerBackrun(bytes32 triggerPoolId, uint112 swapAmountIn, bool token0In, address recipient, bytes32 configId)
-        external
-        returns (uint256 profit, address profitToken);
+    function triggerBackrun(
+        bytes32 triggerPoolId,
+        uint112 swapAmountIn,
+        bool token0In,
+        address recipient,
+        bytes32 configId
+    ) external returns (uint256 profit, address profitToken);
 
     /// @notice Executes arbitrary calldata on a target contract and then triggers multiple backruns.
     /// @param executeParams The parameters for the execute call (target, value, callData).

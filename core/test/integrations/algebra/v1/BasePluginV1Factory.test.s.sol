@@ -66,7 +66,8 @@ contract BasePluginV1FactoryTest is Test {
 
     function testConstructor() public {
         bytes32 testConfigId = keccak256("test-config");
-        BasePluginV1Factory newFactory = new BasePluginV1Factory(address(algebraFactory), address(reflexRouter), testConfigId);
+        BasePluginV1Factory newFactory =
+            new BasePluginV1Factory(address(algebraFactory), address(reflexRouter), testConfigId);
 
         assertEq(newFactory.algebraFactory(), address(algebraFactory));
         assertEq(newFactory.reflexRouter(), address(reflexRouter));
@@ -570,7 +571,7 @@ contract BasePluginV1FactoryTest is Test {
 
     function testPluginCreatedWithFactoryConfigId() public {
         bytes32 customConfigId = keccak256("v1-factory-custom-config");
-        
+
         // Set custom config ID in factory
         vm.prank(admin);
         factory.setConfigId(customConfigId);
@@ -611,7 +612,7 @@ contract BasePluginV1FactoryTest is Test {
         // Verify different config IDs
         AlgebraBasePluginV1 createdPlugin1 = AlgebraBasePluginV1(plugin1);
         AlgebraBasePluginV1 createdPlugin2 = AlgebraBasePluginV1(plugin2);
-        
+
         assertEq(createdPlugin1.getConfigId(), firstConfigId);
         assertEq(createdPlugin2.getConfigId(), secondConfigId);
         assertTrue(createdPlugin1.getConfigId() != createdPlugin2.getConfigId());

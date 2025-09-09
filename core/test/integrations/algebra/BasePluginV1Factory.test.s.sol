@@ -64,7 +64,8 @@ contract BasePluginV1FactoryTest is Test {
     // ========== Constructor Tests ==========
 
     function testConstructor() public {
-        BasePluginV1Factory newFactory = new BasePluginV1Factory(address(algebraFactory), address(reflexRouter), bytes32(0));
+        BasePluginV1Factory newFactory =
+            new BasePluginV1Factory(address(algebraFactory), address(reflexRouter), bytes32(0));
 
         assertEq(newFactory.algebraFactory(), address(algebraFactory));
         assertEq(newFactory.reflexRouter(), address(reflexRouter));
