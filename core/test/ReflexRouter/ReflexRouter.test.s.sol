@@ -71,6 +71,9 @@ contract ReflexRouterTest is Test {
     address public owner = address(0x1);
     address public alice = address(0xA);
     address public bob = address(0xB);
+    address public charlie = address(0xC);
+    address public dave = address(0xD);
+    address public eve = address(0xE);
     address public attacker = address(0xBAD);
 
     // Events from ReflexRouter
@@ -202,7 +205,7 @@ contract ReflexRouterTest is Test {
 
         assertEq(profit, expectedProfit);
         assertEq(profitToken, address(token0));
-        
+
         // With the ConfigurableRevenueDistributor:
         // - 80% goes to the router owner (deployer)
         // - 20% goes to the dust recipient (alice)
@@ -266,7 +269,7 @@ contract ReflexRouterTest is Test {
 
         assertEq(profit, expectedProfit);
         assertEq(profitToken, address(token1));
-        
+
         // With the ConfigurableRevenueDistributor:
         // - 80% goes to the router owner (deployer)
         // - 20% goes to the dust recipient (bob)
@@ -546,7 +549,7 @@ contract ReflexRouterTest is Test {
 
         assertEq(profit, expectedProfit);
         assertEq(profitToken, address(token0));
-        
+
         // With the ConfigurableRevenueDistributor:
         // - 80% goes to the router owner (deployer)
         // - 20% goes to the dust recipient (alice)
@@ -1248,5 +1251,153 @@ contract ReflexRouterTest is Test {
         // Verify target contract state (proves main execution wasn't affected by backrun failure)
         assertEq(target.value(), 99999, "Target contract should have correct value");
         assertEq(target.lastCaller(), address(reflexRouter), "Target contract should have correct caller");
+    }
+
+    // =============================================================================
+    // Profit Splitting Tests (ConfigurableRevenueDistributor Integration)
+    // =============================================================================
+
+    function test_triggerBackrun_defaultConfigProfit() public {
+        // Test profit splitting with default configuration (bytes32(0))
+        bytes32 triggerPoolId = bytes32(uint256(uint160(address(mockV2Pair))));
+        uint112 swapAmountIn = 1000 * 10 ** 18;
+        bool token0In = true;
+        uint256 expectedProfit = 45 * 10 ** 18;
+
+        _setupProfitableQuote(triggerPoolId, swapAmountIn, expectedProfit);
+
+        uint256 initialDustBalance = token0.balanceOf(alice);
+        uint256 initialOwnerBalance = token0.balanceOf(reflexRouter.owner());
+
+        // Use default config (bytes32(0)) - should use 80% to owner, 20% to dust recipient
+        (uint256 profit, address profitToken) =
+            reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, token0In, alice, bytes32(0));
+
+        assertEq(profit, expectedProfit);
+        assertEq(profitToken, address(token0));
+
+        // Verify profit distribution with default config
+        uint256 expectedDustShare = (expectedProfit * 2000) / 10000; // 20%
+        uint256 expectedOwnerShare = (expectedProfit * 8000) / 10000; // 80%
+
+        assertEq(token0.balanceOf(alice), initialDustBalance + expectedDustShare);
+        assertEq(token0.balanceOf(reflexRouter.owner()), initialOwnerBalance + expectedOwnerShare);
+    }
+
+    function test_triggerBackrun_customConfigProfit() public {
+        // Set up a custom revenue configuration
+        bytes32 configId = keccak256("custom_config_1");
+        
+        address[] memory recipients = new address[](2);
+        recipients[0] = alice;
+        recipients[1] = bob;
+        
+        uint256[] memory sharesBps = new uint256[](2);
+        sharesBps[0] = 3000; // 30% to alice
+        sharesBps[1] = 5000; // 50% to bob
+        
+        // Update shares using router's inherited function (need to prank as admin)
+        vm.prank(reflexRouter.owner());
+        reflexRouter.updateShares(configId, recipients, sharesBps, 2000); // 20% dust
+
+        // Set up profitable arbitrage - use standard amounts that work with _setupProfitableQuote
+        bytes32 poolId = bytes32(uint256(uint160(address(mockV2Pair))));
+        uint112 swapAmountIn = 1000 * 10 ** 18; // Standard amount
+        uint256 expectedProfit = 45 * 10 ** 18; // Standard profit
+
+        _setupProfitableQuote(poolId, swapAmountIn, expectedProfit);
+
+        // Execute backrun with custom config
+        (uint256 profit,) = reflexRouter.triggerBackrun(poolId, swapAmountIn, true, dave, configId);
+
+        assertEq(profit, expectedProfit);
+        
+        // Verify custom profit distribution: 30% alice, 50% bob, 20% dave
+        assertEq(token0.balanceOf(alice), (expectedProfit * 3000) / 10000);
+        assertEq(token0.balanceOf(bob), (expectedProfit * 5000) / 10000);
+        assertEq(token0.balanceOf(dave), (expectedProfit * 2000) / 10000);
+    }
+
+    function test_triggerBackrun_nonExistentConfigFallsBackToDefault() public {
+        // Test that non-existent config falls back to default behavior
+        bytes32 nonExistentConfigId = keccak256("non_existent_config");
+
+        bytes32 triggerPoolId = bytes32(uint256(uint160(address(mockV2Pair))));
+        uint112 swapAmountIn = 1000 * 10 ** 18; // Use standard amount
+        bool token0In = true;
+        uint256 expectedProfit = 45 * 10 ** 18; // Use standard profit
+
+        _setupProfitableQuote(triggerPoolId, swapAmountIn, expectedProfit);
+
+        uint256 initialDustBalance = token0.balanceOf(eve);
+        uint256 initialOwnerBalance = token0.balanceOf(reflexRouter.owner());
+
+        // Use non-existent config - should fall back to default behavior
+        (uint256 profit, address profitToken) =
+            reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, token0In, eve, nonExistentConfigId);
+
+        assertEq(profit, expectedProfit);
+        assertEq(profitToken, address(token0));
+
+        // Should behave like default config: 80% to owner, 20% to dust recipient
+        uint256 expectedDustShare = (expectedProfit * 2000) / 10000; // 20%
+        uint256 expectedOwnerShare = (expectedProfit * 8000) / 10000; // 80%
+
+        assertEq(token0.balanceOf(eve), initialDustBalance + expectedDustShare);
+        assertEq(token0.balanceOf(reflexRouter.owner()), initialOwnerBalance + expectedOwnerShare);
+    }
+
+    function test_triggerBackrun_multipleDifferentConfigs() public {
+        // Test two sequential backruns with different configurations
+        bytes32 config1 = keccak256("config_type_1");
+        
+        // Simple config: 60% to alice, 40% dust
+        address[] memory recipients = new address[](1);
+        recipients[0] = alice;
+        uint256[] memory shares = new uint256[](1);
+        shares[0] = 6000;
+        
+        vm.prank(reflexRouter.owner());
+        reflexRouter.updateShares(config1, recipients, shares, 4000);
+
+        bytes32 poolId = bytes32(uint256(uint160(address(mockV2Pair))));
+        uint112 swapAmountIn = 1000 * 10 ** 18; // Use standard amount
+        uint256 expectedProfit = 45 * 10 ** 18; // Use standard profit from helper
+        
+        _setupProfitableQuote(poolId, swapAmountIn, expectedProfit);
+
+        (uint256 profit,) = reflexRouter.triggerBackrun(poolId, swapAmountIn, true, dave, config1);
+        assertEq(profit, expectedProfit);
+
+        // Verify profit distribution: 60% alice, 40% dave
+        assertEq(token0.balanceOf(alice), (expectedProfit * 6000) / 10000);
+        assertEq(token0.balanceOf(dave), (expectedProfit * 4000) / 10000);
+    }
+
+    function test_triggerBackrun_zeroProfit_noDistribution() public {
+        // Test that when profit is zero, no distribution occurs
+        bytes32 configId = keccak256("config_zero_profit");
+        
+        address[] memory recipients = new address[](1);
+        recipients[0] = alice;
+        uint256[] memory shares = new uint256[](1);
+        shares[0] = 8000;
+        
+        vm.prank(reflexRouter.owner());
+        reflexRouter.updateShares(configId, recipients, shares, 2000);
+
+        bytes32 poolId = bytes32(uint256(uint160(address(mockV2Pair))));
+
+        // Don't set up any quote, so profit will be 0
+        uint256 aliceInitial = token0.balanceOf(alice);
+
+        (uint256 profit, address profitToken) =
+            reflexRouter.triggerBackrun(poolId, 1000 * 10 ** 18, true, bob, configId);
+
+        assertEq(profit, 0);
+        assertEq(profitToken, address(0));
+
+        // No balances should change
+        assertEq(token0.balanceOf(alice), aliceInitial);
     }
 }
