@@ -150,7 +150,7 @@ contract ReflexRouterIntegrationTest is Test {
 
         assertEq(profit, expectedProfit);
         assertEq(profitToken, address(tokenA));
-        
+
         // With the ConfigurableRevenueDistributor:
         // - 80% goes to the router owner (deployer)
         // - 20% goes to the dust recipient (recipient)
@@ -203,7 +203,7 @@ contract ReflexRouterIntegrationTest is Test {
 
         assertEq(profit, expectedProfit);
         assertEq(profitToken, address(tokenA));
-        
+
         // With the ConfigurableRevenueDistributor:
         // - 80% goes to the router owner (deployer)
         // - 20% goes to the dust recipient (recipient)

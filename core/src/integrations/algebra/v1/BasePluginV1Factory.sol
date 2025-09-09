@@ -85,8 +85,9 @@ contract BasePluginV1Factory is IBasePluginV1Factory {
 
     function _createPlugin(address pool) internal returns (address) {
         require(pluginByPool[pool] == address(0), "Already created");
-        AlgebraBasePluginV1 plugin =
-            new AlgebraBasePluginV1(pool, algebraFactory, address(this), _defaultFeeConfiguration, reflexRouter, configId);
+        AlgebraBasePluginV1 plugin = new AlgebraBasePluginV1(
+            pool, algebraFactory, address(this), _defaultFeeConfiguration, reflexRouter, configId
+        );
         pluginByPool[pool] = address(plugin);
         return address(plugin);
     }

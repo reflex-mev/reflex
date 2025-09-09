@@ -103,12 +103,13 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @return profit The amount of profit generated from the arbitrage
      * @return profitToken The address of the token in which profit was generated
      */
-    function triggerBackrun(bytes32 triggerPoolId, uint112 swapAmountIn, bool token0In, address recipient, bytes32 configId)
-        external
-        override
-        gracefulNonReentrant
-        returns (uint256 profit, address profitToken)
-    {
+    function triggerBackrun(
+        bytes32 triggerPoolId,
+        uint112 swapAmountIn,
+        bool token0In,
+        address recipient,
+        bytes32 configId
+    ) external override gracefulNonReentrant returns (uint256 profit, address profitToken) {
         return _triggerBackrun(triggerPoolId, swapAmountIn, token0In, recipient, configId);
     }
 
@@ -123,10 +124,13 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @return profit The amount of profit generated from the arbitrage
      * @return profitToken The address of the token in which profit was generated
      */
-    function _triggerBackrunSafe(bytes32 triggerPoolId, uint112 swapAmountIn, bool token0In, address recipient, bytes32 configId)
-        external
-        returns (uint256 profit, address profitToken)
-    {
+    function _triggerBackrunSafe(
+        bytes32 triggerPoolId,
+        uint112 swapAmountIn,
+        bool token0In,
+        address recipient,
+        bytes32 configId
+    ) external returns (uint256 profit, address profitToken) {
         require(msg.sender == address(this), "Only self-call allowed");
         return _triggerBackrun(triggerPoolId, swapAmountIn, token0In, recipient, configId);
     }
@@ -142,10 +146,13 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @return profit The amount of profit generated from the arbitrage
      * @return profitToken The address of the token in which profit was generated
      */
-    function _triggerBackrun(bytes32 triggerPoolId, uint112 swapAmountIn, bool token0In, address recipient, bytes32 configId)
-        internal
-        returns (uint256 profit, address profitToken)
-    {
+    function _triggerBackrun(
+        bytes32 triggerPoolId,
+        uint112 swapAmountIn,
+        bool token0In,
+        address recipient,
+        bytes32 configId
+    ) internal returns (uint256 profit, address profitToken) {
         (
             uint256 quoteProfit,
             IReflexQuoter.SwapDecodedData memory decoded,

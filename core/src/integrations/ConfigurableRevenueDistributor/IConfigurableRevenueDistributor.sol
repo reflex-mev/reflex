@@ -22,7 +22,15 @@ interface IConfigurableRevenueDistributor {
     event DefaultConfigUpdated(address[] recipients, uint256[] sharesBps, uint256 dustShareBps);
 
     /// @notice Emitted after a successful split operation (ETH or ERC20)
-    event SplitExecuted(bytes32 indexed configId, address indexed token, uint256 totalAmount, address[] recipients, uint256[] amounts, address dustRecipient, uint256 dustAmount);
+    event SplitExecuted(
+        bytes32 indexed configId,
+        address indexed token,
+        uint256 totalAmount,
+        address[] recipients,
+        uint256[] amounts,
+        address dustRecipient,
+        uint256 dustAmount
+    );
 
     // ========== Functions ==========
 
@@ -36,12 +44,20 @@ interface IConfigurableRevenueDistributor {
     /// @return recipients List of recipient addresses
     /// @return sharesBps Corresponding list of share amounts in basis points (1% = 100 bps)
     /// @return dustShareBps Dust recipient's share in basis points
-    function getRecipients(bytes32 configId) external view returns (address[] memory recipients, uint256[] memory sharesBps, uint256 dustShareBps);
+    function getRecipients(bytes32 configId)
+        external
+        view
+        returns (address[] memory recipients, uint256[] memory sharesBps, uint256 dustShareBps);
 
     /// @notice Updates the recipients and their shares for a specific configuration (admin only)
     /// @param configId The 32-byte identifier for the configuration
     /// @param recipients List of recipient addresses
     /// @param sharesBps List of corresponding shares in basis points (1% = 100 bps)
     /// @param dustShareBps Dust recipient's share in basis points
-    function updateShares(bytes32 configId, address[] calldata recipients, uint256[] calldata sharesBps, uint256 dustShareBps) external;
+    function updateShares(
+        bytes32 configId,
+        address[] calldata recipients,
+        uint256[] calldata sharesBps,
+        uint256 dustShareBps
+    ) external;
 }

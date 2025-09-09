@@ -53,10 +53,13 @@ contract MockReflexRouter is IReflexRouter {
         }
     }
 
-    function triggerBackrun(bytes32 triggerPoolId, uint112 swapAmountIn, bool token0In, address recipient, bytes32 configId)
-        external
-        returns (uint256 profit, address _profitToken)
-    {
+    function triggerBackrun(
+        bytes32 triggerPoolId,
+        uint112 swapAmountIn,
+        bool token0In,
+        address recipient,
+        bytes32 configId
+    ) external returns (uint256 profit, address _profitToken) {
         if (shouldRevert) {
             revert("Mock router reverted");
         }

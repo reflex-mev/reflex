@@ -388,13 +388,13 @@ contract AlgebraBasePluginV1Test is Test {
         uint256 aliceAfterFirst = profitToken.balanceOf(alice);
         assertTrue(aliceAfterFirst > aliceInitialBalance);
 
-        // Second swap - bob receives profit  
+        // Second swap - bob receives profit
         vm.prank(address(pool));
         plugin.afterSwap(address(0), bob, false, 2000, 0, -800, 400, "");
 
         uint256 aliceAfterSecond = profitToken.balanceOf(alice);
         uint256 bobAfterSecond = profitToken.balanceOf(bob);
-        
+
         // Alice's balance should remain the same (she didn't receive profit from second swap)
         assertEq(aliceAfterSecond, aliceAfterFirst);
         // Bob should have received profit from the second swap
@@ -564,7 +564,7 @@ contract AlgebraBasePluginV1Test is Test {
 
     function test_ConfigId_StoredCorrectly() public {
         bytes32 testConfigId = keccak256("custom-config-v1");
-        
+
         AlgebraBasePluginV1 customPlugin = new AlgebraBasePluginV1(
             address(pool),
             address(factory),
@@ -579,7 +579,7 @@ contract AlgebraBasePluginV1Test is Test {
 
     function test_ConfigId_UsedInAfterSwap() public {
         bytes32 testConfigId = keccak256("test-config-v1-afterswap");
-        
+
         // Create plugin with custom config ID
         AlgebraBasePluginV1 customPlugin = new AlgebraBasePluginV1(
             address(pool),
@@ -589,7 +589,7 @@ contract AlgebraBasePluginV1Test is Test {
             address(reflexRouter),
             testConfigId
         );
-        
+
         // Set the custom plugin in pool
         pool.setPlugin(address(customPlugin));
 
@@ -600,11 +600,11 @@ contract AlgebraBasePluginV1Test is Test {
         // Call afterSwap
         vm.prank(address(pool));
         customPlugin.afterSwap(
-            address(0),  // sender
+            address(0), // sender
             alice,
             zeroToOne,
-            0,           // amountSpecified
-            0,           // sqrtPriceX96After
+            0, // amountSpecified
+            0, // sqrtPriceX96After
             amount0,
             amount1,
             ""
@@ -619,23 +619,13 @@ contract AlgebraBasePluginV1Test is Test {
     function test_ConfigId_DifferentPluginsDifferentConfigs() public {
         bytes32 configId1 = keccak256("v1-config-1");
         bytes32 configId2 = keccak256("v1-config-2");
-        
+
         // Create two plugins with different config IDs
         AlgebraBasePluginV1 plugin1 = new AlgebraBasePluginV1(
-            address(pool),
-            address(factory),
-            address(this),
-            defaultConfig,
-            address(reflexRouter),
-            configId1
+            address(pool), address(factory), address(this), defaultConfig, address(reflexRouter), configId1
         );
         AlgebraBasePluginV1 plugin2 = new AlgebraBasePluginV1(
-            address(pool),
-            address(factory),
-            address(this),
-            defaultConfig,
-            address(reflexRouter),
-            configId2
+            address(pool), address(factory), address(this), defaultConfig, address(reflexRouter), configId2
         );
 
         assertEq(plugin1.getConfigId(), configId1);
@@ -645,24 +635,19 @@ contract AlgebraBasePluginV1Test is Test {
 
     function test_ConfigId_ZeroConfigId() public {
         bytes32 zeroConfigId = bytes32(0);
-        
+
         AlgebraBasePluginV1 zeroPlugin = new AlgebraBasePluginV1(
-            address(pool),
-            address(factory),
-            address(this),
-            defaultConfig,
-            address(reflexRouter),
-            zeroConfigId
+            address(pool), address(factory), address(this), defaultConfig, address(reflexRouter), zeroConfigId
         );
 
         assertEq(zeroPlugin.getConfigId(), zeroConfigId);
-        
+
         // Test that it still works with zero config
         pool.setPlugin(address(zeroPlugin));
-        
+
         vm.prank(address(pool));
         zeroPlugin.afterSwap(address(0), alice, true, 0, 0, 1000e18, -500e18, "");
-        
+
         MockReflexRouter.TriggerBackrunCall memory call = reflexRouter.getTriggerBackrunCall(0);
         assertEq(call.configId, zeroConfigId);
     }
