@@ -8,7 +8,7 @@ import "../utils/TestUtils.sol";
 
 // Testable implementation of ReflexAfterSwap
 contract TestableReflexAfterSwap is ReflexAfterSwap {
-    constructor(address _router) ReflexAfterSwap(_router) {}
+    constructor(address _router, bytes32 _configId) ReflexAfterSwap(_router, _configId) {}
 
     // Expose internal function for testing
     function testReflexAfterSwap(
@@ -71,7 +71,8 @@ contract ReflexAfterSwapTest is Test {
         profitToken = MockToken(TestUtils.createStandardMockToken());
         mockRouter = MockReflexRouter(TestUtils.createMockReflexRouter(admin, address(profitToken)));
 
-        reflexAfterSwap = new TestableReflexAfterSwap(address(mockRouter));
+        bytes32 testConfigId = keccak256("test-config");
+        reflexAfterSwap = new TestableReflexAfterSwap(address(mockRouter), testConfigId);
     }
 
     // ========== Constructor Tests ==========
@@ -79,11 +80,13 @@ contract ReflexAfterSwapTest is Test {
     function testConstructor() public view {
         assertEq(reflexAfterSwap.getRouter(), address(mockRouter));
         assertEq(reflexAfterSwap.getReflexAdmin(), admin);
+        assertEq(reflexAfterSwap.getConfigId(), keccak256("test-config"));
     }
 
     function testConstructorInvalidRouter() public {
+        bytes32 testConfigId = keccak256("test-config");
         vm.expectRevert("Invalid router address");
-        new TestableReflexAfterSwap(address(0));
+        new TestableReflexAfterSwap(address(0), testConfigId);
     }
 
     // ========== Access Control Tests ==========
@@ -288,5 +291,63 @@ contract ReflexAfterSwapTest is Test {
         }
 
         assertEq(profitToken.balanceOf(recipient), profit * 5);
+    }
+
+    // ========== ConfigId Tests ==========
+
+    function testConfigIdStoredCorrectly() public {
+        bytes32 testConfigId = keccak256("test-afterswap-config");
+        TestableReflexAfterSwap customReflexAfterSwap = new TestableReflexAfterSwap(address(mockRouter), testConfigId);
+
+        assertEq(customReflexAfterSwap.getConfigId(), testConfigId);
+    }
+
+    function testConfigIdUsedInTriggerBackrun() public {
+        bytes32 testConfigId = keccak256("test-trigger-config");
+        TestableReflexAfterSwap customReflexAfterSwap = new TestableReflexAfterSwap(address(mockRouter), testConfigId);
+
+        bytes32 poolId = keccak256("test-pool");
+        int256 amount0Delta = 1000;
+        int256 amount1Delta = -500;
+        bool zeroForOne = true;
+        address recipient = alice;
+
+        // Set up mock router to return a profit amount
+        uint256 expectedProfit = 100 * 10 ** 18;
+        mockRouter.setMockProfit(expectedProfit);
+        profitToken.mint(address(mockRouter), expectedProfit);
+
+        // Call reflexAfterSwap
+        customReflexAfterSwap.testReflexAfterSwap(poolId, amount0Delta, amount1Delta, zeroForOne, recipient);
+
+        // Verify the correct configId was passed to triggerBackrun
+        MockReflexRouter.TriggerBackrunCall memory call = mockRouter.getTriggerBackrunCall(0);
+        assertEq(call.configId, testConfigId);
+    }
+
+    function testConfigIdZeroValue() public {
+        bytes32 zeroConfigId = bytes32(0);
+        TestableReflexAfterSwap zeroConfigAfterSwap = new TestableReflexAfterSwap(address(mockRouter), zeroConfigId);
+
+        assertEq(zeroConfigAfterSwap.getConfigId(), zeroConfigId);
+
+        // Test that it still works with zero config
+        bytes32 poolId = keccak256("test-pool");
+        zeroConfigAfterSwap.testReflexAfterSwap(poolId, 1000, -500, true, alice);
+
+        MockReflexRouter.TriggerBackrunCall memory call = mockRouter.getTriggerBackrunCall(0);
+        assertEq(call.configId, zeroConfigId);
+    }
+
+    function testConfigIdDifferentInstances() public {
+        bytes32 configId1 = keccak256("config-1");
+        bytes32 configId2 = keccak256("config-2");
+
+        TestableReflexAfterSwap instance1 = new TestableReflexAfterSwap(address(mockRouter), configId1);
+        TestableReflexAfterSwap instance2 = new TestableReflexAfterSwap(address(mockRouter), configId2);
+
+        assertEq(instance1.getConfigId(), configId1);
+        assertEq(instance2.getConfigId(), configId2);
+        assertTrue(instance1.getConfigId() != instance2.getConfigId());
     }
 }

@@ -15,13 +15,18 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
     /// @notice Address of the reflex admin (authorized controller)
     address reflexAdmin;
 
+    /// @notice Configuration ID for profit distribution
+    bytes32 configId;
+
     /// @notice Constructor to initialize the ReflexAfterSwap contract
     /// @param _router Address of the Reflex router contract
+    /// @param _configId Configuration ID for profit distribution
     /// @dev Validates router address and fetches the admin from the router
-    constructor(address _router) {
+    constructor(address _router, bytes32 _configId) {
         require(_router != address(0), "Invalid router address");
         router = _router;
         reflexAdmin = IReflexRouter(_router).getReflexAdmin();
+        configId = _configId;
     }
 
     /// @notice Modifier to restrict access to reflex admin only
@@ -53,6 +58,12 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
         return reflexAdmin;
     }
 
+    /// @notice Get the current configuration ID for profit distribution
+    /// @return The current configuration ID
+    function getConfigId() external view returns (bytes32) {
+        return configId;
+    }
+
     /// @notice Main entry point for post-swap profit extraction via backrunning
     /// @param triggerPoolId Unique identifier for the pool that triggered the swap
     /// @param amount0Delta The change in token0 balance from the original swap
@@ -74,7 +85,7 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
         uint256 swapAmountIn = uint256(amount0Delta > 0 ? amount0Delta : amount1Delta);
 
         // Failsafe: Use try-catch to prevent router failures from breaking the main swap
-        try IReflexRouter(router).triggerBackrun(triggerPoolId, uint112(swapAmountIn), zeroForOne, recipient, bytes32(0)) returns (
+        try IReflexRouter(router).triggerBackrun(triggerPoolId, uint112(swapAmountIn), zeroForOne, recipient, configId) returns (
             uint256 backrunProfit, address backrunProfitToken
         ) {
             return (backrunProfit, backrunProfitToken);

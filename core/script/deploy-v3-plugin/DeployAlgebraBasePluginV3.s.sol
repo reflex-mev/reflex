@@ -68,7 +68,7 @@ contract DeployAlgebraBasePluginV3 is Script {
 
         // Deploy the plugin contract
         plugin =
-            new AlgebraBasePluginV3(poolAddress, factoryAddress, pluginFactoryAddress, baseFee, reflexRouterAddress);
+            new AlgebraBasePluginV3(poolAddress, factoryAddress, pluginFactoryAddress, baseFee, reflexRouterAddress, bytes32(0));
 
         // Initialize plugin if requested
         _initializePlugin();
