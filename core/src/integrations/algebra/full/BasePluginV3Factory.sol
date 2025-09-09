@@ -24,6 +24,9 @@ contract BasePluginV3Factory is IBasePluginV3Factory {
 
     address public reflexRouter;
 
+    /// @notice Configuration ID for profit distribution used by plugins created by this factory
+    bytes32 public reflexConfigId;
+
     /// @inheritdoc IBasePluginV2Factory
     mapping(address poolAddress => address pluginAddress) public override pluginByPool;
 
@@ -35,8 +38,10 @@ contract BasePluginV3Factory is IBasePluginV3Factory {
         _;
     }
 
-    constructor(address _algebraFactory) {
+    constructor(address _algebraFactory, address _reflexRouter, bytes32 _configId) {
         algebraFactory = _algebraFactory;
+        reflexRouter = _reflexRouter;
+        reflexConfigId = _configId;
     }
 
     /// @inheritdoc IAlgebraPluginFactory
@@ -68,7 +73,7 @@ contract BasePluginV3Factory is IBasePluginV3Factory {
     function _createPlugin(address pool) internal returns (address) {
         require(pluginByPool[pool] == address(0), "Already created");
         AlgebraBasePluginV3 plugin =
-            new AlgebraBasePluginV3(pool, algebraFactory, address(this), defaultBaseFee, reflexRouter);
+            new AlgebraBasePluginV3(pool, algebraFactory, address(this), defaultBaseFee, reflexRouter, reflexConfigId);
         pluginByPool[pool] = address(plugin);
         return address(plugin);
     }
@@ -90,5 +95,11 @@ contract BasePluginV3Factory is IBasePluginV3Factory {
     /// @inheritdoc IBasePluginV3Factory
     function setReflexRouter(address _reflexRouter) external onlyAdministrator {
         reflexRouter = _reflexRouter;
+    }
+
+    /// @notice Set the configuration ID for profit distribution
+    /// @param _configId New configuration ID to use for plugins created by this factory
+    function setConfigId(bytes32 _configId) external onlyAdministrator {
+        reflexConfigId = _configId;
     }
 }

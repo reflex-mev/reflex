@@ -119,7 +119,6 @@ testFuzz_no_unauthorized_state_changes()  // State integrity verification
 ```solidity
 test_simple_two_hop_arbitrage()           // Basic A->B->A arbitrage
 test_three_hop_arbitrage_mixed_dex()      // V2->V3->V2 arbitrage
-test_gas_usage_complex_arbitrage()        // Gas optimization verification
 test_multiple_sequential_arbitrages()     // Stress testing
 test_rapid_fire_arbitrages()              // High-frequency operation testing
 test_arbitrage_with_price_impact()        // Realistic market conditions

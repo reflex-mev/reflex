@@ -54,27 +54,28 @@ contract BasePluginV3FactoryTest is Test {
         reflexRouter = MockReflexRouter(TestUtils.createSimpleMockReflexRouter(admin));
 
         // Deploy BasePluginV3Factory
-        factory = new BasePluginV3Factory(address(algebraFactory));
-
-        // Set initial reflex router
-        vm.prank(admin);
-        factory.setReflexRouter(address(reflexRouter));
+        bytes32 defaultConfigId = keccak256("test-config");
+        factory = new BasePluginV3Factory(address(algebraFactory), address(reflexRouter), defaultConfigId);
     }
 
     // ========== Constructor Tests ==========
 
     function testConstructor() public {
-        BasePluginV3Factory newFactory = new BasePluginV3Factory(address(algebraFactory));
+        bytes32 testConfigId = keccak256("test-config");
+        BasePluginV3Factory newFactory =
+            new BasePluginV3Factory(address(algebraFactory), address(reflexRouter), testConfigId);
 
         assertEq(newFactory.algebraFactory(), address(algebraFactory));
         assertEq(newFactory.defaultBaseFee(), 3000);
         assertEq(newFactory.farmingAddress(), address(0));
-        assertEq(newFactory.reflexRouter(), address(0));
+        assertEq(newFactory.reflexRouter(), address(reflexRouter));
+        assertEq(newFactory.reflexConfigId(), testConfigId);
     }
 
     function testConstructorWithZeroFactory() public {
         // Should not revert - the contract allows zero factory address
-        BasePluginV3Factory newFactory = new BasePluginV3Factory(address(0));
+        bytes32 testConfigId = keccak256("test-config");
+        BasePluginV3Factory newFactory = new BasePluginV3Factory(address(0), address(reflexRouter), testConfigId);
         assertEq(newFactory.algebraFactory(), address(0));
     }
 
@@ -123,7 +124,8 @@ contract BasePluginV3FactoryTest is Test {
     }
 
     function testReflexRouterInitiallyZero() public {
-        BasePluginV3Factory newFactory = new BasePluginV3Factory(address(algebraFactory));
+        bytes32 testConfigId = keccak256("test-config");
+        BasePluginV3Factory newFactory = new BasePluginV3Factory(address(algebraFactory), address(0), testConfigId);
         assertEq(newFactory.reflexRouter(), address(0));
     }
 
@@ -312,6 +314,74 @@ contract BasePluginV3FactoryTest is Test {
         vm.prank(nonAdmin);
         vm.expectRevert("Only administrator");
         factory.setFarmingAddress(address(0x789));
+    }
+
+    // ========== ConfigId Tests ==========
+
+    function testSetConfigId() public {
+        bytes32 newConfigId = keccak256("new-config-id");
+
+        vm.prank(admin);
+        factory.setConfigId(newConfigId);
+
+        assertEq(factory.reflexConfigId(), newConfigId);
+    }
+
+    function testSetConfigIdUnauthorized() public {
+        bytes32 newConfigId = keccak256("unauthorized-config");
+
+        vm.prank(nonAdmin);
+        vm.expectRevert("Only administrator");
+        factory.setConfigId(newConfigId);
+    }
+
+    function testPluginCreatedWithFactoryConfigId() public {
+        bytes32 customConfigId = keccak256("factory-custom-config");
+
+        // Set custom config ID in factory
+        vm.prank(admin);
+        factory.setConfigId(customConfigId);
+
+        // Create plugin
+        vm.prank(poolsAdmin);
+        address plugin = factory.createPluginForExistingPool(address(token0), address(token1));
+
+        // Verify plugin has the factory's config ID
+        AlgebraBasePluginV3 createdPlugin = AlgebraBasePluginV3(plugin);
+        assertEq(createdPlugin.getConfigId(), customConfigId);
+    }
+
+    function testConfigIdChangeAffectsNewPlugins() public {
+        bytes32 firstConfigId = keccak256("first-config");
+        bytes32 secondConfigId = keccak256("second-config");
+
+        // Set first config and create a plugin
+        vm.prank(admin);
+        factory.setConfigId(firstConfigId);
+
+        vm.prank(poolsAdmin);
+        address plugin1 = factory.createPluginForExistingPool(address(token0), address(token1));
+
+        // Create additional pool for second plugin
+        MockToken token2 = MockToken(TestUtils.createMockToken("Token2", "TK2", 1000000 * 10 ** 18));
+        MockToken token3 = MockToken(TestUtils.createMockToken("Token3", "TK3", 1000000 * 10 ** 18));
+        MockPool pool2 = MockPool(TestUtils.createMockPool(address(token2), address(token3), address(algebraFactory)));
+        algebraFactory.setPoolByPair(address(token2), address(token3), address(pool2));
+
+        // Change config and create another plugin
+        vm.prank(admin);
+        factory.setConfigId(secondConfigId);
+
+        vm.prank(poolsAdmin);
+        address plugin2 = factory.createPluginForExistingPool(address(token2), address(token3));
+
+        // Verify different config IDs
+        AlgebraBasePluginV3 createdPlugin1 = AlgebraBasePluginV3(plugin1);
+        AlgebraBasePluginV3 createdPlugin2 = AlgebraBasePluginV3(plugin2);
+
+        assertEq(createdPlugin1.getConfigId(), firstConfigId);
+        assertEq(createdPlugin2.getConfigId(), secondConfigId);
+        assertTrue(createdPlugin1.getConfigId() != createdPlugin2.getConfigId());
     }
 
     // ========== Integration Tests ==========

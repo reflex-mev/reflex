@@ -7,6 +7,7 @@ import "@reflex/interfaces/IReflexRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./utils/GracefulReentrancyGuard.sol";
 import "./libraries/DexTypes.sol";
+import "./integrations/ConfigurableRevenueDistributor/ConfigurableRevenueDistributor.sol";
 
 interface IUniswapV3Pool {
     function swap(
@@ -35,8 +36,9 @@ uint8 constant LOAN_CALLBACK_TYPE_UNI3 = 3; // Initial loan from uniswap v3
  * @dev Implements flash loan arbitrage strategies using UniswapV2, UniswapV3, and other DEX protocols
  * The contract uses flash loans to execute profitable arbitrage opportunities without requiring upfront capital
  * Supports multiple DEX types and handles callback-based flash loan mechanisms
+ * Inherits from ConfigurableRevenueDistributor to support profit splitting across multiple configurations
  */
-contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard {
+contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRevenueDistributor {
     /// @notice The address of the contract owner/admin
     address public owner;
 
@@ -65,6 +67,14 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard {
     }
 
     /**
+     * @notice Internal function to enforce admin access control for ConfigurableRevenueDistributor
+     * @dev Implementation of the abstract _onlyFundsAdmin function from ConfigurableRevenueDistributor
+     */
+    function _onlyFundsAdmin() internal view override {
+        require(msg.sender == owner, "Only admin can manage revenue configurations");
+    }
+
+    /**
      * @notice Sets the address of the ReflexQuoter contract
      * @dev Only callable by admin. Used to update the quoter contract address
      * @param _reflexQuoter The address of the new ReflexQuoter contract
@@ -84,21 +94,23 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard {
 
     /**
      * @notice Executes a backrun arbitrage opportunity on a DEX pool
-     * @dev Gets a quote from ReflexQuoter, executes the swap route if profitable, and returns profit to recipient
+     * @dev Gets a quote from ReflexQuoter, executes the swap route if profitable, and distributes profit using revenue distributor
      * @param triggerPoolId The unique identifier of the pool that triggered the backrun opportunity
      * @param swapAmountIn The amount of tokens to use as input for the arbitrage swap
      * @param token0In Whether to use token0 (true) or token1 (false) as the input token
-     * @param recipient The address that will receive the arbitrage profit
+     * @param recipient The address that will receive the arbitrage profit (used as dust recipient)
+     * @param configId The configuration ID for profit splitting (uses default if bytes32(0))
      * @return profit The amount of profit generated from the arbitrage
      * @return profitToken The address of the token in which profit was generated
      */
-    function triggerBackrun(bytes32 triggerPoolId, uint112 swapAmountIn, bool token0In, address recipient)
-        external
-        override
-        gracefulNonReentrant
-        returns (uint256 profit, address profitToken)
-    {
-        return _triggerBackrun(triggerPoolId, swapAmountIn, token0In, recipient);
+    function triggerBackrun(
+        bytes32 triggerPoolId,
+        uint112 swapAmountIn,
+        bool token0In,
+        address recipient,
+        bytes32 configId
+    ) external override gracefulNonReentrant returns (uint256 profit, address profitToken) {
+        return _triggerBackrun(triggerPoolId, swapAmountIn, token0In, recipient, configId);
     }
 
     /**
@@ -107,32 +119,40 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard {
      * @param triggerPoolId The unique identifier of the pool that triggered the backrun opportunity
      * @param swapAmountIn The amount of tokens to use as input for the arbitrage swap
      * @param token0In Whether to use token0 (true) or token1 (false) as the input token
-     * @param recipient The address that will receive the arbitrage profit
+     * @param recipient The address that will receive the arbitrage profit (used as dust recipient)
+     * @param configId The configuration ID for profit splitting (uses default if bytes32(0))
      * @return profit The amount of profit generated from the arbitrage
      * @return profitToken The address of the token in which profit was generated
      */
-    function _triggerBackrunSafe(bytes32 triggerPoolId, uint112 swapAmountIn, bool token0In, address recipient)
-        external
-        returns (uint256 profit, address profitToken)
-    {
+    function _triggerBackrunSafe(
+        bytes32 triggerPoolId,
+        uint112 swapAmountIn,
+        bool token0In,
+        address recipient,
+        bytes32 configId
+    ) external returns (uint256 profit, address profitToken) {
         require(msg.sender == address(this), "Only self-call allowed");
-        return _triggerBackrun(triggerPoolId, swapAmountIn, token0In, recipient);
+        return _triggerBackrun(triggerPoolId, swapAmountIn, token0In, recipient, configId);
     }
 
     /**
      * @notice Internal function to execute a backrun arbitrage opportunity on a DEX pool
-     * @dev Gets a quote from ReflexQuoter, executes the swap route if profitable, and returns profit to recipient
+     * @dev Gets a quote from ReflexQuoter, executes the swap route if profitable, and distributes profit using revenue distributor
      * @param triggerPoolId The unique identifier of the pool that triggered the backrun opportunity
      * @param swapAmountIn The amount of tokens to use as input for the arbitrage swap
      * @param token0In Whether to use token0 (true) or token1 (false) as the input token
-     * @param recipient The address that will receive the arbitrage profit
+     * @param recipient The address that will receive the arbitrage profit (used as dust recipient)
+     * @param configId The configuration ID for profit splitting (uses default if bytes32(0))
      * @return profit The amount of profit generated from the arbitrage
      * @return profitToken The address of the token in which profit was generated
      */
-    function _triggerBackrun(bytes32 triggerPoolId, uint112 swapAmountIn, bool token0In, address recipient)
-        internal
-        returns (uint256 profit, address profitToken)
-    {
+    function _triggerBackrun(
+        bytes32 triggerPoolId,
+        uint112 swapAmountIn,
+        bool token0In,
+        address recipient,
+        bytes32 configId
+    ) internal returns (uint256 profit, address profitToken) {
         (
             uint256 quoteProfit,
             IReflexQuoter.SwapDecodedData memory decoded,
@@ -151,7 +171,9 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard {
         triggerSwapRoute(decoded, amountsOut, initialHopIndex);
         profit = IERC20(profitToken).balanceOf(address(this)) - balanceBefore;
 
-        IERC20(profitToken).transfer(recipient, profit);
+        // Split the profit using the revenue distributor (handles default config fallback internally)
+        _splitERC20(configId, profitToken, profit, recipient);
+
         loanCallbackType = LOAN_CALLBACK_TYPE_EMPTY;
         emit BackrunExecuted(triggerPoolId, swapAmountIn, token0In, profit, profitToken, recipient);
     }
@@ -191,7 +213,8 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard {
                 backrunParams[i].triggerPoolId,
                 backrunParams[i].swapAmountIn,
                 backrunParams[i].token0In,
-                backrunParams[i].recipient
+                backrunParams[i].recipient,
+                backrunParams[i].configId
             ) returns (uint256 profit, address profitToken) {
                 profits[i] = profit;
                 profitTokens[i] = profitToken;

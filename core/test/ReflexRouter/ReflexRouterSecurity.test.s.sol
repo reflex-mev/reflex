@@ -23,7 +23,7 @@ contract MaliciousReentrancyContract {
     }
 
     function attack(bytes32 triggerPoolId, uint112 swapAmountIn, bool token0In) external {
-        target.triggerBackrun(triggerPoolId, swapAmountIn, token0In, address(this));
+        target.triggerBackrun(triggerPoolId, swapAmountIn, token0In, address(this), bytes32(0));
     }
 
     // This function would be called when receiving tokens
@@ -31,7 +31,7 @@ contract MaliciousReentrancyContract {
         callCount++;
         if (shouldReenter && callCount < 3) {
             // Attempt reentrancy
-            target.triggerBackrun(bytes32(0), 1000, true, address(this));
+            target.triggerBackrun(bytes32(0), 1000, true, address(this), bytes32(0));
         }
         return true;
     }
@@ -210,8 +210,8 @@ contract ReflexRouterSecurityTest is Test {
 
         // With graceful reentrancy guard, multiple calls should work fine sequentially
         // (they are not actually reentrant since they're called one after another)
-        (uint256 profit1,) = reflexRouter.triggerBackrun(triggerPoolId, 100, true, alice);
-        (uint256 profit2,) = reflexRouter.triggerBackrun(triggerPoolId, 200, true, bob);
+        (uint256 profit1,) = reflexRouter.triggerBackrun(triggerPoolId, 100, true, alice, bytes32(0));
+        (uint256 profit2,) = reflexRouter.triggerBackrun(triggerPoolId, 200, true, bob, bytes32(0));
 
         // Both should return 0 since no quote is set up, but the important thing is they don't revert
         assertEq(profit1, 0, "First call should complete gracefully");
@@ -282,7 +282,8 @@ contract ReflexRouterSecurityTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(token0))));
 
         // Should handle malformed data gracefully (likely revert or return no profit)
-        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice) returns (uint256 profit, address) {
+        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0)) returns (uint256 profit, address)
+        {
             // If it doesn't revert, profit should be 0 due to malformed data
             assertEq(profit, 0);
         } catch {
@@ -300,7 +301,8 @@ contract ReflexRouterSecurityTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(token0))));
 
         // Should either revert due to gas limit or handle gracefully
-        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice) returns (uint256 profit, address) {
+        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0)) returns (uint256 profit, address)
+        {
             // If it completes, profit should be 0
             assertEq(profit, 0);
         } catch {
@@ -343,7 +345,7 @@ contract ReflexRouterSecurityTest is Test {
 
         // Test with maximum possible values
         (uint256 profit, address profitToken) =
-            reflexRouter.triggerBackrun(triggerPoolId, type(uint112).max, true, alice);
+            reflexRouter.triggerBackrun(triggerPoolId, type(uint112).max, true, alice, bytes32(0));
 
         // Should handle extreme values without overflow
         assertEq(profit, 0);
@@ -357,7 +359,8 @@ contract ReflexRouterSecurityTest is Test {
 
         bytes32 triggerPoolId = bytes32(0);
 
-        (uint256 profit, address profitToken) = reflexRouter.triggerBackrun(triggerPoolId, 0, true, address(0));
+        (uint256 profit, address profitToken) =
+            reflexRouter.triggerBackrun(triggerPoolId, 0, true, address(0), bytes32(0));
 
         assertEq(profit, 0);
         assertEq(profitToken, address(0));
@@ -385,7 +388,7 @@ contract ReflexRouterSecurityTest is Test {
     }
 
     function callWithGasLimit(bytes32 triggerPoolId) external {
-        reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice);
+        reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0));
     }
 
     // =============================================================================
@@ -400,8 +403,8 @@ contract ReflexRouterSecurityTest is Test {
         // Test that the same parameters produce the same results regardless of order
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(token0))));
 
-        (uint256 profit1,) = reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice);
-        (uint256 profit2,) = reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice);
+        (uint256 profit1,) = reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0));
+        (uint256 profit2,) = reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0));
 
         // Should be deterministic
         assertEq(profit1, profit2);
@@ -418,7 +421,7 @@ contract ReflexRouterSecurityTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(token0))));
 
         // Attempt a transaction that might fail
-        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice) {
+        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0)) {
             // Transaction succeeded
         } catch {
             // Transaction failed
@@ -439,7 +442,8 @@ contract ReflexRouterSecurityTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(maliciousPool))));
 
         // Should handle malicious callbacks gracefully
-        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice) returns (uint256 profit, address) {
+        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0)) returns (uint256 profit, address)
+        {
             assertEq(profit, 0);
         } catch {
             // Reverting is acceptable for malicious callbacks
@@ -462,9 +466,9 @@ contract ReflexRouterSecurityTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(token0))));
 
         // Multiple calls with same parameters should be consistent
-        (uint256 profit1,) = reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice);
-        (uint256 profit2,) = reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice);
-        (uint256 profit3,) = reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice);
+        (uint256 profit1,) = reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0));
+        (uint256 profit2,) = reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0));
+        (uint256 profit3,) = reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0));
 
         assertEq(profit1, profit2);
         assertEq(profit2, profit3);
@@ -482,7 +486,8 @@ contract ReflexRouterSecurityTest is Test {
         // Test with invalid pool addresses
         bytes32 invalidPoolId = bytes32(uint256(uint160(address(0xdead))));
 
-        (uint256 profit, address profitToken) = reflexRouter.triggerBackrun(invalidPoolId, 1000, true, alice);
+        (uint256 profit, address profitToken) =
+            reflexRouter.triggerBackrun(invalidPoolId, 1000, true, alice, bytes32(0));
 
         assertEq(profit, 0);
         assertEq(profitToken, address(0));
@@ -497,7 +502,7 @@ contract ReflexRouterSecurityTest is Test {
 
         // Should revert when quoter is not set
         vm.expectRevert();
-        newRouter.triggerBackrun(triggerPoolId, 1000, true, alice);
+        newRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0));
     }
 
     // =============================================================================
@@ -518,7 +523,7 @@ contract ReflexRouterSecurityTest is Test {
 
         // Random caller attempts to trigger backrun
         vm.prank(randomCaller);
-        try reflexRouter.triggerBackrun(randomPoolId, randomAmount, randomBool, randomCaller) {
+        try reflexRouter.triggerBackrun(randomPoolId, randomAmount, randomBool, randomCaller, bytes32(0)) {
             // Transaction succeeded
         } catch {
             // Transaction failed
@@ -568,8 +573,10 @@ contract ReflexRouterSecurityTest is Test {
         reflexRouter.setReflexQuoter(address(maliciousQuoter));
 
         // Same inputs should produce same outputs
-        (uint256 profit1, address profitToken1) = reflexRouter.triggerBackrun(poolId, amount, tokenIn, recipient);
-        (uint256 profit2, address profitToken2) = reflexRouter.triggerBackrun(poolId, amount, tokenIn, recipient);
+        (uint256 profit1, address profitToken1) =
+            reflexRouter.triggerBackrun(poolId, amount, tokenIn, recipient, bytes32(0));
+        (uint256 profit2, address profitToken2) =
+            reflexRouter.triggerBackrun(poolId, amount, tokenIn, recipient, bytes32(0));
 
         assertEq(profit1, profit2);
         assertEq(profitToken1, profitToken2);
