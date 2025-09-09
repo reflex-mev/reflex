@@ -77,9 +77,7 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
         try IReflexRouter(router).triggerBackrun(triggerPoolId, uint112(swapAmountIn), zeroForOne, recipient) returns (
             uint256 backrunProfit, address backrunProfitToken
         ) {
-            if (backrunProfit > 0 && backrunProfitToken != address(0)) {
-                return (backrunProfit, backrunProfitToken);
-            }
+            return (backrunProfit, backrunProfitToken);
         } catch {
             // Router call failed, but don't revert the main transaction
             // This ensures the main swap can still complete successfully
