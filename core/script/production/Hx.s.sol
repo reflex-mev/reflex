@@ -48,7 +48,8 @@ contract HxSwapSimulationSpecs is SwapSimulationTest {
         uint256[] memory shares = new uint256[](2);
         shares[0] = 5000;
         shares[1] = 5000;
-        IFundsSplitter(plugin).updateShares(shareHolders, shares);
+        // TODO: Fund splitting functionality has been moved to ConfigurableRevenueDistributor
+        // IFundsSplitter(plugin).updateShares(shareHolders, shares);
         vm.stopPrank();
     }
 
