@@ -67,21 +67,8 @@ contract AlgebraBasePluginV1Test is Test {
         vm.prank(address(pool));
         plugin.beforeInitialize(address(0), 0);
 
-        // Set up shared recipients for ReflexAfterSwap functionality
-        address[] memory recipients = new address[](4);
-        recipients[0] = alice;
-        recipients[1] = bob;
-        recipients[2] = address(0xC); // charlie equivalent
-        recipients[3] = address(0xD); // diana equivalent
-
-        uint256[] memory shares = new uint256[](4);
-        shares[0] = 2500; // 25%
-        shares[1] = 2500; // 25%
-        shares[2] = 2500; // 25%
-        shares[3] = 2500; // 25%
-
-        vm.prank(admin);
-        plugin.updateShares(recipients, shares);
+        // Note: Fund splitting functionality has been moved to ConfigurableRevenueDistributor
+        // ReflexAfterSwap now only handles profit extraction without funds splitting
     } // ========== Constructor Tests ==========
 
     function testConstructor() public view {
@@ -391,20 +378,26 @@ contract AlgebraBasePluginV1Test is Test {
 
     function testMultipleSwaps() public {
         uint256 aliceInitialBalance = profitToken.balanceOf(alice);
+        uint256 bobInitialBalance = profitToken.balanceOf(bob);
 
-        // First swap
+        // First swap - alice receives profit
         vm.prank(address(pool));
         plugin.afterSwap(address(0), alice, true, 1000, 0, 500, -250, "");
 
         uint256 aliceAfterFirst = profitToken.balanceOf(alice);
         assertTrue(aliceAfterFirst > aliceInitialBalance);
 
-        // Second swap
+        // Second swap - bob receives profit  
         vm.prank(address(pool));
         plugin.afterSwap(address(0), bob, false, 2000, 0, -800, 400, "");
 
         uint256 aliceAfterSecond = profitToken.balanceOf(alice);
-        assertTrue(aliceAfterSecond > aliceAfterFirst);
+        uint256 bobAfterSecond = profitToken.balanceOf(bob);
+        
+        // Alice's balance should remain the same (she didn't receive profit from second swap)
+        assertEq(aliceAfterSecond, aliceAfterFirst);
+        // Bob should have received profit from the second swap
+        assertTrue(bobAfterSecond > bobInitialBalance);
     }
 
     function testRouterFailure() public {
