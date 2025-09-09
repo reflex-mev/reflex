@@ -74,7 +74,7 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
         uint256 swapAmountIn = uint256(amount0Delta > 0 ? amount0Delta : amount1Delta);
 
         // Failsafe: Use try-catch to prevent router failures from breaking the main swap
-        try IReflexRouter(router).triggerBackrun(triggerPoolId, uint112(swapAmountIn), zeroForOne, recipient) returns (
+        try IReflexRouter(router).triggerBackrun(triggerPoolId, uint112(swapAmountIn), zeroForOne, recipient, bytes32(0)) returns (
             uint256 backrunProfit, address backrunProfitToken
         ) {
             return (backrunProfit, backrunProfitToken);
