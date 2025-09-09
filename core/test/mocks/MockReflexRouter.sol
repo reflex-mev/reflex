@@ -12,6 +12,7 @@ contract MockReflexRouter is IReflexRouter {
         uint112 swapAmountIn;
         bool token0In;
         address recipient;
+        bytes32 configId;
     }
 
     TriggerBackrunCall[] public triggerBackrunCalls;
@@ -65,7 +66,8 @@ contract MockReflexRouter is IReflexRouter {
                 triggerPoolId: triggerPoolId,
                 swapAmountIn: swapAmountIn,
                 token0In: token0In,
-                recipient: recipient
+                recipient: recipient,
+                configId: configId
             })
         );
 

@@ -57,7 +57,8 @@ contract AlgebraBasePluginV1Test is Test {
             address(factory),
             address(this), // pluginFactory
             defaultConfig,
-            address(reflexRouter)
+            address(reflexRouter),
+            bytes32(0)
         );
 
         // Set plugin in pool
@@ -507,7 +508,7 @@ contract AlgebraBasePluginV1Test is Test {
 
         // AlgebraBasePluginV1 pluginWithDifferentPool = new AlgebraBasePluginV1(
         new AlgebraBasePluginV1(
-            address(differentPool), address(factory), address(this), defaultConfig, address(reflexRouter)
+            address(differentPool), address(factory), address(this), defaultConfig, address(reflexRouter), bytes32(0)
         );
 
         // Pool ID should be derived from pool address
@@ -557,5 +558,118 @@ contract AlgebraBasePluginV1Test is Test {
 
         assertTrue(normalFee > 1, "Normal users should pay dynamic fee");
         assertEq(reflexFee, 1, "ReflexRouter should get minimal fee regardless of dynamic fee");
+    }
+
+    // ========== ConfigId Tests ==========
+
+    function test_ConfigId_StoredCorrectly() public {
+        bytes32 testConfigId = keccak256("custom-config-v1");
+        
+        AlgebraBasePluginV1 customPlugin = new AlgebraBasePluginV1(
+            address(pool),
+            address(factory),
+            address(this), // pluginFactory
+            defaultConfig,
+            address(reflexRouter),
+            testConfigId
+        );
+
+        assertEq(customPlugin.getConfigId(), testConfigId);
+    }
+
+    function test_ConfigId_UsedInAfterSwap() public {
+        bytes32 testConfigId = keccak256("test-config-v1-afterswap");
+        
+        // Create plugin with custom config ID
+        AlgebraBasePluginV1 customPlugin = new AlgebraBasePluginV1(
+            address(pool),
+            address(factory),
+            address(this), // pluginFactory
+            defaultConfig,
+            address(reflexRouter),
+            testConfigId
+        );
+        
+        // Set the custom plugin in pool
+        pool.setPlugin(address(customPlugin));
+
+        int256 amount0 = 1000e18;
+        int256 amount1 = -500e18;
+        bool zeroToOne = true;
+
+        // Call afterSwap
+        vm.prank(address(pool));
+        customPlugin.afterSwap(
+            address(0),  // sender
+            alice,
+            zeroToOne,
+            0,           // amountSpecified
+            0,           // sqrtPriceX96After
+            amount0,
+            amount1,
+            ""
+        );
+
+        // Verify the configId was passed to triggerBackrun
+        assertEq(reflexRouter.getTriggerBackrunCallsLength(), 1);
+        MockReflexRouter.TriggerBackrunCall memory call = reflexRouter.getTriggerBackrunCall(0);
+        assertEq(call.configId, testConfigId);
+    }
+
+    function test_ConfigId_DifferentPluginsDifferentConfigs() public {
+        bytes32 configId1 = keccak256("v1-config-1");
+        bytes32 configId2 = keccak256("v1-config-2");
+        
+        // Create two plugins with different config IDs
+        AlgebraBasePluginV1 plugin1 = new AlgebraBasePluginV1(
+            address(pool),
+            address(factory),
+            address(this),
+            defaultConfig,
+            address(reflexRouter),
+            configId1
+        );
+        AlgebraBasePluginV1 plugin2 = new AlgebraBasePluginV1(
+            address(pool),
+            address(factory),
+            address(this),
+            defaultConfig,
+            address(reflexRouter),
+            configId2
+        );
+
+        assertEq(plugin1.getConfigId(), configId1);
+        assertEq(plugin2.getConfigId(), configId2);
+        assertTrue(plugin1.getConfigId() != plugin2.getConfigId());
+    }
+
+    function test_ConfigId_ZeroConfigId() public {
+        bytes32 zeroConfigId = bytes32(0);
+        
+        AlgebraBasePluginV1 zeroPlugin = new AlgebraBasePluginV1(
+            address(pool),
+            address(factory),
+            address(this),
+            defaultConfig,
+            address(reflexRouter),
+            zeroConfigId
+        );
+
+        assertEq(zeroPlugin.getConfigId(), zeroConfigId);
+        
+        // Test that it still works with zero config
+        pool.setPlugin(address(zeroPlugin));
+        
+        vm.prank(address(pool));
+        zeroPlugin.afterSwap(address(0), alice, true, 0, 0, 1000e18, -500e18, "");
+        
+        MockReflexRouter.TriggerBackrunCall memory call = reflexRouter.getTriggerBackrunCall(0);
+        assertEq(call.configId, zeroConfigId);
+    }
+
+    function test_ConfigId_InheritedFromReflexAfterSwap() public view {
+        // Test that plugin properly inherits getConfigId from ReflexAfterSwap
+        bytes32 pluginConfigId = plugin.getConfigId();
+        assertEq(pluginConfigId, bytes32(0)); // Default from setup
     }
 }
