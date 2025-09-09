@@ -2,7 +2,7 @@
 
 ![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue.svg)
 ![Foundry](https://img.shields.io/badge/Built%20with-Foundry-red.svg)
-![Tests](https://img.shields.io/badge/Tests-322%20Passing-brightgreen.svg)
+![Tests](https://img.shields.io/badge/Tests-368%20Passing-brightgreen.svg)
 
 The core Solidity contracts that power the Reflex MEV capture engine, designed for seamless integration into DEX protocols and AMM systems.
 
@@ -20,6 +20,7 @@ The core Solidity contracts that power the Reflex MEV capture engine, designed f
 - **Runtime Enable/Disable**: Toggle MEV capture functionality without contract redeployment
 - **Authorization Framework**: Flexible access control system for secure administration
 - **Configurable Profit Sharing**: Split captured profits between swap recipients and fund distribution
+- **Multi-Configuration Support**: Support for different profit distribution configurations per config ID
 - **Plugin-Level Integration**: Seamlessly integrates with various DEX plugin architectures
 - **Fee Optimization**: Smart fee management to maximize profit extraction
 
@@ -27,7 +28,7 @@ The core Solidity contracts that power the Reflex MEV capture engine, designed f
 
 - **Reentrancy Protection**: Built-in guards against reentrancy attacks
 - **Dust Handling**: Proper handling of token remainders to prevent value loss
-- **Comprehensive Testing**: 322+ tests covering all functionality and edge cases
+- **Comprehensive Testing**: 368+ tests covering all functionality and edge cases
 - **MIT Licensed**: Open source with permissive licensing
 
 ## 🏗️ Architecture
@@ -49,8 +50,19 @@ Abstract base contract for MEV capture logic:
 
 - Implements the core profit extraction and distribution mechanism
 - Configurable recipient share functionality (up to 50% of profits)
-- Integration with `FundsSplitter` for multi-party profit distribution
+- **Configuration ID support** for different profit distribution setups
+- Integration with `ConfigurableRevenueDistributor` for multi-party profit distribution
 - Reentrancy-protected with comprehensive validation
+
+#### `ConfigurableRevenueDistributor`
+
+Advanced profit distribution system supporting multiple configurations:
+
+- **Multiple Distribution Configurations**: Support for different profit splits per config ID
+- **Basis Points System**: Precise percentage allocation using basis points (1% = 100 bps)
+- **Stateless Design**: No fund storage, immediate distribution on receipt
+- **Default Configuration**: Fallback distribution when specific config not found
+- **Admin-Controlled**: Secure configuration management with access controls
 
 #### `FundsSplitter`
 
@@ -67,15 +79,50 @@ Handles distribution of captured profits:
 2. **MEV Detection**: System identifies profitable arbitrage opportunities
 3. **Hook Trigger**: Swap completion triggers MEV capture logic
 4. **MEV Check**: System checks if MEV capture is enabled
-5. **Profit Extraction**: If enabled, triggers backrun through ReflexRouter
-6. **Profit Distribution**: Captured profits are split between recipient and fund distribution
-7. **Failsafe**: Any errors are caught to prevent disruption
+5. **Profit Extraction**: If enabled, triggers backrun through ReflexRouter with config ID
+6. **Config Resolution**: Router uses config ID to determine profit distribution rules
+7. **Profit Distribution**: Captured profits are split according to the configuration
+8. **Failsafe**: Any errors are caught to prevent disruption
 
 ## 🔐 Authorization System
 
 - **Flexible role-based access control**: Secure permission management for administrative functions
 - **Upgradeable authorization framework**: Extensible system that can adapt to different protocol requirements
 - **Administrative functions protection**: All sensitive operations are protected by access controls
+
+## ⚙️ Configuration System
+
+### Configuration IDs
+
+The system supports multiple profit distribution configurations through configuration IDs:
+
+- **Config ID**: 32-byte identifier (`bytes32`) used to select profit distribution configuration
+- **Default Configuration**: Fallback used when no specific configuration is found
+- **Per-Plugin Configuration**: Each plugin can be deployed with its own config ID
+- **Runtime Flexibility**: Configurations can be updated by authorized administrators
+
+### Profit Distribution Flow
+
+1. **Plugin Deployment**: Plugin is deployed with a specific config ID
+2. **Swap Execution**: User performs swap, triggering MEV capture
+3. **Config Lookup**: System uses the plugin's config ID to find distribution rules
+4. **Profit Split**: Captured profits are distributed according to the configuration
+5. **Fallback Handling**: If config not found, default configuration is used
+
+### Configuration Management
+
+```solidity
+// Example configuration setup
+bytes32 configId = keccak256("protocol-v1");
+
+// Recipients and their shares
+address[] memory recipients = [treasury, lpRewards, devFund];
+uint256[] memory shares = [5000, 3000, 1500]; // 50%, 30%, 15%
+uint256 dustShare = 500; // 5% for dust/remainder
+
+// Update configuration (admin only)
+router.updateShares(configId, recipients, shares, dustShare);
+```
 
 ## Testing
 
@@ -90,7 +137,10 @@ forge test
 # Run specific test categories
 forge test --match-contract AlgebraBasePluginV3Test
 forge test --match-contract ReflexAfterSwapTest
-forge test --match-contract FundsSplitterTest
+forge test --match-contract ConfigurableRevenueDistributorTest
+
+# Run configId functionality tests
+forge test --match-test "test.*ConfigId"
 
 # Run fee exemption tests specifically
 forge test --match-test "test_BeforeSwap_.*"
@@ -136,7 +186,10 @@ src/
 │   │   └── full/
 │   │       └── AlgebraBasePluginV3.sol    # Main plugin contract
 │   ├── ReflexAfterSwap.sol            # MEV capture logic
-│   └── FundsSplitter/                 # Profit distribution system
+│   ├── ConfigurableRevenueDistributor/ # Advanced profit distribution system
+│   │   ├── ConfigurableRevenueDistributor.sol
+│   │   └── IConfigurableRevenueDistributor.sol
+│   └── FundsSplitter/                 # Basic profit distribution system
 ├── interfaces/                       # Contract interfaces
 ├── libraries/                        # Shared libraries
 └── utils/                           # Utility contracts
@@ -159,14 +212,35 @@ script/
 ### Basic Plugin Deployment
 
 ```solidity
-// Deploy with MEV capture enabled by default
+// Deploy with MEV capture enabled by default and specific config ID
+bytes32 configId = keccak256("my-protocol-config");
 AlgebraBasePluginV3 plugin = new AlgebraBasePluginV3(
     poolAddress,
     factoryAddress,
     pluginFactoryAddress,
     baseFee,
-    reflexRouterAddress
+    reflexRouterAddress,
+    configId
 );
+```
+
+### Configuration Management
+
+```solidity
+// Set up a custom profit distribution configuration
+bytes32 configId = keccak256("custom-config");
+address[] memory recipients = new address[](2);
+recipients[0] = protocolTreasury;
+recipients[1] = lpIncentivePool;
+
+uint256[] memory sharesBps = new uint256[](2);
+sharesBps[0] = 6000; // 60% to treasury
+sharesBps[1] = 3000; // 30% to LP incentives
+
+uint256 dustShareBps = 1000; // 10% remainder
+
+// Update the configuration (admin only)
+reflexRouter.updateShares(configId, recipients, sharesBps, dustShareBps);
 ```
 
 ### Runtime Configuration
