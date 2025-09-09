@@ -50,7 +50,15 @@ contract ConfigurableRevenueDistributorTest is Test {
 
     // Events from IConfigurableRevenueDistributor
     event SharesUpdated(bytes32 indexed configId, address[] recipients, uint256[] sharesBps, uint256 dustShareBps);
-    event SplitExecuted(bytes32 indexed configId, address indexed token, uint256 totalAmount, address[] recipients, uint256[] amounts, address dustRecipient, uint256 dustAmount);
+    event SplitExecuted(
+        bytes32 indexed configId,
+        address indexed token,
+        uint256 totalAmount,
+        address[] recipients,
+        uint256[] amounts,
+        address dustRecipient,
+        uint256 dustAmount
+    );
 
     uint256 public constant TOTAL_BPS = 10_000;
 
@@ -464,10 +472,10 @@ contract ConfigurableRevenueDistributorTest is Test {
         distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
 
         uint256 amount = 10000 * 10 ** 18;
-        
+
         // Transfer tokens to distributor
         token.transfer(address(distributor), amount);
-        
+
         distributor.splitERC20(CONFIG_ID_1, address(token), amount, dustRecipient);
 
         // Verify each recipient got their share
@@ -486,10 +494,10 @@ contract ConfigurableRevenueDistributorTest is Test {
         distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, 0);
 
         uint256 initialBalance = token.balanceOf(recipient1);
-        
+
         // Transfer tokens to distributor (even though it's 0, for consistency)
         // No transfer needed for 0 amount
-        
+
         distributor.splitERC20(CONFIG_ID_1, address(token), 0, address(0));
 
         // Balance should remain unchanged

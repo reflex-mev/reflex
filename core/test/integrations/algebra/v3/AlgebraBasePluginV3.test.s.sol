@@ -94,7 +94,7 @@ contract AlgebraBasePluginV3Test is Test {
         assertEq(call.triggerPoolId, bytes32(uint256(uint160(address(pool)))));
         assertEq(call.swapAmountIn, uint112(uint256(amount0Out > 0 ? amount0Out : amount1Out)));
         assertEq(call.token0In, zeroToOne);
-        assertEq(call.recipient, address(plugin));
+        assertEq(call.recipient, recipient);
     }
 
     function test_AfterSwap_OnlyPoolCanCall() public {
@@ -113,7 +113,7 @@ contract AlgebraBasePluginV3Test is Test {
         MockReflexRouter.TriggerBackrunCall memory call = reflexRouter.getTriggerBackrunCall(0);
         assertEq(call.token0In, false);
         assertEq(call.swapAmountIn, uint112(uint256(amount1Out)));
-        assertEq(call.recipient, address(plugin));
+        assertEq(call.recipient, recipient);
     }
 
     function test_AfterSwap_WithDifferentRecipients() public {
@@ -133,8 +133,8 @@ contract AlgebraBasePluginV3Test is Test {
         MockReflexRouter.TriggerBackrunCall memory call1 = reflexRouter.getTriggerBackrunCall(0);
         MockReflexRouter.TriggerBackrunCall memory call2 = reflexRouter.getTriggerBackrunCall(1);
 
-        assertEq(call1.recipient, address(plugin));
-        assertEq(call2.recipient, address(plugin));
+        assertEq(call1.recipient, recipient1);
+        assertEq(call2.recipient, recipient2);
     }
 
     function test_AfterSwap_LargeAmounts() public {
@@ -249,7 +249,7 @@ contract AlgebraBasePluginV3Test is Test {
         uint256 expectedSwapAmount = uint256(amount0Out > 0 ? amount0Out : amount1Out);
         assertEq(call.swapAmountIn, uint112(expectedSwapAmount));
         assertEq(call.token0In, zeroToOne);
-        assertEq(call.recipient, address(plugin));
+        assertEq(call.recipient, fuzzRecipient);
     }
 
     function testFuzz_TriggerPoolId(address poolAddress) public {
