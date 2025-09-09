@@ -78,7 +78,7 @@ contract DeployBasePluginV1Factory is Script {
         vm.startBroadcast();
 
         // Deploy the factory contract
-        factory = new BasePluginV1Factory(algebraFactoryAddress, reflexRouterAddress);
+        factory = new BasePluginV1Factory(algebraFactoryAddress, reflexRouterAddress, bytes32(0));
 
         // Configure the factory
         _configureFactory();

@@ -13,7 +13,7 @@ contract AlgebraPlugin is IAlgebraPlugin, ReflexAfterSwap {
 
     address public immutable pool;
 
-    constructor(address _pool, address _reflexRouter) ReflexAfterSwap(_reflexRouter) {
+    constructor(address _pool, address _reflexRouter, bytes32 _configId) ReflexAfterSwap(_reflexRouter, _configId) {
         pool = _pool;
         defaultPluginConfig = uint8(Plugins.AFTER_SWAP_FLAG);
     }

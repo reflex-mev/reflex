@@ -55,7 +55,7 @@ contract BasePluginV1FactoryTest is Test {
         reflexRouter = MockReflexRouter(TestUtils.createSimpleMockReflexRouter(admin));
 
         // Deploy BasePluginV1Factory
-        factory = new BasePluginV1Factory(address(algebraFactory), address(reflexRouter));
+        factory = new BasePluginV1Factory(address(algebraFactory), address(reflexRouter), bytes32(0));
 
         // Set initial reflex router
         // Router is now set in constructor, no need to set separately
@@ -64,7 +64,8 @@ contract BasePluginV1FactoryTest is Test {
     // ========== Constructor Tests ==========
 
     function testConstructor() public {
-        BasePluginV1Factory newFactory = new BasePluginV1Factory(address(algebraFactory), address(reflexRouter));
+        BasePluginV1Factory newFactory =
+            new BasePluginV1Factory(address(algebraFactory), address(reflexRouter), bytes32(0));
 
         assertEq(newFactory.algebraFactory(), address(algebraFactory));
         assertEq(newFactory.reflexRouter(), address(reflexRouter));
@@ -84,7 +85,7 @@ contract BasePluginV1FactoryTest is Test {
 
     function testConstructorWithZeroFactory() public {
         // Should not revert - the contract allows zero factory address
-        BasePluginV1Factory newFactory = new BasePluginV1Factory(address(0), address(reflexRouter));
+        BasePluginV1Factory newFactory = new BasePluginV1Factory(address(0), address(reflexRouter), bytes32(0));
         assertEq(newFactory.algebraFactory(), address(0));
         assertEq(newFactory.reflexRouter(), address(reflexRouter));
     }
@@ -134,7 +135,7 @@ contract BasePluginV1FactoryTest is Test {
     }
 
     function testReflexRouterInitiallyZero() public {
-        BasePluginV1Factory newFactory = new BasePluginV1Factory(address(algebraFactory), address(0));
+        BasePluginV1Factory newFactory = new BasePluginV1Factory(address(algebraFactory), address(0), bytes32(0));
         assertEq(newFactory.reflexRouter(), address(0));
     }
 

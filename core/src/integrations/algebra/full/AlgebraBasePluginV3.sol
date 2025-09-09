@@ -22,10 +22,17 @@ contract AlgebraBasePluginV3 is SlidingFeePlugin, FarmingProxyPlugin, Volatility
     uint8 public constant override defaultPluginConfig =
         uint8(Plugins.AFTER_INIT_FLAG | Plugins.BEFORE_SWAP_FLAG | Plugins.AFTER_SWAP_FLAG | Plugins.DYNAMIC_FEE);
 
-    constructor(address _pool, address _factory, address _pluginFactory, uint16 _baseFee, address _reflexRouter)
+    constructor(
+        address _pool,
+        address _factory,
+        address _pluginFactory,
+        uint16 _baseFee,
+        address _reflexRouter,
+        bytes32 _configId
+    )
         AlgebraBasePlugin(_pool, _factory, _pluginFactory)
         SlidingFeePlugin(_baseFee)
-        ReflexAfterSwap(_reflexRouter)
+        ReflexAfterSwap(_reflexRouter, _configId)
     {
         reflexEnabled = true; // Enable reflex functionality by default
     }
