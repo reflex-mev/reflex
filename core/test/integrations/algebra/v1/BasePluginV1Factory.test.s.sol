@@ -71,7 +71,7 @@ contract BasePluginV1FactoryTest is Test {
 
         assertEq(newFactory.algebraFactory(), address(algebraFactory));
         assertEq(newFactory.reflexRouter(), address(reflexRouter));
-        assertEq(newFactory.configId(), testConfigId);
+        assertEq(newFactory.reflexConfigId(), testConfigId);
         assertEq(newFactory.farmingAddress(), address(0));
 
         // Check default fee configuration
@@ -558,7 +558,7 @@ contract BasePluginV1FactoryTest is Test {
         vm.prank(admin);
         factory.setConfigId(newConfigId);
 
-        assertEq(factory.configId(), newConfigId);
+        assertEq(factory.reflexConfigId(), newConfigId);
     }
 
     function testSetConfigIdUnauthorized() public {
