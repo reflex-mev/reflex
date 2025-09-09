@@ -69,7 +69,7 @@ contract BasePluginV3FactoryTest is Test {
         assertEq(newFactory.defaultBaseFee(), 3000);
         assertEq(newFactory.farmingAddress(), address(0));
         assertEq(newFactory.reflexRouter(), address(reflexRouter));
-        assertEq(newFactory.configId(), testConfigId);
+        assertEq(newFactory.reflexConfigId(), testConfigId);
     }
 
     function testConstructorWithZeroFactory() public {
@@ -324,7 +324,7 @@ contract BasePluginV3FactoryTest is Test {
         vm.prank(admin);
         factory.setConfigId(newConfigId);
 
-        assertEq(factory.configId(), newConfigId);
+        assertEq(factory.reflexConfigId(), newConfigId);
     }
 
     function testSetConfigIdUnauthorized() public {
