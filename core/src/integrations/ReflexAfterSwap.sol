@@ -2,14 +2,15 @@
 pragma solidity ^0.8.20;
 
 import "../interfaces/IReflexRouter.sol";
-import "./FundsSplitter/FundsSplitter.sol";
 import "../utils/GracefulReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title ReflexAfterSwap
-/// @notice Abstract contract that integrates with Reflex Router for post-swap profit extraction and distribution
-/// @dev Inherits from FundsSplitter to enable profit sharing among multiple recipients
+/// @notice Abstract contract that integrates with Reflex Router for post-swap profit extraction
 /// @dev Implements failsafe mechanisms to prevent router failures from affecting main swap operations
-abstract contract ReflexAfterSwap is FundsSplitter, GracefulReentrancyGuard {
+/// @dev Profit distribution is handled externally - this contract only extracts profits
+abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /// @notice Address of the Reflex router contract
@@ -18,32 +19,28 @@ abstract contract ReflexAfterSwap is FundsSplitter, GracefulReentrancyGuard {
     /// @notice Address of the reflex admin (authorized controller)
     address reflexAdmin;
 
-    /// @notice Percentage of profit to give to swap recipient (in basis points)
-    /// @dev 0 = no recipient share, 10000 = 100% to recipient (nothing to FundsSplitter)
-    uint256 public recipientShareBps;
+    /// @notice Event emitted when profit is extracted
+    event ProfitExtracted(
+        bytes32 indexed triggerPoolId, address indexed profitToken, uint256 amount, address indexed recipient
+    );
 
-    /// @notice Maximum allowed recipient share (50% = 5000 bps)
-    uint256 public constant MAX_RECIPIENT_SHARE_BPS = 5000;
+    /// @notice Event emitted when router is updated
+    event RouterUpdated(address indexed oldRouter, address indexed newRouter, address indexed newAdmin);
 
     /// @notice Constructor to initialize the ReflexAfterSwap contract
     /// @param _router Address of the Reflex router contract
-    /// @dev Validates router address and fetches the admin from the router, sets recipient share to 0 by default
+    /// @dev Validates router address and fetches the admin from the router
     constructor(address _router) {
         require(_router != address(0), "Invalid router address");
         router = _router;
         reflexAdmin = IReflexRouter(_router).getReflexAdmin();
-        recipientShareBps = 0; // No recipient share by default
     }
 
     /// @notice Modifier to restrict access to reflex admin only
     /// @dev Reverts with "Not authorized" if caller is not the reflex admin
     modifier onlyReflexAdmin() {
-        _onlyFundsAdmin();
-        _;
-    }
-
-    function _onlyFundsAdmin() internal view virtual override {
         require(msg.sender == reflexAdmin, "Caller is not the reflex admin");
+        _;
     }
 
     /// @notice Updates the Reflex router address and refreshes admin
@@ -51,8 +48,11 @@ abstract contract ReflexAfterSwap is FundsSplitter, GracefulReentrancyGuard {
     /// @dev Only callable by current reflex admin, validates non-zero address, and updates admin from new router
     function setReflexRouter(address _router) external onlyReflexAdmin {
         require(_router != address(0), "Invalid router address");
+        address oldRouter = router;
         router = _router;
-        reflexAdmin = IReflexRouter(_router).getReflexAdmin();
+        address newAdmin = IReflexRouter(_router).getReflexAdmin();
+        reflexAdmin = newAdmin;
+        emit RouterUpdated(oldRouter, _router, newAdmin);
     }
 
     /// @notice Returns the current router address
@@ -67,29 +67,16 @@ abstract contract ReflexAfterSwap is FundsSplitter, GracefulReentrancyGuard {
         return reflexAdmin;
     }
 
-    /// @notice Set the percentage of profit that goes to the swap recipient
-    /// @param _recipientShareBps Percentage in basis points (0-5000, where 5000 = 50%)
-    /// @dev Only callable by reflex admin, limited to maximum of 50%
-    function setRecipientShare(uint256 _recipientShareBps) external onlyReflexAdmin {
-        require(_recipientShareBps <= MAX_RECIPIENT_SHARE_BPS, "Recipient share too high");
-        recipientShareBps = _recipientShareBps;
-    }
-
-    /// @notice Get the current recipient share percentage
-    /// @return The recipient share in basis points
-    function getRecipientShare() external view returns (uint256) {
-        return recipientShareBps;
-    }
-
     /// @notice Main entry point for post-swap profit extraction via backrunning
     /// @param triggerPoolId Unique identifier for the pool that triggered the swap
     /// @param amount0Delta The change in token0 balance from the original swap
     /// @param amount1Delta The change in token1 balance from the original swap
     /// @param zeroForOne Direction of the original swap (true if token0 -> token1)
     /// @param recipient Address that should receive the extracted profits
-    /// @return profit Amount of profit extracted and distributed
-    /// @dev Internal function with reentrancy protection using OpenZeppelin's ReentrancyGuard
-    /// @dev Uses try-catch for failsafe operation and delegates profit distribution to _splitERC20
+    /// @return profit Amount of profit extracted
+    /// @dev Internal function with reentrancy protection using graceful reentrancy guard
+    /// @dev Uses try-catch for failsafe operation - router failures won't break main swap
+    /// @dev All extracted profits are sent directly to the recipient
     function reflexAfterSwap(
         bytes32 triggerPoolId,
         int256 amount0Delta,
@@ -103,20 +90,9 @@ abstract contract ReflexAfterSwap is FundsSplitter, GracefulReentrancyGuard {
         try IReflexRouter(router).triggerBackrun(triggerPoolId, uint112(swapAmountIn), zeroForOne, address(this))
         returns (uint256 backrunProfit, address profitToken) {
             if (backrunProfit > 0 && profitToken != address(0)) {
-                // Calculate recipient share
-                uint256 recipientAmount = (backrunProfit * recipientShareBps) / 10000;
-                uint256 remainingAmount = backrunProfit - recipientAmount;
-
-                // Transfer recipient share directly if any
-                if (recipientAmount > 0) {
-                    IERC20(profitToken).safeTransfer(recipient, recipientAmount);
-                }
-
-                // Split remaining amount through FundsSplitter if any
-                if (remainingAmount > 0) {
-                    _splitERC20(profitToken, remainingAmount, recipient);
-                }
-
+                // Transfer all profit directly to recipient
+                IERC20(profitToken).safeTransfer(recipient, backrunProfit);
+                emit ProfitExtracted(triggerPoolId, profitToken, backrunProfit, recipient);
                 return backrunProfit;
             }
         } catch {
