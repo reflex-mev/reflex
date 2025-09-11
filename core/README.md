@@ -249,9 +249,6 @@ reflexRouter.updateShares(configId, recipients, sharesBps, dustShareBps);
 // Disable MEV capture
 plugin.setReflexEnabled(false);
 
-// Set 25% of profits to go directly to swap recipient
-plugin.setRecipientShare(2500); // 2500 basis points = 25%
-
 // Re-enable MEV capture
 plugin.setReflexEnabled(true);
 ```
@@ -359,14 +356,6 @@ modifier onlyAdministrator() {
     require(IAlgebraFactory(factory).hasRoleOrOwner(ALGEBRA_BASE_PLUGIN_MANAGER, msg.sender));
     _;
 }
-```
-
-### Profit Distribution Limits
-
-Recipient share is capped at 50% to ensure reasonable profit distribution:
-
-```solidity
-require(_recipientShareBps <= MAX_RECIPIENT_SHARE_BPS, "Share too high");
 ```
 
 ## 🆘 Help
