@@ -116,11 +116,13 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
 
         // Distribute dust recipient share and any remaining dust
         uint256 dustAmount = 0;
-        if (dustRecipient != address(0) && config.dustShareBps > 0) {
+        if (dustRecipient != address(0)) {
             // Calculate dust recipient's configured share
-            uint256 dustShare = (amount * config.dustShareBps) / TOTAL_BPS;
-            totalDistributed += dustShare;
-            dustAmount += dustShare;
+            if (config.dustShareBps > 0) {
+                uint256 dustShare = (amount * config.dustShareBps) / TOTAL_BPS;
+                totalDistributed += dustShare;
+                dustAmount += dustShare;
+            }
 
             // Add any remaining dust from rounding
             uint256 remainder = amount - totalDistributed;
@@ -162,11 +164,13 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
 
         // Distribute dust recipient share and any remaining dust
         uint256 dustAmount = 0;
-        if (dustRecipient != address(0) && config.dustShareBps > 0) {
+        if (dustRecipient != address(0)) {
             // Calculate dust recipient's configured share
-            uint256 dustShare = (value * config.dustShareBps) / TOTAL_BPS;
-            totalDistributed += dustShare;
-            dustAmount += dustShare;
+            if (config.dustShareBps > 0) {
+                uint256 dustShare = (value * config.dustShareBps) / TOTAL_BPS;
+                totalDistributed += dustShare;
+                dustAmount += dustShare;
+            }
 
             // Add any remaining dust from rounding
             uint256 remainder = value - totalDistributed;
