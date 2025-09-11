@@ -10,13 +10,13 @@ import "../utils/GracefulReentrancyGuard.sol";
 /// @dev Profit distribution is handled externally - this contract only extracts profits
 abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
     /// @notice Address of the Reflex router contract
-    address router;
+    address reflexRouter;
 
     /// @notice Address of the reflex admin (authorized controller)
     address reflexAdmin;
 
     /// @notice Configuration ID for profit distribution
-    bytes32 configId;
+    bytes32 reflexConfigId;
 
     /// @notice Constructor to initialize the ReflexAfterSwap contract
     /// @param _router Address of the Reflex router contract
@@ -24,9 +24,9 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
     /// @dev Validates router address and fetches the admin from the router
     constructor(address _router, bytes32 _configId) {
         require(_router != address(0), "Invalid router address");
-        router = _router;
+        reflexRouter = _router;
         reflexAdmin = IReflexRouter(_router).getReflexAdmin();
-        configId = _configId;
+        reflexConfigId = _configId;
     }
 
     /// @notice Modifier to restrict access to reflex admin only
@@ -41,7 +41,7 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
     /// @dev Only callable by current reflex admin, validates non-zero address, and updates admin from new router
     function setReflexRouter(address _router) external onlyReflexAdmin {
         require(_router != address(0), "Invalid router address");
-        router = _router;
+        reflexRouter = _router;
         address newAdmin = IReflexRouter(_router).getReflexAdmin();
         reflexAdmin = newAdmin;
     }
@@ -49,7 +49,7 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
     /// @notice Returns the current router address
     /// @return The address of the current Reflex router contract
     function getRouter() public view returns (address) {
-        return router;
+        return reflexRouter;
     }
 
     /// @notice Get the current reflex admin address
@@ -61,7 +61,14 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
     /// @notice Get the current configuration ID for profit distribution
     /// @return The current configuration ID
     function getConfigId() external view returns (bytes32) {
-        return configId;
+        return reflexConfigId;
+    }
+
+    /// @notice Updates the configuration ID for profit distribution
+    /// @param _configId New configuration ID to set
+    /// @dev Only callable by current reflex admin
+    function setReflexConfigId(bytes32 _configId) external onlyReflexAdmin {
+        reflexConfigId = _configId;
     }
 
     /// @notice Main entry point for post-swap profit extraction via backrunning
@@ -85,8 +92,9 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
         uint256 swapAmountIn = uint256(amount0Delta > 0 ? amount0Delta : amount1Delta);
 
         // Failsafe: Use try-catch to prevent router failures from breaking the main swap
-        try IReflexRouter(router).triggerBackrun(triggerPoolId, uint112(swapAmountIn), zeroForOne, recipient, configId)
-        returns (uint256 backrunProfit, address backrunProfitToken) {
+        try IReflexRouter(reflexRouter).triggerBackrun(
+            triggerPoolId, uint112(swapAmountIn), zeroForOne, recipient, reflexConfigId
+        ) returns (uint256 backrunProfit, address backrunProfitToken) {
             return (backrunProfit, backrunProfitToken);
         } catch {
             // Router call failed, but don't revert the main transaction
