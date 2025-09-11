@@ -526,6 +526,177 @@ contract ConfigurableRevenueDistributorTest is Test {
         assertEq(token.balanceOf(recipient1), initialBalance);
     }
 
+    // ========== Dust Recipient Zero Share Tests ==========
+
+    function testSplitERC20_DustRecipientGetsRemainderWithZeroShare() public {
+        // Setup configuration where dust recipient has 0 share but should still get remainder
+        address[] memory recipients = new address[](2);
+        recipients[0] = recipient1;
+        recipients[1] = recipient2;
+        uint256[] memory sharesBps = new uint256[](2);
+        sharesBps[0] = 3333; // 33.33%
+        sharesBps[1] = 6667; // 66.67%
+        uint256 dustShareBps = 0; // 0% - dust recipient gets no configured share
+
+        vm.prank(admin);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+
+        uint256 amount = 100; // Small amount to create rounding remainder
+        uint256 initialBalanceDust = token.balanceOf(dustRecipient);
+        uint256 initialBalance1 = token.balanceOf(recipient1);
+        uint256 initialBalance2 = token.balanceOf(recipient2);
+
+        // Transfer tokens to distributor
+        token.transfer(address(distributor), amount);
+
+        distributor.splitERC20(CONFIG_ID_1, address(token), amount, dustRecipient);
+
+        // Calculate expected amounts
+        uint256 expectedShare1 = (amount * 3333) / TOTAL_BPS; // 33
+        uint256 expectedShare2 = (amount * 6667) / TOTAL_BPS; // 66
+        uint256 distributedTotal = expectedShare1 + expectedShare2; // 99
+        uint256 remainder = amount - distributedTotal; // 1
+
+        // Verify recipients got their shares
+        assertEq(token.balanceOf(recipient1), initialBalance1 + expectedShare1);
+        assertEq(token.balanceOf(recipient2), initialBalance2 + expectedShare2);
+
+        // Verify dust recipient got remainder (but no configured share since it's 0)
+        assertEq(token.balanceOf(dustRecipient), initialBalanceDust + remainder);
+    }
+
+    function testSplitETH_DustRecipientGetsRemainderWithZeroShare() public {
+        // Setup configuration where dust recipient has 0 share but should still get remainder
+        address[] memory recipients = new address[](2);
+        recipients[0] = recipient1;
+        recipients[1] = recipient2;
+        uint256[] memory sharesBps = new uint256[](2);
+        sharesBps[0] = 3333; // 33.33%
+        sharesBps[1] = 6667; // 66.67%
+        uint256 dustShareBps = 0; // 0% - dust recipient gets no configured share
+
+        vm.prank(admin);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+
+        uint256 amount = 100 wei; // Small amount to create rounding remainder
+        uint256 initialBalanceDust = dustRecipient.balance;
+        uint256 initialBalance1 = recipient1.balance;
+        uint256 initialBalance2 = recipient2.balance;
+
+        distributor.splitETH{value: amount}(CONFIG_ID_1, dustRecipient);
+
+        // Calculate expected amounts
+        uint256 expectedShare1 = (amount * 3333) / TOTAL_BPS; // 33
+        uint256 expectedShare2 = (amount * 6667) / TOTAL_BPS; // 66
+        uint256 distributedTotal = expectedShare1 + expectedShare2; // 99
+        uint256 remainder = amount - distributedTotal; // 1
+
+        // Verify recipients got their shares
+        assertEq(recipient1.balance, initialBalance1 + expectedShare1);
+        assertEq(recipient2.balance, initialBalance2 + expectedShare2);
+
+        // Verify dust recipient got remainder (but no configured share since it's 0)
+        assertEq(dustRecipient.balance, initialBalanceDust + remainder);
+    }
+
+    function testSplitERC20_DustRecipientGetsShareAndRemainder() public {
+        // Test that dust recipient gets both configured share AND remainder
+        address[] memory recipients = new address[](1);
+        recipients[0] = recipient1;
+        uint256[] memory sharesBps = new uint256[](1);
+        sharesBps[0] = 3333; // 33.33%
+        uint256 dustShareBps = 6667; // 66.67% - dust recipient gets configured share (total = 100%)
+
+        vm.prank(admin);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+
+        uint256 amount = 100; // Amount to split
+        uint256 initialBalanceDust = token.balanceOf(dustRecipient);
+        uint256 initialBalance1 = token.balanceOf(recipient1);
+
+        // Transfer tokens to distributor
+        token.transfer(address(distributor), amount);
+
+        distributor.splitERC20(CONFIG_ID_1, address(token), amount, dustRecipient);
+
+        // Calculate expected amounts
+        uint256 expectedShare1 = (amount * 3333) / TOTAL_BPS; // 33
+        uint256 expectedDustShare = (amount * 6667) / TOTAL_BPS; // 66
+        uint256 distributedTotal = expectedShare1 + expectedDustShare; // 99
+        uint256 remainder = amount - distributedTotal; // 1
+
+        // Verify recipient1 got their share
+        assertEq(token.balanceOf(recipient1), initialBalance1 + expectedShare1);
+
+        // Verify dust recipient got both configured share AND remainder
+        assertEq(token.balanceOf(dustRecipient), initialBalanceDust + expectedDustShare + remainder);
+    }
+
+    function testSplitETH_DustRecipientGetsShareAndRemainder() public {
+        // Test that dust recipient gets both configured share AND remainder
+        address[] memory recipients = new address[](1);
+        recipients[0] = recipient1;
+        uint256[] memory sharesBps = new uint256[](1);
+        sharesBps[0] = 3333; // 33.33%
+        uint256 dustShareBps = 6667; // 66.67% - dust recipient gets configured share (total = 100%)
+
+        vm.prank(admin);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+
+        uint256 amount = 100 wei; // Amount to split
+        uint256 initialBalanceDust = dustRecipient.balance;
+        uint256 initialBalance1 = recipient1.balance;
+
+        distributor.splitETH{value: amount}(CONFIG_ID_1, dustRecipient);
+
+        // Calculate expected amounts
+        uint256 expectedShare1 = (amount * 3333) / TOTAL_BPS; // 33
+        uint256 expectedDustShare = (amount * 6667) / TOTAL_BPS; // 66
+        uint256 distributedTotal = expectedShare1 + expectedDustShare; // 99
+        uint256 remainder = amount - distributedTotal; // 1
+
+        // Verify recipient1 got their share
+        assertEq(recipient1.balance, initialBalance1 + expectedShare1);
+
+        // Verify dust recipient got both configured share AND remainder
+        assertEq(dustRecipient.balance, initialBalanceDust + expectedDustShare + remainder);
+    }
+
+    function testSplitERC20_NoDustRecipientWithRemainder() public {
+        // Test case where there's a remainder but no dust recipient - remainder should be lost
+        address[] memory recipients = new address[](2);
+        recipients[0] = recipient1;
+        recipients[1] = recipient2;
+        uint256[] memory sharesBps = new uint256[](2);
+        sharesBps[0] = 3333; // 33.33%
+        sharesBps[1] = 6666; // 66.66% - Total is 99.99%, leaving 0.01% remainder
+        uint256 dustShareBps = 1; // 0.01%
+
+        vm.prank(admin);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+
+        uint256 amount = 100; // Small amount to create remainder
+        uint256 initialBalance1 = token.balanceOf(recipient1);
+        uint256 initialBalance2 = token.balanceOf(recipient2);
+
+        // Transfer tokens to distributor
+        token.transfer(address(distributor), amount);
+
+        // No dust recipient provided
+        distributor.splitERC20(CONFIG_ID_1, address(token), amount, address(0));
+
+        // Calculate expected amounts
+        uint256 expectedShare1 = (amount * 3333) / TOTAL_BPS; // 33
+        uint256 expectedShare2 = (amount * 6666) / TOTAL_BPS; // 66
+
+        // Verify recipients got their shares
+        assertEq(token.balanceOf(recipient1), initialBalance1 + expectedShare1);
+        assertEq(token.balanceOf(recipient2), initialBalance2 + expectedShare2);
+
+        // Remainder should stay in contract (lost) since no dust recipient
+        assertEq(token.balanceOf(address(distributor)), amount - expectedShare1 - expectedShare2);
+    }
+
     // ========== Receive function test for contracts that might send ETH ==========
     receive() external payable {}
 }
