@@ -118,8 +118,8 @@ contract ReflexRouterTest is Test {
 
     function testConstructor() public {
         ReflexRouter newRouter = new ReflexRouter();
-        assertEq(newRouter.owner(), tx.origin);
-        assertEq(newRouter.getReflexAdmin(), tx.origin);
+        assertEq(newRouter.owner(), address(this));
+        assertEq(newRouter.getReflexAdmin(), address(this));
         assertEq(newRouter.reflexQuoter(), address(0));
     }
 
