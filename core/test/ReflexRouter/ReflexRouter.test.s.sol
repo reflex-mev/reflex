@@ -468,8 +468,9 @@ contract ReflexRouterTest is Test {
     }
 
     function testFuzz_decodeIsZeroForOne(uint256 input) public view {
-        bool result = reflexRouter.decodeIsZeroForOne(input);
-        bool expected = (input & 0x80) != 0;
+        uint8 inputByte = uint8(input); // Cast to uint8 to match function signature
+        bool result = reflexRouter.decodeIsZeroForOne(inputByte);
+        bool expected = (inputByte & 0x80) != 0;
         assertEq(result, expected);
     }
 
