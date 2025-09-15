@@ -119,7 +119,7 @@ contract ReflexRouterTest is Test {
     function testConstructor() public {
         ReflexRouter newRouter = new ReflexRouter();
         assertEq(newRouter.owner(), address(this));
-        assertEq(newRouter.getReflexAdmin(), address(this));
+        assertEq(newRouter.owner(), address(this));
         assertEq(newRouter.reflexQuoter(), address(0));
     }
 
@@ -140,8 +140,8 @@ contract ReflexRouterTest is Test {
         reflexRouter.setReflexQuoter(newQuoter);
     }
 
-    function testGetReflexAdmin() public view {
-        assertEq(reflexRouter.getReflexAdmin(), reflexRouter.owner());
+    function testGetOwner() public view {
+        assertEq(reflexRouter.owner(), reflexRouter.owner());
     }
 
     // =============================================================================

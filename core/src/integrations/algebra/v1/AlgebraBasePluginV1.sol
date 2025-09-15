@@ -144,4 +144,9 @@ contract AlgebraBasePluginV1 is DynamicFeePlugin, FarmingProxyPlugin, Volatility
         _authorize();
         reflexEnabled = enabled;
     }
+
+    /// @inheritdoc ReflexAfterSwap
+    function _onlyReflexAdmin() internal view override {
+        _authorize();
+    }
 }

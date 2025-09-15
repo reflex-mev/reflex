@@ -12,9 +12,6 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
     /// @notice Address of the Reflex router contract
     address reflexRouter;
 
-    /// @notice Address of the reflex admin (authorized controller)
-    address reflexAdmin;
-
     /// @notice Configuration ID for profit distribution
     bytes32 reflexConfigId;
 
@@ -25,37 +22,25 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
     constructor(address _router, bytes32 _configId) {
         require(_router != address(0), "Invalid router address");
         reflexRouter = _router;
-        reflexAdmin = IReflexRouter(_router).getReflexAdmin();
         reflexConfigId = _configId;
     }
 
-    /// @notice Modifier to restrict access to reflex admin only
-    /// @dev Reverts with "Not authorized" if caller is not the reflex admin
-    modifier onlyReflexAdmin() {
-        require(msg.sender == reflexAdmin, "Caller is not the reflex admin");
-        _;
-    }
+    /// @notice Internal function that must be implemented by child contract to enforce admin access control
+    function _onlyReflexAdmin() internal view virtual;
 
     /// @notice Updates the Reflex router address and refreshes admin
     /// @param _router New router address to set
     /// @dev Only callable by current reflex admin, validates non-zero address, and updates admin from new router
-    function setReflexRouter(address _router) external onlyReflexAdmin {
+    function setReflexRouter(address _router) external {
+        _onlyReflexAdmin();
         require(_router != address(0), "Invalid router address");
         reflexRouter = _router;
-        address newAdmin = IReflexRouter(_router).getReflexAdmin();
-        reflexAdmin = newAdmin;
     }
 
     /// @notice Returns the current router address
     /// @return The address of the current Reflex router contract
     function getRouter() public view returns (address) {
         return reflexRouter;
-    }
-
-    /// @notice Get the current reflex admin address
-    /// @return The address of the current reflex admin
-    function getReflexAdmin() external view returns (address) {
-        return reflexAdmin;
     }
 
     /// @notice Get the current configuration ID for profit distribution
@@ -67,7 +52,8 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
     /// @notice Updates the configuration ID for profit distribution
     /// @param _configId New configuration ID to set
     /// @dev Only callable by current reflex admin
-    function setReflexConfigId(bytes32 _configId) external onlyReflexAdmin {
+    function setReflexConfigId(bytes32 _configId) external {
+        _onlyReflexAdmin();
         reflexConfigId = _configId;
     }
 
