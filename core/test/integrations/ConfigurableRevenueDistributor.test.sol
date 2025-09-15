@@ -20,12 +20,12 @@ contract TestableConfigurableRevenueDistributor is ConfigurableRevenueDistributo
     }
 
     // Expose internal functions for testing
-    function splitERC20(bytes32 configId, address token, uint256 amount, address dustRecipient) external {
-        _splitERC20(configId, token, amount, dustRecipient);
+    function splitERC20(bytes32 configId, address token, uint256 amount, address variedRecipient) external {
+        _splitERC20(configId, token, amount, variedRecipient);
     }
 
-    function splitETH(bytes32 configId, address dustRecipient) external payable {
-        _splitETH(configId, dustRecipient);
+    function splitETH(bytes32 configId, address variedRecipient) external payable {
+        _splitETH(configId, variedRecipient);
     }
 
     // Allow contract to receive ETH
@@ -42,22 +42,22 @@ contract ConfigurableRevenueDistributorTest is Test {
     address public recipient1 = address(0x2);
     address public recipient2 = address(0x3);
     address public recipient3 = address(0x4);
-    address public dustRecipient = address(0x5);
+    address public variedRecipient = address(0x5);
     address public nonAdmin = address(0x6);
 
     bytes32 public constant CONFIG_ID_1 = keccak256("config1");
     bytes32 public constant CONFIG_ID_2 = keccak256("config2");
 
     // Events from IConfigurableRevenueDistributor
-    event SharesUpdated(bytes32 indexed configId, address[] recipients, uint256[] sharesBps, uint256 dustShareBps);
+    event SharesUpdated(bytes32 indexed configId, address[] recipients, uint256[] sharesBps, uint256 variedShareBps);
     event SplitExecuted(
         bytes32 indexed configId,
         address indexed token,
         uint256 totalAmount,
         address[] recipients,
         uint256[] amounts,
-        address dustRecipient,
-        uint256 dustAmount
+        address variedRecipient,
+        uint256 variedAmount
     );
 
     uint256 public constant TOTAL_BPS = 10_000;
@@ -84,10 +84,10 @@ contract ConfigurableRevenueDistributorTest is Test {
         sharesBps[0] = 3000; // 30%
         sharesBps[1] = 5000; // 50%
 
-        uint256 dustShareBps = 2000; // 20%
+        uint256 variedShareBps = 2000; // 20%
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         IConfigurableRevenueDistributor.SplitConfig memory config = distributor.getConfig(CONFIG_ID_1);
         assertEq(config.recipients.length, 2);
@@ -95,7 +95,7 @@ contract ConfigurableRevenueDistributorTest is Test {
         assertEq(config.recipients[1], recipient2);
         assertEq(config.sharesBps[0], 3000);
         assertEq(config.sharesBps[1], 5000);
-        assertEq(config.dustShareBps, 2000);
+        assertEq(config.variedShareBps, 2000);
     }
 
     function testUpdateShares_MultipleConfigurations() public {
@@ -106,30 +106,30 @@ contract ConfigurableRevenueDistributorTest is Test {
         uint256[] memory sharesBps1 = new uint256[](2);
         sharesBps1[0] = 4000;
         sharesBps1[1] = 4000;
-        uint256 dustShareBps1 = 2000;
+        uint256 variedShareBps1 = 2000;
 
         // Setup second configuration
         address[] memory recipients2 = new address[](1);
         recipients2[0] = recipient3;
         uint256[] memory sharesBps2 = new uint256[](1);
         sharesBps2[0] = 7000;
-        uint256 dustShareBps2 = 3000;
+        uint256 variedShareBps2 = 3000;
 
         vm.startPrank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients1, sharesBps1, dustShareBps1);
-        distributor.updateShares(CONFIG_ID_2, recipients2, sharesBps2, dustShareBps2);
+        distributor.updateShares(CONFIG_ID_1, recipients1, sharesBps1, variedShareBps1);
+        distributor.updateShares(CONFIG_ID_2, recipients2, sharesBps2, variedShareBps2);
         vm.stopPrank();
 
         // Verify first config
         IConfigurableRevenueDistributor.SplitConfig memory config1 = distributor.getConfig(CONFIG_ID_1);
         assertEq(config1.recipients.length, 2);
-        assertEq(config1.dustShareBps, 2000);
+        assertEq(config1.variedShareBps, 2000);
 
         // Verify second config
         IConfigurableRevenueDistributor.SplitConfig memory config2 = distributor.getConfig(CONFIG_ID_2);
         assertEq(config2.recipients.length, 1);
         assertEq(config2.recipients[0], recipient3);
-        assertEq(config2.dustShareBps, 3000);
+        assertEq(config2.variedShareBps, 3000);
     }
 
     function testUpdateShares_RevertWhenNotAdmin() public {
@@ -209,25 +209,25 @@ contract ConfigurableRevenueDistributorTest is Test {
         uint256[] memory sharesBps = new uint256[](2);
         sharesBps[0] = 3000;
         sharesBps[1] = 5000;
-        uint256 dustShareBps = 2000;
+        uint256 variedShareBps = 2000;
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 1000 * 10 ** 18;
         uint256 initialBalance1 = token.balanceOf(recipient1);
         uint256 initialBalance2 = token.balanceOf(recipient2);
-        uint256 initialBalanceDust = token.balanceOf(dustRecipient);
+        uint256 initialBalanceVaried = token.balanceOf(variedRecipient);
 
         // Transfer tokens to distributor
         token.transfer(address(distributor), amount);
 
-        distributor.splitERC20(CONFIG_ID_1, address(token), amount, dustRecipient);
+        distributor.splitERC20(CONFIG_ID_1, address(token), amount, variedRecipient);
 
         // Check balances
         assertEq(token.balanceOf(recipient1), initialBalance1 + (amount * 3000 / TOTAL_BPS));
         assertEq(token.balanceOf(recipient2), initialBalance2 + (amount * 5000 / TOTAL_BPS));
-        assertEq(token.balanceOf(dustRecipient), initialBalanceDust + (amount * 2000 / TOTAL_BPS));
+        assertEq(token.balanceOf(variedRecipient), initialBalanceVaried + (amount * 2000 / TOTAL_BPS));
     }
 
     function testSplitERC20_WithRoundingDust() public {
@@ -240,37 +240,37 @@ contract ConfigurableRevenueDistributorTest is Test {
         sharesBps[0] = 3333; // 33.33%
         sharesBps[1] = 3333; // 33.33%
         sharesBps[2] = 3333; // 33.33%
-        uint256 dustShareBps = 1; // 0.01%
+        uint256 variedShareBps = 1; // 0.01%
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 100; // Small amount to create rounding issues
-        uint256 initialBalanceDust = token.balanceOf(dustRecipient);
+        uint256 initialBalanceVaried = token.balanceOf(variedRecipient);
 
         // Transfer tokens to distributor
         token.transfer(address(distributor), amount);
 
-        distributor.splitERC20(CONFIG_ID_1, address(token), amount, dustRecipient);
+        distributor.splitERC20(CONFIG_ID_1, address(token), amount, variedRecipient);
 
         // Dust recipient should get their share plus any rounding remainder
-        uint256 expectedDustShare = (amount * 1) / TOTAL_BPS; // Should be 0 due to rounding
+        uint256 expectedVariedShare = (amount * 1) / TOTAL_BPS; // Should be 0 due to rounding
         uint256 distributedToRecipients = 3 * (amount * 3333 / TOTAL_BPS); // 3 * 33 = 99
-        uint256 remainder = amount - distributedToRecipients - expectedDustShare;
+        uint256 remainder = amount - distributedToRecipients - expectedVariedShare;
 
-        assertEq(token.balanceOf(dustRecipient), initialBalanceDust + expectedDustShare + remainder);
+        assertEq(token.balanceOf(variedRecipient), initialBalanceVaried + expectedVariedShare + remainder);
     }
 
-    function testSplitERC20_NoDustRecipient() public {
+    function testSplitERC20_NoVariedRecipient() public {
         // Setup configuration without dust recipient
         address[] memory recipients = new address[](1);
         recipients[0] = recipient1;
         uint256[] memory sharesBps = new uint256[](1);
         sharesBps[0] = 10000; // 100%
-        uint256 dustShareBps = 0; // No dust share
+        uint256 variedShareBps = 0; // No dust share
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 1000 * 10 ** 18;
         uint256 initialBalance1 = token.balanceOf(recipient1);
@@ -297,15 +297,15 @@ contract ConfigurableRevenueDistributorTest is Test {
         // The default config has tx.origin as the recipient
         // From the trace, we can see tx.origin is "DefaultSender" in the test environment
         // We need to check the actual balance change of the dust recipient instead
-        uint256 initialDustBalance = token.balanceOf(dustRecipient);
+        uint256 initialVariedBalance = token.balanceOf(variedRecipient);
 
         // This should not revert but use default config
-        distributor.splitERC20(CONFIG_ID_1, address(token), amount, dustRecipient);
+        distributor.splitERC20(CONFIG_ID_1, address(token), amount, variedRecipient);
 
         // Verify default config was used: 20% to dust recipient
-        uint256 expectedDustShare = (amount * 2000) / 10000; // 20%
+        uint256 expectedVariedShare = (amount * 2000) / 10000; // 20%
 
-        assertEq(token.balanceOf(dustRecipient), initialDustBalance + expectedDustShare);
+        assertEq(token.balanceOf(variedRecipient), initialVariedBalance + expectedVariedShare);
 
         // Also verify the total amount was distributed (distributor should have 0 left)
         assertEq(token.balanceOf(address(distributor)), 0);
@@ -321,22 +321,22 @@ contract ConfigurableRevenueDistributorTest is Test {
         uint256[] memory sharesBps = new uint256[](2);
         sharesBps[0] = 4000;
         sharesBps[1] = 4000;
-        uint256 dustShareBps = 2000;
+        uint256 variedShareBps = 2000;
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 10 ether;
         uint256 initialBalance1 = recipient1.balance;
         uint256 initialBalance2 = recipient2.balance;
-        uint256 initialBalanceDust = dustRecipient.balance;
+        uint256 initialBalanceVaried = variedRecipient.balance;
 
-        distributor.splitETH{value: amount}(CONFIG_ID_1, dustRecipient);
+        distributor.splitETH{value: amount}(CONFIG_ID_1, variedRecipient);
 
         // Check balances
         assertEq(recipient1.balance, initialBalance1 + (amount * 4000 / TOTAL_BPS));
         assertEq(recipient2.balance, initialBalance2 + (amount * 4000 / TOTAL_BPS));
-        assertEq(dustRecipient.balance, initialBalanceDust + (amount * 2000 / TOTAL_BPS));
+        assertEq(variedRecipient.balance, initialBalanceVaried + (amount * 2000 / TOTAL_BPS));
     }
 
     function testSplitETH_WithRoundingDust() public {
@@ -349,34 +349,34 @@ contract ConfigurableRevenueDistributorTest is Test {
         sharesBps[0] = 3333;
         sharesBps[1] = 3333;
         sharesBps[2] = 3333;
-        uint256 dustShareBps = 1;
+        uint256 variedShareBps = 1;
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 100 wei; // Small amount to create rounding issues
-        uint256 initialBalanceDust = dustRecipient.balance;
+        uint256 initialBalanceVaried = variedRecipient.balance;
 
-        distributor.splitETH{value: amount}(CONFIG_ID_1, dustRecipient);
+        distributor.splitETH{value: amount}(CONFIG_ID_1, variedRecipient);
 
         // Dust recipient should get their share plus any rounding remainder
-        uint256 expectedDustShare = (amount * 1) / TOTAL_BPS;
+        uint256 expectedVariedShare = (amount * 1) / TOTAL_BPS;
         uint256 distributedToRecipients = 3 * (amount * 3333 / TOTAL_BPS);
-        uint256 remainder = amount - distributedToRecipients - expectedDustShare;
+        uint256 remainder = amount - distributedToRecipients - expectedVariedShare;
 
-        assertEq(dustRecipient.balance, initialBalanceDust + expectedDustShare + remainder);
+        assertEq(variedRecipient.balance, initialBalanceVaried + expectedVariedShare + remainder);
     }
 
-    function testSplitETH_NoDustRecipient() public {
+    function testSplitETH_NoVariedRecipient() public {
         // Setup configuration without dust recipient
         address[] memory recipients = new address[](1);
         recipients[0] = recipient1;
         uint256[] memory sharesBps = new uint256[](1);
         sharesBps[0] = 10000;
-        uint256 dustShareBps = 0;
+        uint256 variedShareBps = 0;
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 5 ether;
         uint256 initialBalance1 = recipient1.balance;
@@ -396,10 +396,10 @@ contract ConfigurableRevenueDistributorTest is Test {
         uint256[] memory sharesBps = new uint256[](2);
         sharesBps[0] = 6000;
         sharesBps[1] = 3000;
-        uint256 dustShareBps = 1000;
+        uint256 variedShareBps = 1000;
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         (address[] memory returnedRecipients, uint256[] memory returnedShares, uint256 returnedDustShare) =
             distributor.getRecipients(CONFIG_ID_1);
@@ -419,12 +419,12 @@ contract ConfigurableRevenueDistributorTest is Test {
         recipients[0] = recipient1;
         uint256[] memory sharesBps = new uint256[](1);
         sharesBps[0] = 8000;
-        uint256 dustShareBps = 2000;
+        uint256 variedShareBps = 2000;
 
         vm.prank(admin);
         vm.expectEmit(true, false, false, true);
-        emit SharesUpdated(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        emit SharesUpdated(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
     }
 
     function testSplitExecutedEvent_ERC20() public {
@@ -433,24 +433,24 @@ contract ConfigurableRevenueDistributorTest is Test {
         recipients[0] = recipient1;
         uint256[] memory sharesBps = new uint256[](1);
         sharesBps[0] = 8000;
-        uint256 dustShareBps = 2000;
+        uint256 variedShareBps = 2000;
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 1000 * 10 ** 18;
         uint256[] memory expectedAmounts = new uint256[](1);
         expectedAmounts[0] = amount * 8000 / TOTAL_BPS;
-        uint256 expectedDustAmount = amount * 2000 / TOTAL_BPS;
+        uint256 expectedVariedAmount = amount * 2000 / TOTAL_BPS;
 
         // Transfer tokens to distributor
         token.transfer(address(distributor), amount);
 
         vm.expectEmit(true, true, false, true);
         emit SplitExecuted(
-            CONFIG_ID_1, address(token), amount, recipients, expectedAmounts, dustRecipient, expectedDustAmount
+            CONFIG_ID_1, address(token), amount, recipients, expectedAmounts, variedRecipient, expectedVariedAmount
         );
-        distributor.splitERC20(CONFIG_ID_1, address(token), amount, dustRecipient);
+        distributor.splitERC20(CONFIG_ID_1, address(token), amount, variedRecipient);
     }
 
     function testSplitExecutedEvent_ETH() public {
@@ -459,21 +459,21 @@ contract ConfigurableRevenueDistributorTest is Test {
         recipients[0] = recipient1;
         uint256[] memory sharesBps = new uint256[](1);
         sharesBps[0] = 7000;
-        uint256 dustShareBps = 3000;
+        uint256 variedShareBps = 3000;
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 10 ether;
         uint256[] memory expectedAmounts = new uint256[](1);
         expectedAmounts[0] = amount * 7000 / TOTAL_BPS;
-        uint256 expectedDustAmount = amount * 3000 / TOTAL_BPS;
+        uint256 expectedVariedAmount = amount * 3000 / TOTAL_BPS;
 
         vm.expectEmit(true, true, false, true);
         emit SplitExecuted(
-            CONFIG_ID_1, address(0), amount, recipients, expectedAmounts, dustRecipient, expectedDustAmount
+            CONFIG_ID_1, address(0), amount, recipients, expectedAmounts, variedRecipient, expectedVariedAmount
         );
-        distributor.splitETH{value: amount}(CONFIG_ID_1, dustRecipient);
+        distributor.splitETH{value: amount}(CONFIG_ID_1, variedRecipient);
     }
 
     // ========== Edge Cases and Stress Tests ==========
@@ -488,17 +488,17 @@ contract ConfigurableRevenueDistributorTest is Test {
             recipients[i] = address(uint160(i + 100)); // Avoid address(0)
             sharesBps[i] = 99; // 0.99% each
         }
-        uint256 dustShareBps = 100; // 1% dust, total = 99*100 + 100 = 10000
+        uint256 variedShareBps = 100; // 1% dust, total = 99*100 + 100 = 10000
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 10000 * 10 ** 18;
 
         // Transfer tokens to distributor
         token.transfer(address(distributor), amount);
 
-        distributor.splitERC20(CONFIG_ID_1, address(token), amount, dustRecipient);
+        distributor.splitERC20(CONFIG_ID_1, address(token), amount, variedRecipient);
 
         // Verify each recipient got their share
         for (uint256 i = 0; i < numRecipients; i++) {
@@ -536,20 +536,20 @@ contract ConfigurableRevenueDistributorTest is Test {
         uint256[] memory sharesBps = new uint256[](2);
         sharesBps[0] = 3333; // 33.33%
         sharesBps[1] = 6667; // 66.67%
-        uint256 dustShareBps = 0; // 0% - dust recipient gets no configured share
+        uint256 variedShareBps = 0; // 0% - dust recipient gets no configured share
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 100; // Small amount to create rounding remainder
-        uint256 initialBalanceDust = token.balanceOf(dustRecipient);
+        uint256 initialBalanceVaried = token.balanceOf(variedRecipient);
         uint256 initialBalance1 = token.balanceOf(recipient1);
         uint256 initialBalance2 = token.balanceOf(recipient2);
 
         // Transfer tokens to distributor
         token.transfer(address(distributor), amount);
 
-        distributor.splitERC20(CONFIG_ID_1, address(token), amount, dustRecipient);
+        distributor.splitERC20(CONFIG_ID_1, address(token), amount, variedRecipient);
 
         // Calculate expected amounts
         uint256 expectedShare1 = (amount * 3333) / TOTAL_BPS; // 33
@@ -562,7 +562,7 @@ contract ConfigurableRevenueDistributorTest is Test {
         assertEq(token.balanceOf(recipient2), initialBalance2 + expectedShare2);
 
         // Verify dust recipient got remainder (but no configured share since it's 0)
-        assertEq(token.balanceOf(dustRecipient), initialBalanceDust + remainder);
+        assertEq(token.balanceOf(variedRecipient), initialBalanceVaried + remainder);
     }
 
     function testSplitETH_DustRecipientGetsRemainderWithZeroShare() public {
@@ -573,17 +573,17 @@ contract ConfigurableRevenueDistributorTest is Test {
         uint256[] memory sharesBps = new uint256[](2);
         sharesBps[0] = 3333; // 33.33%
         sharesBps[1] = 6667; // 66.67%
-        uint256 dustShareBps = 0; // 0% - dust recipient gets no configured share
+        uint256 variedShareBps = 0; // 0% - dust recipient gets no configured share
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 100 wei; // Small amount to create rounding remainder
-        uint256 initialBalanceDust = dustRecipient.balance;
+        uint256 initialBalanceVaried = variedRecipient.balance;
         uint256 initialBalance1 = recipient1.balance;
         uint256 initialBalance2 = recipient2.balance;
 
-        distributor.splitETH{value: amount}(CONFIG_ID_1, dustRecipient);
+        distributor.splitETH{value: amount}(CONFIG_ID_1, variedRecipient);
 
         // Calculate expected amounts
         uint256 expectedShare1 = (amount * 3333) / TOTAL_BPS; // 33
@@ -596,7 +596,7 @@ contract ConfigurableRevenueDistributorTest is Test {
         assertEq(recipient2.balance, initialBalance2 + expectedShare2);
 
         // Verify dust recipient got remainder (but no configured share since it's 0)
-        assertEq(dustRecipient.balance, initialBalanceDust + remainder);
+        assertEq(variedRecipient.balance, initialBalanceVaried + remainder);
     }
 
     function testSplitERC20_DustRecipientGetsShareAndRemainder() public {
@@ -605,31 +605,31 @@ contract ConfigurableRevenueDistributorTest is Test {
         recipients[0] = recipient1;
         uint256[] memory sharesBps = new uint256[](1);
         sharesBps[0] = 3333; // 33.33%
-        uint256 dustShareBps = 6667; // 66.67% - dust recipient gets configured share (total = 100%)
+        uint256 variedShareBps = 6667; // 66.67% - dust recipient gets configured share (total = 100%)
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 100; // Amount to split
-        uint256 initialBalanceDust = token.balanceOf(dustRecipient);
+        uint256 initialBalanceVaried = token.balanceOf(variedRecipient);
         uint256 initialBalance1 = token.balanceOf(recipient1);
 
         // Transfer tokens to distributor
         token.transfer(address(distributor), amount);
 
-        distributor.splitERC20(CONFIG_ID_1, address(token), amount, dustRecipient);
+        distributor.splitERC20(CONFIG_ID_1, address(token), amount, variedRecipient);
 
         // Calculate expected amounts
         uint256 expectedShare1 = (amount * 3333) / TOTAL_BPS; // 33
-        uint256 expectedDustShare = (amount * 6667) / TOTAL_BPS; // 66
-        uint256 distributedTotal = expectedShare1 + expectedDustShare; // 99
+        uint256 expectedVariedShare = (amount * 6667) / TOTAL_BPS; // 66
+        uint256 distributedTotal = expectedShare1 + expectedVariedShare; // 99
         uint256 remainder = amount - distributedTotal; // 1
 
         // Verify recipient1 got their share
         assertEq(token.balanceOf(recipient1), initialBalance1 + expectedShare1);
 
         // Verify dust recipient got both configured share AND remainder
-        assertEq(token.balanceOf(dustRecipient), initialBalanceDust + expectedDustShare + remainder);
+        assertEq(token.balanceOf(variedRecipient), initialBalanceVaried + expectedVariedShare + remainder);
     }
 
     function testSplitETH_DustRecipientGetsShareAndRemainder() public {
@@ -638,31 +638,31 @@ contract ConfigurableRevenueDistributorTest is Test {
         recipients[0] = recipient1;
         uint256[] memory sharesBps = new uint256[](1);
         sharesBps[0] = 3333; // 33.33%
-        uint256 dustShareBps = 6667; // 66.67% - dust recipient gets configured share (total = 100%)
+        uint256 variedShareBps = 6667; // 66.67% - dust recipient gets configured share (total = 100%)
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 100 wei; // Amount to split
-        uint256 initialBalanceDust = dustRecipient.balance;
+        uint256 initialBalanceVaried = variedRecipient.balance;
         uint256 initialBalance1 = recipient1.balance;
 
-        distributor.splitETH{value: amount}(CONFIG_ID_1, dustRecipient);
+        distributor.splitETH{value: amount}(CONFIG_ID_1, variedRecipient);
 
         // Calculate expected amounts
         uint256 expectedShare1 = (amount * 3333) / TOTAL_BPS; // 33
-        uint256 expectedDustShare = (amount * 6667) / TOTAL_BPS; // 66
-        uint256 distributedTotal = expectedShare1 + expectedDustShare; // 99
+        uint256 expectedVariedShare = (amount * 6667) / TOTAL_BPS; // 66
+        uint256 distributedTotal = expectedShare1 + expectedVariedShare; // 99
         uint256 remainder = amount - distributedTotal; // 1
 
         // Verify recipient1 got their share
         assertEq(recipient1.balance, initialBalance1 + expectedShare1);
 
         // Verify dust recipient got both configured share AND remainder
-        assertEq(dustRecipient.balance, initialBalanceDust + expectedDustShare + remainder);
+        assertEq(variedRecipient.balance, initialBalanceVaried + expectedVariedShare + remainder);
     }
 
-    function testSplitERC20_NoDustRecipientWithRemainder() public {
+    function testSplitERC20_NoVariedRecipientWithRemainder() public {
         // Test case where there's a remainder but no dust recipient - remainder should be lost
         address[] memory recipients = new address[](2);
         recipients[0] = recipient1;
@@ -670,10 +670,10 @@ contract ConfigurableRevenueDistributorTest is Test {
         uint256[] memory sharesBps = new uint256[](2);
         sharesBps[0] = 3333; // 33.33%
         sharesBps[1] = 6666; // 66.66% - Total is 99.99%, leaving 0.01% remainder
-        uint256 dustShareBps = 1; // 0.01%
+        uint256 variedShareBps = 1; // 0.01%
 
         vm.prank(admin);
-        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, dustShareBps);
+        distributor.updateShares(CONFIG_ID_1, recipients, sharesBps, variedShareBps);
 
         uint256 amount = 100; // Small amount to create remainder
         uint256 initialBalance1 = token.balanceOf(recipient1);
