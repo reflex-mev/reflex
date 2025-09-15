@@ -51,10 +51,10 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
 
     /**
      * @notice Constructor sets the contract deployer as the owner
-     * @dev Uses tx.origin to set the owner, which is the original transaction sender
+     * @dev Uses msg.sender to set the owner, which is the direct caller of the constructor
      */
     constructor() {
-        owner = tx.origin;
+        owner = msg.sender;
     }
 
     /**
