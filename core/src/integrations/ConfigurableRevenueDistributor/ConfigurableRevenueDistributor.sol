@@ -28,16 +28,16 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
 
     // ========== Constructor ==========
 
-    /// @notice Constructor sets up default configuration: 80% to deployer, 20% to dust
+    /// @notice Constructor sets up default configuration: 80% to deployer, 20% to varied recipient
     constructor() {
-        address deployer = tx.origin;
+        address deployer = msg.sender;
 
-        // Set up default configuration: 80% to deployer, 20% to dust
+        // Set up default configuration: 80% to deployer, 20% to varied recipient
         defaultConfig.recipients = new address[](1);
         defaultConfig.recipients[0] = deployer;
         defaultConfig.sharesBps = new uint256[](1);
         defaultConfig.sharesBps[0] = 8000; // 80%
-        defaultConfig.dustShareBps = 2000; // 20%
+        defaultConfig.variedShareBps = 2000; // 20%
     }
 
     // ========== Access Control Hook ==========
@@ -60,7 +60,7 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
         returns (address[] memory, uint256[] memory, uint256)
     {
         SplitConfig storage config = configs[configId];
-        return (config.recipients, config.sharesBps, config.dustShareBps);
+        return (config.recipients, config.sharesBps, config.variedShareBps);
     }
 
     /// @inheritdoc IConfigurableRevenueDistributor
@@ -68,22 +68,22 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
         bytes32 configId,
         address[] calldata _recipients,
         uint256[] calldata _sharesBps,
-        uint256 _dustShareBps
+        uint256 _variedShareBps
     ) external override {
         _onlyFundsAdmin();
-        _setShares(configId, _recipients, _sharesBps, _dustShareBps);
-        emit SharesUpdated(configId, _recipients, _sharesBps, _dustShareBps);
+        _setShares(configId, _recipients, _sharesBps, _variedShareBps);
+        emit SharesUpdated(configId, _recipients, _sharesBps, _variedShareBps);
     }
 
     /// @notice Updates the default configuration used when no specific config is found
     /// @param _recipients List of recipient addresses for the default config
     /// @param _sharesBps List of corresponding shares in basis points for the default config
-    /// @param _dustShareBps Dust recipient's share in basis points for the default config
-    function updateDefaultConfig(address[] calldata _recipients, uint256[] calldata _sharesBps, uint256 _dustShareBps)
+    /// @param _variedShareBps Varied recipient's share in basis points for the default config
+    function updateDefaultConfig(address[] calldata _recipients, uint256[] calldata _sharesBps, uint256 _variedShareBps)
         external
     {
         _onlyFundsAdmin();
-        _setDefaultShares(_recipients, _sharesBps, _dustShareBps);
+        _setDefaultShares(_recipients, _sharesBps, _variedShareBps);
     }
 
     // ========== Internal Methods ==========
@@ -92,8 +92,8 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
     /// @param configId The configuration ID to use for splitting
     /// @param token The ERC20 token address
     /// @param amount The amount to split
-    /// @param dustRecipient Address that receives dust and additional share (optional)
-    function _splitERC20(bytes32 configId, address token, uint256 amount, address dustRecipient) internal {
+    /// @param variedRecipient Address that receives dust and additional share (optional)
+    function _splitERC20(bytes32 configId, address token, uint256 amount, address variedRecipient) internal {
         // Use requested config if it exists, otherwise fall back to default
         SplitConfig memory config;
         if (configs[configId].recipients.length == 0) {
@@ -114,32 +114,32 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
             IERC20(token).safeTransfer(recipient, share);
         }
 
-        // Distribute dust recipient share and any remaining dust
-        uint256 dustAmount = 0;
-        if (dustRecipient != address(0)) {
-            // Calculate dust recipient's configured share
-            if (config.dustShareBps > 0) {
-                uint256 dustShare = (amount * config.dustShareBps) / TOTAL_BPS;
-                totalDistributed += dustShare;
-                dustAmount += dustShare;
+        // Distribute varied recipient share and any remaining dust
+        uint256 variedAmount = 0;
+        if (variedRecipient != address(0)) {
+            // Calculate varied recipient's configured share
+            if (config.variedShareBps > 0) {
+                uint256 variedShare = (amount * config.variedShareBps) / TOTAL_BPS;
+                totalDistributed += variedShare;
+                variedAmount += variedShare;
             }
 
             // Add any remaining dust from rounding
             uint256 remainder = amount - totalDistributed;
-            dustAmount += remainder;
+            variedAmount += remainder;
 
-            if (dustAmount > 0) {
-                IERC20(token).safeTransfer(dustRecipient, dustAmount);
+            if (variedAmount > 0) {
+                IERC20(token).safeTransfer(variedRecipient, variedAmount);
             }
         }
 
-        emit SplitExecuted(configId, token, amount, config.recipients, amounts, dustRecipient, dustAmount);
+        emit SplitExecuted(configId, token, amount, config.recipients, amounts, variedRecipient, variedAmount);
     }
 
     /// @notice Internal function to split ETH - can be called by inheriting contracts
     /// @param configId The configuration ID to use for splitting
-    /// @param dustRecipient Address that receives dust and additional share (optional)
-    function _splitETH(bytes32 configId, address dustRecipient) internal {
+    /// @param variedRecipient Address that receives dust and additional share (optional)
+    function _splitETH(bytes32 configId, address variedRecipient) internal {
         // Use requested config if it exists, otherwise fall back to default
         SplitConfig memory config;
         if (configs[configId].recipients.length == 0) {
@@ -162,44 +162,44 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
             require(success, "ETH transfer failed");
         }
 
-        // Distribute dust recipient share and any remaining dust
-        uint256 dustAmount = 0;
-        if (dustRecipient != address(0)) {
-            // Calculate dust recipient's configured share
-            if (config.dustShareBps > 0) {
-                uint256 dustShare = (value * config.dustShareBps) / TOTAL_BPS;
-                totalDistributed += dustShare;
-                dustAmount += dustShare;
+        // Distribute varied recipient share and any remaining dust
+        uint256 variedAmount = 0;
+        if (variedRecipient != address(0)) {
+            // Calculate varied recipient's configured share
+            if (config.variedShareBps > 0) {
+                uint256 variedShare = (value * config.variedShareBps) / TOTAL_BPS;
+                totalDistributed += variedShare;
+                variedAmount += variedShare;
             }
 
             // Add any remaining dust from rounding
             uint256 remainder = value - totalDistributed;
-            dustAmount += remainder;
+            variedAmount += remainder;
 
-            if (dustAmount > 0) {
-                (bool success,) = dustRecipient.call{value: dustAmount}("");
-                require(success, "ETH dust transfer failed");
+            if (variedAmount > 0) {
+                (bool success,) = variedRecipient.call{value: variedAmount}("");
+                require(success, "ETH varied transfer failed");
             }
         }
 
-        emit SplitExecuted(configId, address(0), value, config.recipients, amounts, dustRecipient, dustAmount);
+        emit SplitExecuted(configId, address(0), value, config.recipients, amounts, variedRecipient, variedAmount);
     }
 
     /// @notice Internal function to update the split configuration
     /// @param configId The configuration ID to update
     /// @param _recipients List of recipient addresses
     /// @param _sharesBps List of corresponding shares in basis points
-    /// @param _dustShareBps Dust recipient's share in basis points
+    /// @param _variedShareBps Varied recipient's share in basis points
     function _setShares(
         bytes32 configId,
         address[] memory _recipients,
         uint256[] memory _sharesBps,
-        uint256 _dustShareBps
+        uint256 _variedShareBps
     ) internal {
         require(_recipients.length == _sharesBps.length, "Recipients and shares length mismatch");
         require(_recipients.length > 0, "No recipients provided");
 
-        uint256 totalShares = _dustShareBps;
+        uint256 totalShares = _variedShareBps;
 
         // Validate recipients and calculate total shares
         for (uint256 i = 0; i < _recipients.length; i++) {
@@ -216,20 +216,20 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
         SplitConfig storage config = configs[configId];
         config.recipients = _recipients;
         config.sharesBps = _sharesBps;
-        config.dustShareBps = _dustShareBps;
+        config.variedShareBps = _variedShareBps;
     }
 
     /// @notice Internal function to update the default split configuration
     /// @param _recipients List of recipient addresses for the default config
     /// @param _sharesBps List of corresponding shares in basis points for the default config
-    /// @param _dustShareBps Dust recipient's share in basis points for the default config
-    function _setDefaultShares(address[] memory _recipients, uint256[] memory _sharesBps, uint256 _dustShareBps)
+    /// @param _variedShareBps Varied recipient's share in basis points for the default config
+    function _setDefaultShares(address[] memory _recipients, uint256[] memory _sharesBps, uint256 _variedShareBps)
         internal
     {
         require(_recipients.length == _sharesBps.length, "Recipients and shares length mismatch");
         require(_recipients.length > 0, "No recipients provided");
 
-        uint256 totalShares = _dustShareBps;
+        uint256 totalShares = _variedShareBps;
 
         // Validate recipients and calculate total shares
         for (uint256 i = 0; i < _recipients.length; i++) {
@@ -245,6 +245,6 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
         // Update default configuration
         defaultConfig.recipients = _recipients;
         defaultConfig.sharesBps = _sharesBps;
-        defaultConfig.dustShareBps = _dustShareBps;
+        defaultConfig.variedShareBps = _variedShareBps;
     }
 }
