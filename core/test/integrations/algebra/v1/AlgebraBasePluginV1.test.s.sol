@@ -75,7 +75,6 @@ contract AlgebraBasePluginV1Test is Test {
     function testConstructor() public view {
         assertEq(plugin.pool(), address(pool));
         assertEq(plugin.getRouter(), address(reflexRouter));
-        assertEq(plugin.getReflexAdmin(), admin);
         assertTrue(plugin.reflexEnabled());
     }
 

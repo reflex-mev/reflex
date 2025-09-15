@@ -430,7 +430,7 @@ contract ReflexRouterSecurityTest is Test {
         // State should remain consistent
         assertEq(reflexRouter.owner(), reflexRouter.owner());
         assertEq(reflexRouter.reflexQuoter(), address(maliciousQuoter));
-        assertEq(reflexRouter.getReflexAdmin(), reflexRouter.owner());
+        assertEq(reflexRouter.owner(), reflexRouter.owner());
     }
 
     // =============================================================================

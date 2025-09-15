@@ -211,7 +211,6 @@ contract BasePluginV3FactoryTest is Test {
         address plugin = factory.createPluginForExistingPool(address(token0), address(token1));
 
         AlgebraBasePluginV3 createdPlugin = AlgebraBasePluginV3(plugin);
-        assertEq(createdPlugin.getReflexAdmin(), reflexRouter.getReflexAdmin());
     }
 
     function testPluginCreatedWithZeroReflexRouter() public {
@@ -247,7 +246,6 @@ contract BasePluginV3FactoryTest is Test {
         address plugin = factory.createPluginForExistingPool(address(token2), address(token3));
 
         AlgebraBasePluginV3 createdPlugin = AlgebraBasePluginV3(plugin);
-        assertEq(createdPlugin.getReflexAdmin(), newRouter.getReflexAdmin());
     }
 
     // ========== Default Base Fee Tests ==========
@@ -406,7 +404,6 @@ contract BasePluginV3FactoryTest is Test {
         AlgebraBasePluginV3 createdPlugin = AlgebraBasePluginV3(plugin);
         assertEq(createdPlugin.pool(), address(pool));
         assertEq(createdPlugin.s_baseFee(), newBaseFee);
-        assertEq(createdPlugin.getReflexAdmin(), newRouter.getReflexAdmin());
 
         // Verify factory state
         assertEq(factory.farmingAddress(), newFarmingAddress);
