@@ -156,4 +156,9 @@ contract AlgebraBasePluginV3 is SlidingFeePlugin, FarmingProxyPlugin, Volatility
         _updatePluginConfigInPool(defaultPluginConfig); // should not be called, reset config
         return IAlgebraPlugin.afterFlash.selector;
     }
+
+    /// @inheritdoc ReflexAfterSwap
+    function _onlyReflexAdmin() internal view override {
+        _authorize();
+    }
 }

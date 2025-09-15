@@ -12,9 +12,11 @@ contract AlgebraPlugin is IAlgebraPlugin, ReflexAfterSwap {
     uint8 public immutable override defaultPluginConfig;
 
     address public immutable pool;
+    address public immutable owner;
 
     constructor(address _pool, address _reflexRouter, bytes32 _configId) ReflexAfterSwap(_reflexRouter, _configId) {
         pool = _pool;
+        owner = msg.sender;
         defaultPluginConfig = uint8(Plugins.AFTER_SWAP_FLAG);
     }
 
@@ -103,5 +105,10 @@ contract AlgebraPlugin is IAlgebraPlugin, ReflexAfterSwap {
         returns (bytes4)
     {
         return IAlgebraPlugin.afterFlash.selector;
+    }
+
+    /// @inheritdoc ReflexAfterSwap
+    function _onlyReflexAdmin() internal view override {
+        require(msg.sender == owner, "AlgebraPlugin: Caller is not the owner");
     }
 }
