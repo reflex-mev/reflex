@@ -478,7 +478,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @return zeroForOne True if swapping token0 for token1, false otherwise
      */
     // 1 byte - <1 bit zeroForOne><7 bits- other data>
-    function decodeIsZeroForOne(uint256 b) public pure returns (bool zeroForOne) {
+    function decodeIsZeroForOne(uint8 b) public pure returns (bool zeroForOne) {
         assembly {
             zeroForOne := and(b, 0x80)
         }

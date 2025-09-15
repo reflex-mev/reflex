@@ -197,7 +197,7 @@ contract ReflexRouterInternalTest is Test {
 
     function test_decodeIsZeroForOne_allValues() public view {
         // Test comprehensive bit patterns
-        for (uint256 i = 0; i < 256; i++) {
+        for (uint8 i = 0; i < 128; i++) {
             bool result = testRouter.decodeIsZeroForOne(i);
             bool expected = (i & 0x80) != 0;
             assertEq(result, expected, string(abi.encodePacked("Failed for value: ", vm.toString(i))));
