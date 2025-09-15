@@ -8,7 +8,11 @@ import "../utils/TestUtils.sol";
 
 // Testable implementation of ReflexAfterSwap
 contract TestableReflexAfterSwap is ReflexAfterSwap {
-    constructor(address _router, bytes32 _configId) ReflexAfterSwap(_router, _configId) {}
+    address public admin;
+
+    constructor(address _router, bytes32 _configId) ReflexAfterSwap(_router, _configId) {
+        admin = msg.sender;
+    }
 
     // Expose internal function for testing
     function testReflexAfterSwap(
@@ -19,6 +23,17 @@ contract TestableReflexAfterSwap is ReflexAfterSwap {
         address recipient
     ) external returns (uint256 profit, address profitToken) {
         return reflexAfterSwap(triggerPoolId, amount0Delta, amount1Delta, zeroForOne, recipient);
+    }
+
+    // Implementation of the abstract function
+    function _onlyReflexAdmin() internal view override {
+        require(msg.sender == admin, "Not admin");
+    }
+
+    // Test helper to change admin
+    function setAdmin(address _admin) external {
+        require(msg.sender == admin, "Not admin");
+        admin = _admin;
     }
 }
 
@@ -79,7 +94,7 @@ contract ReflexAfterSwapTest is Test {
 
     function testConstructor() public view {
         assertEq(reflexAfterSwap.getRouter(), address(mockRouter));
-        assertEq(reflexAfterSwap.getReflexAdmin(), admin);
+        assertEq(reflexAfterSwap.admin(), address(this));
         assertEq(reflexAfterSwap.getConfigId(), keccak256("test-config"));
     }
 
@@ -94,23 +109,21 @@ contract ReflexAfterSwapTest is Test {
     function testSetReflexRouter() public {
         MockReflexRouter newRouter = MockReflexRouter(TestUtils.createMockReflexRouter(admin, address(profitToken)));
 
-        vm.prank(admin);
         reflexAfterSwap.setReflexRouter(address(newRouter));
 
         assertEq(reflexAfterSwap.getRouter(), address(newRouter));
-        assertEq(reflexAfterSwap.getReflexAdmin(), admin);
+        assertEq(reflexAfterSwap.admin(), address(this));
     }
 
     function testSetReflexRouterUnauthorized() public {
         MockReflexRouter newRouter = MockReflexRouter(TestUtils.createMockReflexRouter(admin, address(profitToken)));
 
         vm.prank(attacker);
-        vm.expectRevert("Caller is not the reflex admin");
+        vm.expectRevert("Not admin");
         reflexAfterSwap.setReflexRouter(address(newRouter));
     }
 
     function testSetReflexRouterInvalidAddress() public {
-        vm.prank(admin);
         vm.expectRevert("Invalid router address");
         reflexAfterSwap.setReflexRouter(address(0));
     }
@@ -118,14 +131,10 @@ contract ReflexAfterSwapTest is Test {
     function testAdminChange() public {
         address newAdmin = address(0x2);
 
-        // Change admin in router
-        mockRouter.setReflexAdmin(newAdmin);
+        // Change admin using our test helper (this contract is currently admin)
+        reflexAfterSwap.setAdmin(newAdmin);
 
-        // Update router to reflect admin change
-        vm.prank(admin);
-        reflexAfterSwap.setReflexRouter(address(mockRouter));
-
-        assertEq(reflexAfterSwap.getReflexAdmin(), newAdmin);
+        assertEq(reflexAfterSwap.admin(), newAdmin);
     }
 
     // ========== Profit Extraction Tests ==========
