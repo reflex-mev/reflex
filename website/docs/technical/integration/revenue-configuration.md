@@ -17,9 +17,8 @@ All MEV profits captured by Reflex are distributed according to predefined confi
 
 Reflex Protocol provides a default revenue sharing configuration that works for most integrations:
 
-- **Protocol Fee**: 20% to Reflex Protocol for infrastructure and development
-- **User Rewards**: 60% back to traders/users
-- **Validator Tips**: 20% to validators for transaction inclusion
+- **Protocol Fee**: 80% to Reflex Protocol for infrastructure and development
+- **User Rewards**: 20% back to traders/users
 
 ## Custom Configuration Process
 
@@ -85,11 +84,24 @@ reflexRouter.triggerBackrun(
 
 ```typescript
 // SDK Integration
-const result = await reflexSDK.triggerMEVCapture({
-  poolAddress: "0x...",
-  amountIn: "1000000000000000000",
+const executeParams = {
+  target: "0xYourContract...",
+  value: 0n,
+  callData: "0x..."
+};
+
+const backrunParams = [{
+  triggerPoolId: "0xPool...",
+  swapAmountIn: "1000000000000000000",
+  token0In: true,
+  recipient: "0xUser...",
   configId: customConfigId // Your provided config ID
-});
+}];
+
+const result = await reflexSDK.backrunedExecute(
+  executeParams,
+  backrunParams
+);
 ```
 
 ## Configuration Examples
@@ -99,12 +111,11 @@ const result = await reflexSDK.triggerMEVCapture({
 ```javascript
 const dexConfig = {
   recipients: [
-    "0xDEXTreasury...",      // Protocol treasury
-    "0xLPRewardsPool...",    // Liquidity provider rewards
-    "0xGovernancePool...",   // Governance token holders
-    "0xValidatorTips..."     // Network validators
+    "0xReflexProtocol...",    // Reflex Protocol
+    "0xDEXTreasury...",       // Protocol treasury
+    "0xLPRewardsPool...",     // Liquidity provider rewards
   ],
-  shares: [30, 40, 20, 10],  // Percentages
+  shares: [70, 20, 10],       // Percentages
   description: "DEX protocol with LP rewards"
 };
 ```
@@ -114,12 +125,11 @@ const dexConfig = {
 ```javascript
 const aggregatorConfig = {
   recipients: [
-    "0xAggregatorTreasury...", // Protocol development
+    "0xReflexProtocol...",     // Reflex Protocol  
     "0xUserCashback...",       // Direct user cashback
-    "0xPartnerRevenue...",     // Partner protocols
-    "0xValidatorTips..."       // Network tips
+    "0xAggregatorTreasury...", // Protocol development
   ],
-  shares: [25, 50, 15, 10],
+  shares: [75, 15, 10],
   description: "Aggregator with user cashback focus"
 };
 ```
@@ -129,11 +139,11 @@ const aggregatorConfig = {
 ```javascript
 const walletConfig = {
   recipients: [
-    "0xWalletTreasury...",     // Wallet development
+    "0xReflexProtocol...",     // Reflex Protocol
     "0xUserRewards...",        // Direct user benefits
-    "0xValidatorTips..."       // Network incentives
+    "0xWalletTreasury...",     // Wallet development
   ],
-  shares: [30, 60, 10],
+  shares: [70, 20, 10],
   description: "Wallet integration with user focus"
 };
 ```
