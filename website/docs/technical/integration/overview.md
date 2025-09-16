@@ -25,6 +25,7 @@ graph LR
 ```
 
 **Best for:**
+
 - ✅ New protocol development
 - ✅ Deep MEV integration
 - ✅ Custom revenue models
@@ -46,6 +47,7 @@ graph LR
 ```
 
 **Best for:**
+
 - ✅ Existing DEX protocols
 - ✅ Minimal code changes required
 - ✅ Automatic MEV capture
@@ -70,6 +72,7 @@ graph LR
 ```
 
 **Best for:**
+
 - ✅ Frontend applications
 - ✅ MEV bots and searchers
 - ✅ Custom trading strategies
