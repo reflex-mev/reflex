@@ -35,15 +35,18 @@ const reflex = new ReflexSDK({
 });
 
 // Increase gas limit
-await reflex.executeBackrun({
-  // ...params
-  gasLimit: 500000, // Increase gas limit
-});
+await reflex.backrunedExecute(
+  executeParams,
+  backrunParams,
+  {
+    gasLimit: 500000, // Increase gas limit
+  }
+);
 
-// Check profit before execution
-const quote = await reflex.getQuote(params);
-if (quote.expectedProfit < minProfit) {
-  console.log("Profit too low, skipping");
+// Check minimum swap threshold before execution
+const minSwapThreshold = ethers.parseEther("1"); // 1 ETH equivalent
+if (swapAmount < minSwapThreshold) {
+  console.log("Swap amount too low, skipping");
   return;
 }
 ```

@@ -82,6 +82,20 @@ graph LR
 **How it works:**
 Your application uses the Reflex SDK to monitor transactions, detect MEV opportunities, and execute backruns programmatically. Perfect for building sophisticated MEV strategies or integrating MEV capture into user-facing applications.
 
+## 🎛️ Revenue Configuration
+
+All integration types use Reflex's centralized revenue configuration system:
+
+**Default Configuration:**
+- 20% to Reflex Protocol
+- 60% to users/traders  
+- 20% to validators
+
+**Custom Configuration:**
+For protocols requiring different profit distribution, contact the Reflex team to set up a custom revenue sharing structure. You'll receive a unique `configId` to use in your integration.
+
+[Learn more about Revenue Configuration →](./revenue-configuration)
+
 ---
 
 For more advanced integration patterns and examples, see our [Examples](../examples/basic-backrun) section and [API Reference](../api/smart-contracts).

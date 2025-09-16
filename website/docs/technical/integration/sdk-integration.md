@@ -79,17 +79,13 @@ async function startMEVBot() {
 
 async function processMEVOpportunity(opportunity) {
   try {
-    // Check if opportunity is still profitable
-    const quote = await reflex.getQuote({
-      triggerPoolId: opportunity.poolAddress,
-      swapAmountIn: opportunity.swapAmount / 10n, // Use 10% for backrun
-      token0In: opportunity.token0In,
-    });
-
-    if (quote.expectedProfit > ethers.parseEther("0.01")) {
+    // Execute MEV opportunity if swap amount is significant
+    const minSwapThreshold = ethers.parseEther("1"); // 1 ETH equivalent
+    
+    if (opportunity.swapAmount > minSwapThreshold) {
       console.log("Executing MEV opportunity:", {
         pool: opportunity.poolAddress,
-        expectedProfit: ethers.formatEther(quote.expectedProfit),
+        swapAmount: ethers.formatEther(opportunity.swapAmount),
       });
 
       // Execute the backrun
@@ -321,11 +317,9 @@ class ReflexArbitrageBot {
   private async analyzeOpportunity(poolAddress: string, swapData: any) {
     // Calculate potential arbitrage across multiple DEXs
     const quotes = await Promise.all([
-      this.reflex.getQuote({
-        /* params for DEX A */
-      }),
       this.getExternalQuote("uniswap" /* params */),
       this.getExternalQuote("sushiswap" /* params */),
+      this.getExternalQuote("curve" /* params */),
     ]);
 
     // Find best arbitrage route
@@ -532,5 +526,6 @@ describe("MEV Integration", () => {
 
 ---
 
+For revenue configuration details, see the [Revenue Configuration Guide](./revenue-configuration).
 For smart contract integration, see the [Smart Contract Integration Guide](./smart-contract).
 For complete examples, check out the [Basic Backrun Example](../examples/basic-backrun).
