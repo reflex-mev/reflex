@@ -30,6 +30,8 @@ const sidebars = {
           label: "Integrations",
           items: [
             "technical/integration/overview",
+            "technical/integration/smart-contract",
+            "technical/integration/sdk-integration",
             "technical/examples/basic-backrun",
           ],
         },

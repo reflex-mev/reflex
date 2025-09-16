@@ -6,11 +6,34 @@ sidebar_position: 1
 
 Learn how to integrate Reflex Protocol into your DeFi protocol to capture and distribute MEV fairly among your users.
 
-## 🎯 Integration Strategies
+## 🎯 Integration Types
 
-Reflex offers multiple integration approaches depending on your protocol's architecture and requirements:
+Reflex offers two main integration approaches depending on your use case and technical requirements:
 
-### 1. Plugin Integration (Recommended)
+## 1. Smart Contract Integration
+
+For protocols and DEXs that want to integrate MEV capture directly into their smart contracts.
+
+### Router Direct Access
+
+Integrate directly with the Reflex Router for full control over MEV capture:
+
+```mermaid
+graph LR
+    Protocol[🏛️ Your Protocol] --> Router[🎯 Reflex Router]
+    Router --> |MEV Capture| Protocol
+```
+
+**Best for:**
+- ✅ New protocol development
+- ✅ Deep MEV integration
+- ✅ Custom revenue models
+- ✅ Protocol-level optimization
+
+**How it works:**
+Your smart contract calls the Reflex Router directly to trigger backrun opportunities. This gives you complete control over when and how MEV is captured.
+
+### Plugin-Based Access
 
 Deploy a lightweight plugin contract that automatically captures MEV from swaps:
 
@@ -23,31 +46,38 @@ graph LR
 ```
 
 **Best for:**
-
 - ✅ Existing DEX protocols
 - ✅ Minimal code changes required
 - ✅ Automatic MEV capture
-- ✅ User profit sharing
+- ✅ Hook/callback architectures
 
-### 2. SDK Integration
+**How it works:**
+A plugin contract integrates with your existing DEX using hooks or callbacks (like `afterSwap`). When users trade, the plugin automatically triggers MEV capture opportunities.
+
+## 2. SDK Integration
+
+For clients, DApps, and custom applications that want to integrate MEV capture functionality.
+
+### TypeScript SDK
 
 Use the TypeScript SDK for custom MEV strategies and manual triggers:
 
 ```mermaid
 graph LR
-    Bot[🤖 Your Bot] --> SDK[📦 Reflex SDK]
+    DApp[📱 Your DApp] --> SDK[📦 Reflex SDK]
     SDK --> Router[🎯 Reflex Router]
-    Router --> |Results| Bot
+    Router --> |Results| DApp
 ```
 
 **Best for:**
-
+- ✅ Frontend applications
 - ✅ MEV bots and searchers
 - ✅ Custom trading strategies
-- ✅ Advanced profit optimization
 - ✅ Multi-chain operations
+- ✅ Advanced profit optimization
 
-### 3. Direct Contract Integration
+**How it works:**
+Your application uses the Reflex SDK to monitor transactions, detect MEV opportunities, and execute backruns programmatically. Perfect for building sophisticated MEV strategies or integrating MEV capture into user-facing applications.
 
 Directly integrate Reflex contracts into your protocol's core logic:
 
