@@ -267,14 +267,14 @@ If you encounter issues not covered here:
 
 1. Check the [GitHub Issues](https://github.com/reflex-mev/reflex/issues)
 2. Join our [Discord](https://discord.gg/reflex) for community support
-3. Review the [FAQ](../security/best-practices)
+3. Review the [Security Overview](../security/overview)
 
 ## Next Steps
 
 Now that you have Reflex installed, you can:
 
 1. 🚀 **[Quick Start](quick-start)** - Deploy your first integration
-2. 📚 **[Examples](examples)** - Explore sample implementations
+2. 📚 **[Examples](../examples/basic-backrun)** - Explore sample implementations
 3. 🏗️ **[Architecture](../architecture/overview)** - Understand the system design
 
 ---

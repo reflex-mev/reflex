@@ -363,7 +363,7 @@ When you run your integration, you should see:
 
 Now that you have a working integration:
 
-1. **[Explore Examples](examples)** - See more advanced use cases
+1. **[Explore Examples](../examples/basic-backrun)** - See more advanced use cases
 2. **[Integration Guide](../integration/overview)** - Learn advanced integration patterns
 3. **[API Reference](../api/smart-contracts)** - Dive deep into the API
 4. **[Architecture](../architecture/overview)** - Understand the system design
