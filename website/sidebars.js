@@ -22,34 +22,21 @@ const sidebars = {
       items: [
         {
           type: "category",
-          label: "Getting Started",
-          items: [
-            "technical/getting-started/installation",
-            "technical/getting-started/quick-start",
-          ],
-        },
-        {
-          type: "category",
           label: "Architecture",
           items: ["technical/architecture/overview"],
         },
         {
           type: "category",
-          label: "API Reference",
+          label: "Integrations",
           items: [
-            "technical/api/smart-contracts",
-            "technical/api/sdk-reference",
+            "technical/integration/overview",
+            "technical/examples/basic-backrun",
           ],
         },
         {
           type: "category",
-          label: "Integration",
-          items: ["technical/integration/overview"],
-        },
-        {
-          type: "category",
-          label: "Examples",
-          items: ["technical/examples/basic-backrun"],
+          label: "API Reference",
+          items: ["technical/api/smart-contracts", "technical/api/sdk-reference"],
         },
         {
           type: "category",
