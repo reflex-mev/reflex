@@ -108,12 +108,14 @@ Reflex supports three main integration patterns to accommodate different use cas
 **SDK Integration** - Applications use the TypeScript SDK to interact with Reflex. Perfect for DApp frontends, MEV bots, trading tools, and any offchain application that wants to protect users or implement custom MEV strategies.
 
 #### SDK Application Types:
+
 - **DApp Frontends**: Protect users from MEV while capturing profits
 - **MEV Bots**: Custom strategies for professional MEV extraction
 - **Protocol UIs**: Integrated MEV capture in protocol interfaces
 - **Trading Tools**: Enhanced trading with automatic MEV protection
 
 #### SDK Capabilities:
+
 - Event monitoring and opportunity detection
 - Transaction simulation and profit estimation
 - Automated MEV capture execution
@@ -149,28 +151,6 @@ sequenceDiagram
     else Not Profitable
         Router-->>Plugin: No action taken
     end
-```
-
-### Batched Execution Flow
-
-```mermaid
-sequenceDiagram
-    participant Aggregator
-    participant Router as Reflex Router
-    participant DEX1 as DEX Pool 1
-    participant DEX2 as DEX Pool 2
-    participant DEX3 as DEX Pool 3
-
-    Aggregator->>Router: backrunedExecute()
-    Router->>Router: Execute target transaction
-
-    par Parallel Backruns
-        Router->>DEX1: Attempt backrun 1
-        Router->>DEX2: Attempt backrun 2
-        Router->>DEX3: Attempt backrun 3
-    end
-
-    Router-->>Aggregator: Results + profits
 ```
 
 ## 💡 MEV Capture Strategies
@@ -210,29 +190,6 @@ graph LR
     Provide --> Capture[Capture Fees]
     Capture --> Remove[Remove Liquidity]
     Remove --> Profit[Net Profit]
-```
-
-## 🔧 Gas Optimization
-
-### Flash Loan Efficiency
-
-Reflex minimizes gas usage through:
-
-- **Single Transaction**: All operations in one atomic transaction
-- **Optimal Routing**: Shortest path through DEX pools
-- **Batch Operations**: Multiple swaps in single call
-- **Callback Optimization**: Efficient callback handling
-
-### Gas Usage Breakdown
-
-```
-Base Transaction:     21,000 gas
-Flash Loan Setup:     30,000 gas
-Swap Execution:       80,000 gas per hop
-Profit Distribution:  25,000 gas per recipient
-Event Emission:        5,000 gas
------------------------------------------
-Typical Total:       ~160,000 gas
 ```
 
 ## 🛡️ Security Architecture
