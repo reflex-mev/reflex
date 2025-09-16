@@ -8,7 +8,7 @@ Integrate Reflex MEV capture into your client applications, DApps, and custom tr
 
 ## Overview
 
-The Reflex SDK provides a powerful and easy-to-use interface for building MEV-enabled applications. Whether you're building a trading bot, integrating MEV capture into a DApp frontend, or creating custom arbitrage strategies, the SDK handles the complexity of interacting with Reflex smart contracts.
+The Reflex SDK provides a powerful and easy-to-use interface for building MEV-enabled DApps. Whether you're integrating MEV capture into a DApp frontend or creating custom trading interfaces, the SDK handles the complexity of interacting with Reflex smart contracts.
 
 ## Installation
 
@@ -42,73 +42,6 @@ const reflex = new ReflexSDK({
     slippageTolerance: 0.005, // 0.5%
   },
 });
-```
-
-### Monitor and Execute MEV
-
-```typescript
-// Start monitoring for MEV opportunities
-async function startMEVBot() {
-  console.log("Starting MEV monitoring...");
-
-  // Listen for swap events across multiple pools
-  const pools = ["0xPool1Address", "0xPool2Address", "0xPool3Address"];
-
-  for (const poolAddress of pools) {
-    const poolContract = new ethers.Contract(poolAddress, POOL_ABI, provider);
-
-    poolContract.on(
-      "Swap",
-      async (sender, amount0In, amount1In, amount0Out, amount1Out, event) => {
-        const swapAmount = amount0In > 0n ? amount0In : amount1In;
-
-        // Only process significant swaps
-        if (swapAmount > ethers.parseEther("1")) {
-          await processMEVOpportunity({
-            poolAddress,
-            swapAmount,
-            token0In: amount0In > 0n,
-            originalSwapper: sender,
-            txHash: event.transactionHash,
-          });
-        }
-      }
-    );
-  }
-}
-
-async function processMEVOpportunity(opportunity) {
-  try {
-    // Execute MEV opportunity if swap amount is significant
-    const minSwapThreshold = ethers.parseEther("1"); // 1 ETH equivalent
-    
-    if (opportunity.swapAmount > minSwapThreshold) {
-      console.log("Executing MEV opportunity:", {
-        pool: opportunity.poolAddress,
-        swapAmount: ethers.formatEther(opportunity.swapAmount),
-      });
-
-      // Execute the backrun
-      const result = await reflex.triggerBackrun({
-        triggerPoolId: opportunity.poolAddress,
-        swapAmountIn: opportunity.swapAmount / 10n,
-        token0In: opportunity.token0In,
-        recipient: opportunity.originalSwapper, // Share profit with user
-        configId: ethers.ZeroHash, // Use default config
-      });
-
-      if (result.success) {
-        console.log("MEV captured successfully:", {
-          txHash: result.txHash,
-          profit: ethers.formatEther(result.profit),
-          gasUsed: result.gasUsed.toString(),
-        });
-      }
-    }
-  } catch (error) {
-    console.error("MEV opportunity failed:", error.message);
-  }
-}
 ```
 
 ## DApp Integration
@@ -154,23 +87,36 @@ export function useReflexMEV(provider, signer) {
       if (!reflex) return null;
 
       try {
-        // Execute the user's swap first
-        const swapTx = await executeUserSwap(swapParams);
-        await swapTx.wait();
+        // Prepare the user's swap transaction as executeParams
+        const executeParams = {
+          target: swapParams.poolAddress,
+          value: swapParams.value || 0n,
+          callData: swapParams.swapCallData,
+        };
 
-        // Then trigger MEV capture
-        const mevResult = await reflex.triggerBackrun({
-          triggerPoolId: swapParams.poolAddress,
-          swapAmountIn: swapParams.amountIn / 20n, // 5% of swap
-          token0In: swapParams.token0In,
-          recipient: swapParams.user,
-          configId: swapParams.configId || ethers.ZeroHash,
-        });
+        // Prepare backrun parameters
+        const backrunParams = [
+          {
+            triggerPoolId: swapParams.poolAddress,
+            swapAmountIn: swapParams.amountIn / 20n, // 5% of swap
+            token0In: swapParams.token0In,
+            recipient: swapParams.user,
+            configId: swapParams.configId || ethers.ZeroHash,
+          },
+        ];
+
+        // Execute swap + MEV capture atomically
+        const result = await reflex.backrunedExecute(
+          executeParams,
+          backrunParams
+        );
 
         return {
-          swapTx,
-          mevResult,
-          totalProfit: mevResult.profit,
+          success: result.success,
+          transactionHash: result.transactionHash,
+          swapExecuted: result.success,
+          mevProfit: result.profits[0] || 0n,
+          profitToken: result.profitTokens[0],
         };
       } catch (error) {
         console.error("Swap with MEV failed:", error);
@@ -214,14 +160,15 @@ export function MEVTradingInterface({ useReflexMEV }) {
         poolAddress: poolAddress,
         user: userAddress,
         token0In: selectedTokenIn.address < selectedTokenOut.address,
+        swapCallData: encodedSwapData, // Pre-encoded swap transaction
       });
 
-      if (result.mevResult.success) {
+      if (result.success && result.mevProfit > 0n) {
         showNotification({
           type: "success",
           title: "Swap Completed with MEV Bonus!",
           message: `You received an additional ${ethers.formatEther(
-            result.totalProfit
+            result.mevProfit
           )} ETH from MEV capture`,
         });
       }
@@ -267,150 +214,6 @@ export function MEVTradingInterface({ useReflexMEV }) {
       </div>
     </div>
   );
-}
-```
-
-## Advanced Trading Strategies
-
-### Arbitrage Bot
-
-```typescript
-class ReflexArbitrageBot {
-  private reflex: ReflexSDK;
-  private pools: string[];
-  private isRunning = false;
-
-  constructor(config: BotConfig) {
-    this.reflex = new ReflexSDK(config.sdkConfig);
-    this.pools = config.monitoredPools;
-  }
-
-  async start() {
-    this.isRunning = true;
-    console.log("Starting arbitrage bot...");
-
-    // Monitor multiple pools simultaneously
-    await Promise.all(
-      this.pools.map((poolAddress) => this.monitorPool(poolAddress))
-    );
-  }
-
-  private async monitorPool(poolAddress: string) {
-    const poolContract = new ethers.Contract(
-      poolAddress,
-      POOL_ABI,
-      this.reflex.provider
-    );
-
-    poolContract.on("Swap", async (sender, ...args) => {
-      if (!this.isRunning) return;
-
-      // Quick profitability check
-      const opportunity = await this.analyzeOpportunity(poolAddress, args);
-
-      if (opportunity.profitable) {
-        await this.executeArbitrage(opportunity);
-      }
-    });
-  }
-
-  private async analyzeOpportunity(poolAddress: string, swapData: any) {
-    // Calculate potential arbitrage across multiple DEXs
-    const quotes = await Promise.all([
-      this.getExternalQuote("uniswap" /* params */),
-      this.getExternalQuote("sushiswap" /* params */),
-      this.getExternalQuote("curve" /* params */),
-    ]);
-
-    // Find best arbitrage route
-    const bestRoute = this.findBestArbitrageRoute(quotes);
-
-    return {
-      profitable: bestRoute.profit > ethers.parseEther("0.02"),
-      route: bestRoute,
-      poolAddress,
-      estimatedGas: bestRoute.gasEstimate,
-    };
-  }
-
-  private async executeArbitrage(opportunity) {
-    try {
-      // Execute multi-hop arbitrage using Reflex
-      const result = await this.reflex.executeComplexArbitrage({
-        route: opportunity.route,
-        maxGasPrice: ethers.parseUnits("50", "gwei"),
-        deadline: Math.floor(Date.now() / 1000) + 300, // 5 minutes
-      });
-
-      console.log("Arbitrage executed:", {
-        profit: ethers.formatEther(result.profit),
-        gasUsed: result.gasUsed.toString(),
-        route: opportunity.route.path,
-      });
-    } catch (error) {
-      console.error("Arbitrage failed:", error);
-    }
-  }
-}
-```
-
-### MEV Protection for Users
-
-```typescript
-// Protect users from sandwich attacks
-class MEVProtectionService {
-  private reflex: ReflexSDK;
-
-  constructor(config: ReflexSDKConfig) {
-    this.reflex = new ReflexSDK(config);
-  }
-
-  async protectedSwap(swapParams: SwapParams) {
-    // 1. Pre-analyze for sandwich risk
-    const riskAnalysis = await this.analyzeSandwichRisk(swapParams);
-
-    if (riskAnalysis.highRisk) {
-      // 2. Use Reflex to preemptively capture MEV
-      await this.preemptiveMEVCapture(swapParams);
-    }
-
-    // 3. Execute user swap
-    const swapResult = await this.executeSwap(swapParams);
-
-    // 4. Trigger backrun to capture remaining MEV
-    const backrunResult = await this.reflex.triggerBackrun({
-      triggerPoolId: swapParams.poolAddress,
-      swapAmountIn: swapParams.amountIn / 10n,
-      token0In: swapParams.token0In,
-      recipient: swapParams.user,
-      configId: swapParams.configId,
-    });
-
-    return {
-      swapResult,
-      backrunResult,
-      totalMEVCaptured: backrunResult.profit,
-      protectionApplied: riskAnalysis.highRisk,
-    };
-  }
-
-  private async analyzeSandwichRisk(params: SwapParams) {
-    // Analyze mempool for potential sandwich attacks
-    const pendingTxs = await this.reflex.getPendingTransactions(
-      params.poolAddress
-    );
-
-    // Check for suspicious patterns
-    const suspiciousTxs = pendingTxs.filter((tx) =>
-      this.isSuspiciousSandwichSetup(tx, params)
-    );
-
-    return {
-      highRisk: suspiciousTxs.length > 0,
-      riskScore: this.calculateRiskScore(suspiciousTxs),
-      recommendations: this.generateProtectionRecommendations(suspiciousTxs),
-    };
-  }
 }
 ```
 
@@ -487,16 +290,24 @@ describe("MEV Integration", () => {
   });
 
   it("should capture MEV successfully", async () => {
-    const result = await reflex.triggerBackrun({
+    const executeParams = {
+      to: "0xTokenContract...",
+      value: 0,
+      data: "0x123...", // encoded swap data
+    };
+
+    const backrunParams = {
       triggerPoolId: "0x123...",
       swapAmountIn: ethers.parseEther("1"),
       token0In: true,
       recipient: "0xUser...",
       configId: ethers.ZeroHash,
-    });
+    };
+
+    const result = await reflex.backrunedExecute(executeParams, backrunParams);
 
     expect(result.success).toBe(true);
-    expect(result.profit).toBeGreaterThan(0n);
+    expect(result.mevProfit).toBeGreaterThan(0n);
   });
 });
 ```

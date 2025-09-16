@@ -87,9 +87,8 @@ Your application uses the Reflex SDK to monitor transactions, detect MEV opportu
 All integration types use Reflex's centralized revenue configuration system:
 
 **Default Configuration:**
-- 20% to Reflex Protocol
-- 60% to users/traders  
-- 20% to validators
+- 80% to Reflex Protocol
+- 20% to users/traders
 
 **Custom Configuration:**
 For protocols requiring different profit distribution, contact the Reflex team to set up a custom revenue sharing structure. You'll receive a unique `configId` to use in your integration.
