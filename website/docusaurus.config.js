@@ -22,6 +22,10 @@ const config = {
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "reflex-mev", // Usually your GitHub org/user name.
   projectName: "reflex", // Usually your repo name.
+  
+  // Custom deployment configuration for SSH host alias
+  deploymentBranch: "gh-pages",
+  trailingSlash: false,
 
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
