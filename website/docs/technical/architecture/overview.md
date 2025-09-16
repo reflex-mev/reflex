@@ -16,6 +16,10 @@ Each blockchain network has two core Reflex contracts:
 
 ```mermaid
 graph LR
+    subgraph "Users"
+        UserGroup[👤 Users<br/>Traders & DeFi Users]
+    end
+
     subgraph "Core Smart Contracts (Per Chain)"
         Router[⚡ Reflex Router<br/>Execution engine]
         Quoter[🧠 Reflex Quoter<br/>Profit detection & path optimization]
@@ -31,11 +35,30 @@ graph LR
         SDKApps[📱 SDK Applications<br/>DApps, MEV Bots]
     end
 
+    %% User transactions trigger MEV opportunities
+    UserGroup -->|Trade/Swap| PluginDEX
+    UserGroup -->|Trade/Swap| RegularDEX
+    UserGroup -->|Interact| SDKApps
+
     %% Client connections to core contracts
     PluginDEX -->|triggerBackrun| Router
     RegularDEX -->|triggerBackrun| Router
     SDKApps -->|backrunExecute| Router
 ```
+
+#### Core Components
+
+**Reflex Router** - The central execution engine that coordinates all MEV capture activities. Handles both automatic MEV capture through `triggerBackrun()` and protected transaction execution through `backrunExecute()`.
+
+**Reflex Quoter** - The analysis engine that detects MEV opportunities by analyzing price differences across DEX pools, calculating optimal arbitrage routes, and estimating profitability.
+
+**Onchain Clients** - Smart contracts that integrate directly with Reflex:
+- Plugin-based DEXes use hooks to automatically capture MEV after user swaps
+- Standard DEXes integrate the router directly into their core contracts
+
+**Offchain Clients** - Applications that use the Reflex SDK:
+- DApps protect users from MEV while capturing profits
+- MEV Bots implement custom strategies for professional MEV extraction
 
 ### Router Entry Points
 
@@ -47,65 +70,6 @@ The **Reflex Router** has two main entry points for MEV capture:
 - **When**: After user swaps that create arbitrage opportunities
 - **Purpose**: Capture MEV from detected price discrepancies
 - **Returns**: Profit amount and token to the specified recipient
-
-#### 2. `backrunExecute()` - Protected Transaction Execution
-
-- **Called by**: Client applications via SDK or custom integrations
-- **When**: Before executing a transaction that might be front-run
-- **Purpose**: Execute transaction and immediately capture any MEV opportunities
-- **Returns**: Transaction results plus captured MEV profits
-
-### Entity Roles & Interactions
-
-```mermaid
-graph LR
-    subgraph "Smart Contracts"
-        SC1[🎯 Reflex Router]
-        SC2[� Reflex Quoter]
-        SC3[🔌 Plugin Contracts]
-        SC4[🏛️ Protocol Contracts]
-    end
-
-    subgraph "Users"
-        U1[👤 Traders]
-        U2[💰 LP Providers]
-        U3[🏢 Protocol Teams]
-    end
-
-    subgraph "Applications"
-        A1[� DApps]
-        A2[🤖 MEV Bots]
-        A3[🖥️ Protocol UIs]
-    end
-
-    subgraph "Infrastructure"
-        I1[⛏️ Validators]
-        I2[🌐 RPC Providers]
-        I3[📊 Indexers]
-    end
-
-    %% Smart Contract interactions
-    SC3 --> SC1
-    SC4 --> SC1
-    SC1 <--> SC2
-
-    %% User interactions
-    U1 --> A1
-    U1 --> SC3
-    U2 --> SC4
-    U3 --> SC4
-
-    %% Application interactions
-    A1 --> SC1
-    A2 --> SC1
-    A3 --> SC1
-
-    %% Profit flows
-    SC1 --> U1
-    SC1 --> U2
-    SC1 --> U3
-    SC1 --> I1
-```
 
 ## 🧩 Core Components
 
