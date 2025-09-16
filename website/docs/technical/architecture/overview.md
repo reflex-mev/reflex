@@ -8,47 +8,123 @@ Understanding Reflex Protocol's architecture is key to building effective MEV ca
 
 ## 🏗️ High-Level Architecture
 
-Reflex Protocol consists of several interconnected components that work together to capture and distribute MEV:
+Reflex Protocol operates through a simple yet powerful architecture consisting of core smart contracts deployed per chain and multiple integration pathways for different entities. The system is designed to capture MEV opportunities and distribute profits fairly across the ecosystem.
+
+### Core Components Per Chain
+
+Each blockchain network has two core Reflex contracts:
 
 ```mermaid
-graph TB
-    User[👤 User Transaction] --> DEX[🏪 DEX Pool]
-    DEX --> Plugin[🔌 Reflex Plugin]
-    Plugin --> Router[🎯 Reflex Router]
-    Router --> Quoter[💡 Reflex Quoter]
-    Quoter --> |Price Analysis| Router
-    Router --> Executor[⚡ Swap Executor]
-    Executor --> |Flash Loan| DEX
-    Executor --> Distributor[💰 Revenue Distributor]
-    Distributor --> Protocol[🏛️ Protocol Share]
-    Distributor --> UserReward[🎁 User Rewards]
-    Distributor --> Validator[⛏️ Validator Tips]
-
-    subgraph "Off-Chain"
-        Monitor[👁️ Event Monitor]
-        Analytics[📊 Analytics Engine]
+graph LR
+    subgraph "Core Smart Contracts (Per Chain)"
+        Router[⚡ Reflex Router<br/>Execution engine]
+        Quoter[🧠 Reflex Quoter<br/>Profit detection & path optimization]
+        Router <--> Quoter
     end
 
-    Plugin --> Monitor
-    Monitor --> Analytics
+    subgraph "Onchain Clients"
+        PluginDEX[🔌 Plugin-based DEX<br/>Automatic MEV capture via hooks]
+        RegularDEX[🏪 Standard DEX<br/>Direct router integration]
+    end
+
+    subgraph "Offchain Clients"
+        SDKApps[📱 SDK Applications<br/>DApps, MEV Bots]
+    end
+
+    %% Client connections to core contracts
+    PluginDEX -->|triggerBackrun| Router
+    RegularDEX -->|triggerBackrun| Router
+    SDKApps -->|backrunExecute| Router
+```
+
+### Router Entry Points
+
+The **Reflex Router** has two main entry points for MEV capture:
+
+#### 1. `triggerBackrun()` - Automatic MEV Capture
+
+- **Called by**: Plugin contracts or protocol contracts
+- **When**: After user swaps that create arbitrage opportunities
+- **Purpose**: Capture MEV from detected price discrepancies
+- **Returns**: Profit amount and token to the specified recipient
+
+#### 2. `backrunExecute()` - Protected Transaction Execution
+
+- **Called by**: Client applications via SDK or custom integrations
+- **When**: Before executing a transaction that might be front-run
+- **Purpose**: Execute transaction and immediately capture any MEV opportunities
+- **Returns**: Transaction results plus captured MEV profits
+
+### Entity Roles & Interactions
+
+```mermaid
+graph LR
+    subgraph "Smart Contracts"
+        SC1[🎯 Reflex Router]
+        SC2[� Reflex Quoter]
+        SC3[🔌 Plugin Contracts]
+        SC4[🏛️ Protocol Contracts]
+    end
+
+    subgraph "Users"
+        U1[👤 Traders]
+        U2[💰 LP Providers]
+        U3[🏢 Protocol Teams]
+    end
+
+    subgraph "Applications"
+        A1[� DApps]
+        A2[🤖 MEV Bots]
+        A3[🖥️ Protocol UIs]
+    end
+
+    subgraph "Infrastructure"
+        I1[⛏️ Validators]
+        I2[🌐 RPC Providers]
+        I3[📊 Indexers]
+    end
+
+    %% Smart Contract interactions
+    SC3 --> SC1
+    SC4 --> SC1
+    SC1 <--> SC2
+
+    %% User interactions
+    U1 --> A1
+    U1 --> SC3
+    U2 --> SC4
+    U3 --> SC4
+
+    %% Application interactions
+    A1 --> SC1
+    A2 --> SC1
+    A3 --> SC1
+
+    %% Profit flows
+    SC1 --> U1
+    SC1 --> U2
+    SC1 --> U3
+    SC1 --> I1
 ```
 
 ## 🧩 Core Components
 
 ### 1. Reflex Router
 
-The central orchestrator that coordinates all MEV capture activities.
+The central execution engine that coordinates all MEV capture activities. **One instance deployed per blockchain.**
 
 **Key Responsibilities:**
 
-- Receives backrun triggers from plugins
+- Executes MEV capture through two main entry points
 - Coordinates with the quoter for profitability analysis
-- Executes arbitrage trades through flash loans
-- Manages revenue distribution
+- Manages flash loan execution for arbitrage trades
+- Handles revenue distribution to configured recipients
+- Maintains security through reentrancy protection
 
-**Core Functions:**
+**Main Entry Points:**
 
 ```solidity
+// Automatic MEV capture (called by plugins/protocols)
 function triggerBackrun(
     bytes32 triggerPoolId,
     uint112 swapAmountIn,
@@ -56,64 +132,88 @@ function triggerBackrun(
     address recipient,
     bytes32 configId
 ) external returns (uint256 profit, address profitToken);
+
+// Protected transaction execution (called by clients)
+function backrunExecute(
+    address target,
+    bytes calldata data,
+    bytes32 configId
+) external payable returns (uint256 profit, address profitToken);
 ```
 
 ### 2. Reflex Quoter
 
-The pricing engine that determines arbitrage opportunities and optimal execution paths.
+The pricing and analysis engine that determines MEV opportunities. **One instance deployed per blockchain.**
 
 **Key Responsibilities:**
 
-- Analyzes price differences across DEX pools
-- Calculates optimal arbitrage routes
-- Estimates gas costs and profitability
-- Provides execution parameters
+- Analyzes price differences across DEX pools in real-time
+- Calculates optimal arbitrage routes and execution paths
+- Estimates gas costs and net profitability
+- Provides execution parameters to the router
+- Caches route data for efficiency
 
-**Analysis Process:**
+**Analysis Workflow:**
 
 ```mermaid
 graph LR
-    Input[🎯 Trigger Pool] --> Analysis[📊 Price Analysis]
-    Analysis --> Routes[🛣️ Route Discovery]
-    Routes --> Profitability[💰 Profit Calculation]
-    Profitability --> Execution[⚡ Execution Plan]
+    TriggerPool[🎯 Trigger Pool] --> PriceCheck[📊 Price Analysis]
+    PriceCheck --> RouteFind[🛣️ Route Discovery]
+    RouteFind --> GasEst[⛽ Gas Estimation]
+    GasEst --> ProfitCalc[💰 Profit Calculation]
+    ProfitCalc --> ExecutionPlan[⚡ Execution Parameters]
 ```
 
-### 3. DEX Plugins
+### 3. Integration Contracts
 
-Lightweight contracts that integrate with existing DEX protocols.
+Reflex integrates with existing protocols through various contract patterns:
+
+#### Plugin Contracts
+
+Lightweight contracts that integrate with DEX protocols using hooks or callbacks:
 
 **Key Responsibilities:**
 
-- Monitor swap events in real-time
-- Trigger backrun opportunities
-- Implement protocol-specific logic
-- Handle callback mechanisms
+- Monitor swap events in specific DEX pools
+- Automatically trigger MEV capture via `triggerBackrun()`
+- Handle protocol-specific callback mechanisms
+- Implement threshold and configuration logic
 
 **Plugin Types:**
 
-- **UniswapV2Plugin**: For UniswapV2-style AMMs
+- **UniswapV2Plugin**: For AMMs with swap callbacks
 - **UniswapV3Plugin**: For concentrated liquidity pools
 - **CurvePlugin**: For stable coin pools
-- **CustomPlugin**: For proprietary AMMs
+- **CustomPlugin**: For proprietary AMM protocols
 
-### 4. Revenue Distributor
+#### Direct Protocol Integration
 
-Manages the fair distribution of captured MEV across stakeholders.
+Protocols can integrate Reflex directly into their core contracts:
 
 **Key Responsibilities:**
 
-- Configurable profit sharing
-- Multi-recipient distributions
-- Dust handling
-- Event emission for transparency
+- Call router methods directly from protocol logic
+- Manage custom revenue sharing configurations
+- Implement protocol-specific MEV capture strategies
+- Handle both `triggerBackrun()` and `backrunExecute()` patterns
 
-**Distribution Models:**
+### 4. Client Applications
 
-- **Fixed Percentage**: Static allocation percentages
-- **Dynamic Sharing**: Allocation based on contribution
-- **Tiered System**: Different rates for different users
-- **Time-based**: Rewards that change over time
+Applications that interact with Reflex through the TypeScript SDK:
+
+**Application Types:**
+
+- **DApp Frontends**: Protect users from MEV while capturing profits
+- **MEV Bots**: Custom strategies for professional MEV extraction
+- **Protocol UIs**: Integrated MEV capture in protocol interfaces
+- **Trading Tools**: Enhanced trading with automatic MEV protection
+
+**SDK Capabilities:**
+
+- Event monitoring and opportunity detection
+- Transaction simulation and profit estimation
+- Automated MEV capture execution
+- Multi-chain deployment management
 
 ## 🔄 Transaction Flow
 
