@@ -102,7 +102,22 @@ For detailed setup and usage instructions, see the individual package READMEs:
 - [Core Documentation](/core/README.md) - Smart contracts, deployment, and testing
 - [SDK Documentation](/sdk/README.md) - TypeScript integration and examples
 
+## 📚 Documentation
+
+Comprehensive documentation is available in the [`/docs`](./docs) directory:
+
+- **[🏗️ Architecture Overview](./docs/ARCHITECTURE.md)** - System design and component interactions
+- **[🔌 Integration Guide](./docs/INTEGRATION.md)** - How to integrate Reflex into your protocol
+- **[📖 API Reference](./docs/API.md)** - Complete API documentation for contracts and SDK
+- **[🛡️ Security Policy](./docs/SECURITY.md)** - Security guidelines and vulnerability reporting
+- **[🤝 Contributing Guide](./docs/CONTRIBUTING.md)** - Development setup and contribution guidelines
+- **[📋 Changelog](./docs/CHANGELOG.md)** - Version history and release notes
+
 ## 🤝 Contributing
+
+We welcome contributions from the community! Please see our [Contributing Guide](./docs/CONTRIBUTING.md) for detailed instructions.
+
+**Quick start:**
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -112,6 +127,8 @@ For detailed setup and usage instructions, see the individual package READMEs:
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
 
+For detailed development setup, testing procedures, and coding standards, see [CONTRIBUTING.md](./docs/CONTRIBUTING.md).
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -120,14 +137,25 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [OpenZeppelin](https://github.com/OpenZeppelin/openzeppelin-contracts) - Security and utility contracts
 - [Foundry](https://github.com/foundry-rs/foundry) - Development framework
+- [Algebra Protocol](https://github.com/cryptoalgebra/AlgebraV1.9) - DEX infrastructure
 
-## 📞 Support
+## 📞 Support & Community
 
-For questions, issues, or contributions, please:
+For questions, issues, or contributions:
 
-- Open an issue on GitHub
-- Check the package-specific documentation for detailed usage
-- Review the test suites for implementation examples
+- **📋 Issues**: [Open an issue](https://github.com/reflex-mev/reflex/issues/new/choose) for bugs or feature requests
+- **💬 Discussions**: [GitHub Discussions](https://github.com/reflex-mev/reflex/discussions) for questions and ideas
+- **📖 Documentation**: Check our [comprehensive docs](./docs) for detailed guides
+- **🔍 Examples**: Review the [examples directory](./examples) for implementation patterns
+- **🛡️ Security**: Follow our [Security Policy](./docs/SECURITY.md) for vulnerability reports
+
+## 🏷️ Badges & Status
+
+![Build Status](https://github.com/reflex-mev/reflex/workflows/CI/badge.svg)
+![Coverage](https://codecov.io/gh/reflex-mev/reflex/branch/main/graph/badge.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+![Version](https://img.shields.io/github/v/release/reflex-mev/reflex)
+![Last Commit](https://img.shields.io/github/last-commit/reflex-mev/reflex)
 
 ---
 
