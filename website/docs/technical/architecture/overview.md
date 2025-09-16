@@ -46,30 +46,19 @@ graph LR
     SDKApps -->|backrunExecute| Router
 ```
 
-#### Core Components
-
 **Reflex Router** - The central execution engine that coordinates all MEV capture activities. Handles both automatic MEV capture through `triggerBackrun()` and protected transaction execution through `backrunExecute()`.
 
 **Reflex Quoter** - The analysis engine that detects MEV opportunities by analyzing price differences across DEX pools, calculating optimal arbitrage routes, and estimating profitability.
 
 **Onchain Clients** - Smart contracts that integrate directly with Reflex:
+
 - Plugin-based DEXes use hooks to automatically capture MEV after user swaps
 - Standard DEXes integrate the router directly into their core contracts
 
 **Offchain Clients** - Applications that use the Reflex SDK:
+
 - DApps protect users from MEV while capturing profits
 - MEV Bots implement custom strategies for professional MEV extraction
-
-### Router Entry Points
-
-The **Reflex Router** has two main entry points for MEV capture:
-
-#### 1. `triggerBackrun()` - Automatic MEV Capture
-
-- **Called by**: Plugin contracts or protocol contracts
-- **When**: After user swaps that create arbitrage opportunities
-- **Purpose**: Capture MEV from detected price discrepancies
-- **Returns**: Profit amount and token to the specified recipient
 
 ## 🧩 Core Components
 
@@ -84,26 +73,6 @@ The central execution engine that coordinates all MEV capture activities. **One 
 - Manages flash loan execution for arbitrage trades
 - Handles revenue distribution to configured recipients
 - Maintains security through reentrancy protection
-
-**Main Entry Points:**
-
-```solidity
-// Automatic MEV capture (called by plugins/protocols)
-function triggerBackrun(
-    bytes32 triggerPoolId,
-    uint112 swapAmountIn,
-    bool token0In,
-    address recipient,
-    bytes32 configId
-) external returns (uint256 profit, address profitToken);
-
-// Protected transaction execution (called by clients)
-function backrunExecute(
-    address target,
-    bytes calldata data,
-    bytes32 configId
-) external payable returns (uint256 profit, address profitToken);
-```
 
 ### 2. Reflex Quoter
 
@@ -121,59 +90,30 @@ The pricing and analysis engine that determines MEV opportunities. **One instanc
 
 ```mermaid
 graph LR
-    TriggerPool[🎯 Trigger Pool] --> PriceCheck[📊 Price Analysis]
+    TriggerPool[🎯 Trigger] --> PriceCheck[📊 Analysis]
     PriceCheck --> RouteFind[🛣️ Route Discovery]
     RouteFind --> GasEst[⛽ Gas Estimation]
     GasEst --> ProfitCalc[💰 Profit Calculation]
     ProfitCalc --> ExecutionPlan[⚡ Execution Parameters]
 ```
 
-### 3. Integration Contracts
+### 3. Integration Types
 
-Reflex integrates with existing protocols through various contract patterns:
+Reflex supports three main integration patterns to accommodate different use cases:
 
-#### Plugin Contracts
+**Plugin-based Integration** - Lightweight contracts that use DEX hooks or callbacks to automatically trigger MEV capture after user swaps. Ideal for existing DEX protocols that want to add MEV capture without modifying core contracts.
 
-Lightweight contracts that integrate with DEX protocols using hooks or callbacks:
+**Direct Integration** - DEX protocols integrate Reflex router calls directly into their core smart contracts. Provides maximum control and customization for revenue sharing and MEV strategies.
 
-**Key Responsibilities:**
+**SDK Integration** - Applications use the TypeScript SDK to interact with Reflex. Perfect for DApp frontends, MEV bots, trading tools, and any offchain application that wants to protect users or implement custom MEV strategies.
 
-- Monitor swap events in specific DEX pools
-- Automatically trigger MEV capture via `triggerBackrun()`
-- Handle protocol-specific callback mechanisms
-- Implement threshold and configuration logic
-
-**Plugin Types:**
-
-- **UniswapV2Plugin**: For AMMs with swap callbacks
-- **UniswapV3Plugin**: For concentrated liquidity pools
-- **CurvePlugin**: For stable coin pools
-- **CustomPlugin**: For proprietary AMM protocols
-
-#### Direct Protocol Integration
-
-Protocols can integrate Reflex directly into their core contracts:
-
-**Key Responsibilities:**
-
-- Call router methods directly from protocol logic
-- Manage custom revenue sharing configurations
-- Implement protocol-specific MEV capture strategies
-- Handle both `triggerBackrun()` and `backrunExecute()` patterns
-
-### 4. Client Applications
-
-Applications that interact with Reflex through the TypeScript SDK:
-
-**Application Types:**
-
+#### SDK Application Types:
 - **DApp Frontends**: Protect users from MEV while capturing profits
 - **MEV Bots**: Custom strategies for professional MEV extraction
 - **Protocol UIs**: Integrated MEV capture in protocol interfaces
 - **Trading Tools**: Enhanced trading with automatic MEV protection
 
-**SDK Capabilities:**
-
+#### SDK Capabilities:
 - Event monitoring and opportunity detection
 - Transaction simulation and profit estimation
 - Automated MEV capture execution

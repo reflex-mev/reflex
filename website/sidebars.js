@@ -38,7 +38,10 @@ const sidebars = {
         {
           type: "category",
           label: "API Reference",
-          items: ["technical/api/smart-contracts", "technical/api/sdk-reference"],
+          items: [
+            "technical/api/smart-contracts",
+            "technical/api/sdk-reference",
+          ],
         },
         {
           type: "category",
