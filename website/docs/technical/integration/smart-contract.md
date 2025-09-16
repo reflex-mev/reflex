@@ -60,21 +60,40 @@ function executeSwapWithMEV(
 
 #### 3. Revenue Configuration
 
+Revenue sharing configurations are managed by the Reflex Protocol team. For detailed information on how to set up custom revenue sharing, see the [Revenue Configuration Guide](./revenue-configuration).
+
+**Quick Summary:**
+1. **Contact Reflex Protocol** with your desired revenue sharing structure
+2. **Receive your configId** after configuration is set up by the Reflex team  
+3. **Use the configId** in your contract calls
+
 ```solidity
-function setupRevenueSharing() external onlyOwner {
-    bytes32 configId = keccak256("YOUR_PROTOCOL_CONFIG");
+contract YourProtocol {
+    // ConfigId provided by Reflex Protocol team
+    bytes32 public immutable CONFIG_ID;
 
-    address[] memory recipients = new address[](3);
-    recipients[0] = protocolTreasury;
-    recipients[1] = userRewardsPool;
-    recipients[2] = validatorTips;
+    constructor(address _reflexRouter, bytes32 _configId) {
+        reflexRouter = IReflexRouter(_reflexRouter);
+        CONFIG_ID = _configId;
+    }
 
-    uint256[] memory shares = new uint256[](3);
-    shares[0] = 40; // 40% to protocol
-    shares[1] = 50; // 50% to users
-    shares[2] = 10; // 10% to validators
+    function executeSwapWithCustomConfig(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn
+    ) external {
+        // Execute your core swap logic
+        uint256 amountOut = _executeSwap(tokenIn, tokenOut, amountIn);
 
-    reflexRouter.configureRevenue(configId, recipients, shares);
+        // Use your custom configId
+        reflexRouter.triggerBackrun(
+            bytes32(uint256(uint160(address(this)))),
+            uint112(amountIn / 20),
+            tokenIn < tokenOut,
+            msg.sender,
+            CONFIG_ID // Your custom config provided by Reflex
+        );
+    }
 }
 ```
 
@@ -84,54 +103,14 @@ function setupRevenueSharing() external onlyOwner {
 
 Plugin-based integration uses lightweight contracts that hook into your existing DEX architecture. This is perfect for protocols that already have callback systems or want minimal changes to existing code.
 
-### UniswapV2-Style Plugin
+### Algebra-Based Plugin
 
 ```solidity
 pragma solidity ^0.8.19;
 
 import "@reflex/contracts/ReflexAfterSwap.sol";
 
-contract UniV2ReflexPlugin is ReflexAfterSwap {
-    uint256 public constant MIN_THRESHOLD = 1e18;
-    bytes32 public immutable CONFIG_ID;
-
-    constructor(
-        address _reflexRouter,
-        address _pool,
-        bytes32 _configId
-    ) ReflexAfterSwap(_reflexRouter, _pool) {
-        CONFIG_ID = _configId;
-    }
-
-    function afterSwap(
-        address sender,
-        uint256 amount0,
-        uint256 amount1,
-        bytes calldata data
-    ) external override onlyPool {
-        uint256 swapAmount = amount0 > 0 ? amount0 : amount1;
-
-        if (swapAmount >= MIN_THRESHOLD) {
-            reflexRouter.triggerBackrun(
-                bytes32(uint256(uint160(pool))),
-                uint112(swapAmount / 20), // 5% of swap
-                amount0 > 0,
-                sender,
-                CONFIG_ID
-            );
-        }
-    }
-}
-```
-
-### UniswapV3-Style Plugin
-
-```solidity
-pragma solidity ^0.8.19;
-
-import "@reflex/contracts/ReflexAfterSwap.sol";
-
-contract UniV3ReflexPlugin is ReflexAfterSwap {
+contract AlgebraReflexPlugin is ReflexAfterSwap {
     struct PluginConfig {
         uint256 minThreshold;
         uint256 backrunRatio; // Basis points
@@ -140,38 +119,48 @@ contract UniV3ReflexPlugin is ReflexAfterSwap {
     }
 
     PluginConfig public config;
+    bytes32 public immutable CONFIG_ID;
 
     constructor(
         address _reflexRouter,
-        address _pool
+        address _pool,
+        bytes32 _configId
     ) ReflexAfterSwap(_reflexRouter, _pool) {
         config.minThreshold = 1e18;
         config.backrunRatio = 500; // 5%
         config.enabled = true;
+        CONFIG_ID = _configId;
     }
 
     function afterSwap(
         address sender,
-        uint256 amount0,
-        uint256 amount1,
+        int256 amount0,
+        int256 amount1,
+        uint160 currentPrice,
+        uint128 currentLiquidity,
+        int24 currentTick,
         bytes calldata data
     ) external override onlyPool {
         if (!config.enabled || config.excludedUsers[sender]) {
             return;
         }
 
-        uint256 swapAmount = amount0 > 0 ? amount0 : amount1;
+        uint256 swapAmount = amount0 > 0 ? uint256(amount0) : uint256(-amount1);
 
         if (swapAmount >= config.minThreshold) {
             uint256 backrunAmount = (swapAmount * config.backrunRatio) / 10000;
 
-            reflexRouter.triggerBackrun(
+            try reflexRouter.triggerBackrun(
                 bytes32(uint256(uint160(pool))),
                 uint112(backrunAmount),
                 amount0 > 0,
                 sender,
-                bytes32(0) // Use default config
-            );
+                CONFIG_ID
+            ) returns (uint256 profit, address profitToken) {
+                emit MEVCaptured(sender, profit, profitToken);
+            } catch {
+                emit MEVCaptureFailed(sender, backrunAmount);
+            }
         }
     }
 
@@ -185,6 +174,14 @@ contract UniV3ReflexPlugin is ReflexAfterSwap {
         config.backrunRatio = _backrunRatio;
         config.enabled = _enabled;
     }
+
+    function excludeUser(address user, bool excluded) external onlyOwner {
+        config.excludedUsers[user] = excluded;
+    }
+
+    // Events
+    event MEVCaptured(address indexed user, uint256 profit, address profitToken);
+    event MEVCaptureFailed(address indexed user, uint256 attemptedAmount);
 }
 ```
 
@@ -232,9 +229,11 @@ contract YourPool {
 contract YourPoolFactory {
     address public immutable reflexRouter;
     mapping(address => address) public poolPlugins;
+    bytes32 public immutable defaultConfigId;
 
-    constructor(address _reflexRouter) {
+    constructor(address _reflexRouter, bytes32 _defaultConfigId) {
         reflexRouter = _reflexRouter;
+        defaultConfigId = _defaultConfigId;
     }
 
     function createPoolWithMEV(
@@ -245,11 +244,11 @@ contract YourPoolFactory {
         // Create pool
         pool = _createPool(tokenA, tokenB, fee);
 
-        // Deploy plugin
-        plugin = new UniV2ReflexPlugin(
+        // Deploy Algebra plugin with default config
+        plugin = new AlgebraReflexPlugin(
             reflexRouter,
             pool,
-            keccak256(abi.encodePacked("POOL_", pool))
+            defaultConfigId
         );
 
         // Configure pool to use plugin
@@ -259,67 +258,29 @@ contract YourPoolFactory {
 
         emit PoolCreatedWithMEV(pool, plugin);
     }
-}
-```
 
-## Deployment Guide
+    function createPoolWithCustomConfig(
+        address tokenA,
+        address tokenB,
+        uint24 fee,
+        bytes32 customConfigId
+    ) external returns (address pool, address plugin) {
+        // Create pool
+        pool = _createPool(tokenA, tokenB, fee);
 
-### 1. Deploy Plugin Contract
+        // Deploy plugin with custom config (provided by Reflex team)
+        plugin = new AlgebraReflexPlugin(
+            reflexRouter,
+            pool,
+            customConfigId
+        );
 
-```typescript
-// deploy-plugin.ts
-import { ethers } from "hardhat";
+        // Configure pool to use plugin
+        IYourPool(pool).setReflexPlugin(plugin);
 
-async function deployPlugin() {
-  const [deployer] = await ethers.getSigners();
+        poolPlugins[pool] = plugin;
 
-  const Plugin = await ethers.getContractFactory("UniV2ReflexPlugin");
-  const plugin = await Plugin.deploy(
-    "0x742d35Cc6634C0532925a3b8D598C4B4B3A3A3A3", // Reflex Router
-    "0xYourPoolAddress",
-    ethers.id("YOUR_CONFIG_ID")
-  );
-
-  await plugin.waitForDeployment();
-
-  console.log("Plugin deployed to:", await plugin.getAddress());
-  return plugin;
-}
-```
-
-### 2. Configure Revenue Sharing
-
-```typescript
-// configure-revenue.ts
-async function configureRevenue() {
-  const reflexRouter = await ethers.getContractAt(
-    "ReflexRouter",
-    "0x742d35Cc6634C0532925a3b8D598C4B4B3A3A3A3"
-  );
-
-  const configId = ethers.id("YOUR_CONFIG_ID");
-  const recipients = ["0xProtocolTreasury", "0xUserRewards", "0xValidatorTips"];
-  const shares = [40, 50, 10]; // Percentages
-
-  await reflexRouter.configureRevenue(configId, recipients, shares);
-}
-```
-
-### 3. Integration Testing
-
-```solidity
-// Test your integration
-contract PluginIntegrationTest {
-    function testMEVCapture() public {
-        // 1. Execute a large swap
-        pool.swap(largeAmount, 0, user, "");
-
-        // 2. Verify plugin was triggered
-        assertEq(plugin.lastTriggerBlock(), block.number);
-
-        // 3. Check profit distribution
-        uint256 userBalance = token.balanceOf(user);
-        assertGt(userBalance, initialBalance);
+        emit PoolCreatedWithMEV(pool, plugin);
     }
 }
 ```
@@ -349,5 +310,6 @@ contract PluginIntegrationTest {
 
 ---
 
+For revenue configuration details, see the [Revenue Configuration Guide](./revenue-configuration).
 For SDK integration, see the [SDK Integration Guide](./sdk-integration).
 For detailed examples, check out the [Basic Backrun Example](../examples/basic-backrun).

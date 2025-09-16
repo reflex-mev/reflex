@@ -115,30 +115,6 @@ interface BackrunResult {
 }
 ```
 
-### `getQuote()`
-
-Get a quote for potential MEV capture.
-
-```typescript
-const quote = await reflex.getQuote({
-    tokenIn: '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI
-    tokenOut: '0xA0b86a33E6417fBB8C6f693CC7C6c2B6B0CF9Dc4', // USDC
-    amountIn: ethers.parseEther('1000'),
-    pools: ['0x123...', '0x456...'],
-});
-```
-
-**Returns:**
-```typescript
-interface Quote {
-    amountOut: bigint;
-    priceImpact: number;
-    route: string[];
-    gasEstimate: bigint;
-    expectedProfit: bigint;
-}
-```
-
 ## 💰 Revenue Distribution
 
 ### Create Configuration
