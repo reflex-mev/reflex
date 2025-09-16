@@ -153,7 +153,7 @@ sequenceDiagram
     end
 ```
 
-## 💡 MEV Capture Strategies
+## 💡 Capabilities
 
 ### 1. Sandwich Attack Prevention
 
@@ -167,129 +167,65 @@ graph LR
     GoodMEV --> Reward[🎁 User Rewards]
 ```
 
-### 2. Arbitrage Opportunities
+### 2. Slippage Correction
 
-Capture cross-DEX price differences:
-
-```mermaid
-graph TB
-    Price1[DEX A: $100] --> Comparison{Price Check}
-    Price2[DEX B: $102] --> Comparison
-    Comparison --> |Profitable| Execute[Execute Arbitrage]
-    Comparison --> |Not Profitable| Wait[Wait for Better Opportunity]
-    Execute --> Profit[2% Profit]
-```
-
-### 3. Just-In-Time Liquidity
-
-Provide liquidity exactly when needed:
+Detect and correct price slippage by capturing arbitrage opportunities:
 
 ```mermaid
 graph LR
-    Swap[Large Swap Detected] --> Provide[Provide JIT Liquidity]
-    Provide --> Capture[Capture Fees]
-    Capture --> Remove[Remove Liquidity]
-    Remove --> Profit[Net Profit]
+    UserSwap[User Swap] --> PriceImpact[Price Impact Created]
+    PriceImpact --> Detection[Slippage Detection]
+    Detection --> Correction[Arbitrage Execution]
+    Correction --> Profit[Captured Profit]
+    Profit --> UserShare[Shared with User]
 ```
 
 ## 🛡️ Security Architecture
 
-### Multi-Layer Security
+### Reflex Protocol Security
 
-```mermaid
-graph TB
-    subgraph "Contract Level"
-        Reentrancy[🔒 Reentrancy Guards]
-        AccessControl[👮 Access Control]
-        InputValidation[✅ Input Validation]
-    end
+Reflex Protocol implements multiple security layers to ensure safe and reliable MEV operations:
 
-    subgraph "Economic Level"
-        SlippageProtection[📉 Slippage Protection]
-        MEVProtection[🛡️ MEV Protection]
-        ProfitThresholds[💰 Profit Thresholds]
-    end
+**Failsafe Mechanisms** - Built-in safety checks that prevent execution if profitability thresholds aren't met or if gas costs exceed expected limits. All operations can be safely reverted without affecting user transactions.
 
-    subgraph "Operational Level"
-        CircuitBreakers[🚨 Circuit Breakers]
-        EmergencyPause[⏸️ Emergency Pause]
-        AdminControls[⚙️ Admin Controls]
-    end
-```
+**Independent Operation** - Reflex operates completely independently from protocol and user swaps. The system has no access to user funds or protocol treasuries, only capturing MEV through legitimate arbitrage opportunities using loan based swaps.
+
+**Reentrancy Protection** - All router functions implement strict reentrancy guards to prevent malicious contracts from exploiting callback mechanisms during flash loan executions.
+
+**Access Controls** - Granular permission system ensures only authorized contracts can trigger specific functions, with different access levels for plugins, direct integrations, and administrative operations.
 
 ### Risk Mitigation
 
-1. **Flash Loan Attacks**: Protected by reentrancy guards and callback validation
-2. **Front-running**: Beneficially redirected to users through MEV capture
-3. **Oracle Manipulation**: Multiple price sources and sanity checks
-4. **Smart Contract Bugs**: Comprehensive testing and formal verification
+1. **Reentrancy Protection**: Protected by reentrancy guards and callback validation
+2. **Unauthorized Access**: Role-based permissions prevent malicious contract interactions
+3. **Fund Safety**: No direct access to user or protocol funds - only captures public arbitrage opportunities
+4. **Execution Failures**: Comprehensive failsafe mechanisms ensure failed MEV attempts don't impact user transactions
 
-## 📊 Performance Characteristics
+## 🔧 Gas Optimization
 
-### Throughput
+### Efficient Profit Detection
 
-- **Transaction Processing**: 1000+ TPS capability
-- **Event Monitoring**: Real-time block processing
-- **Route Calculation**: Sub-second quote generation
-- **Gas Efficiency**: 40-60% less gas than competing solutions
+Reflex Protocol implements a multi-stage gas optimization strategy that minimizes costs while maximizing MEV capture efficiency:
 
-### Latency
+**Stage 1: Profit Check (Minimal Gas)** - Initial profitability assessment adds virtually no gas overhead. This lightweight check determines if an MEV opportunity exists without committing to expensive calculations.
 
-- **Block Detection**: `<100ms`
-- **Opportunity Analysis**: `<200ms`
-- **Transaction Submission**: `<300ms`
-- **Total MEV Capture Time**: `<600ms`
+**Stage 2: Route Optimization (Moderate Gas)** - When profitable opportunities are detected, the system performs detailed route calculations and profit estimations. This includes optimal path discovery, gas cost analysis, and net profit calculations.
 
-### Scalability
+**Stage 3: Swap Execution (Variable Gas)** - Actual MEV capture execution with gas costs dependent on the selected arbitrage route. Multi-hop swaps require additional gas per DEX interaction.
 
-- **Horizontal Scaling**: Multiple quoter instances
-- **Load Balancing**: Distributed across regions
-- **Caching**: Aggressive route and price caching
-- **Batch Processing**: Multiple opportunities per transaction
+### Gas Economics
+
+**Profitability Guarantee** - All executed backruns are profitable by design, ensuring gas costs are always covered by captured MEV profits. Failed profitability checks prevent unprofitable executions.
+
+**User Gas Rebates** - A portion of captured MEV profits is automatically shared with users to offset their original transaction gas costs, providing net positive value.
+
+### Gas Limit Recommendations
+
+**Recommended Gas Limit** - For optimal MEV capture, we recommend setting a gas limit of 1.5M gas for most transactions, this provides sufficient headroom for profitable MEV operations.
 
 ## 🌐 Multi-Chain Architecture
 
-### Chain-Agnostic Design
-
-Reflex is designed to work across multiple blockchain networks:
-
-```mermaid
-graph TB
-    Core[🧠 Core Protocol] --> Ethereum[🔷 Ethereum]
-    Core --> Polygon[🟣 Polygon]
-    Core --> Arbitrum[🔵 Arbitrum]
-    Core --> Optimism[🔴 Optimism]
-    Core --> BSC[🟡 BSC]
-
-    subgraph "Cross-Chain MEV"
-        Bridge1[🌉 Bridge Arbitrage]
-        Bridge2[🌉 Cross-Chain Flash Loans]
-        Bridge3[🌉 Multi-Chain Routing]
-    end
-```
-
-### Network-Specific Optimizations
-
-- **Ethereum**: Focus on high-value arbitrage
-- **L2 Networks**: Low-cost, high-frequency strategies
-- **Side Chains**: Specialized DeFi protocol integration
-- **Cross-Chain**: Bridge arbitrage opportunities
-
-## 🔮 Future Enhancements
-
-### Planned Features
-
-1. **AI-Powered Quoter**: Machine learning for opportunity prediction
-2. **Cross-Chain MEV**: Arbitrage across different networks
-3. **Privacy Features**: Zero-knowledge MEV strategies
-4. **Governance Integration**: Community-driven parameter updates
-
-### Research Areas
-
-- **Intent-based Architecture**: User intent fulfillment optimization
-- **Collaborative MEV**: Multi-party MEV sharing protocols
-- **Sustainable MEV**: Long-term ecosystem health focus
-- **Regulatory Compliance**: Privacy-preserving compliance tools
+Reflex is designed to work across multiple blockchain networks and supported by over 180 EVM chains.
 
 ---
 
