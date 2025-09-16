@@ -16,7 +16,7 @@ Reflex is an on-chain MEV capture engine designed to reclaim backrun profits for
 - **Secure by design**: Reflex is fully non-custodial, operating independently of user funds and requiring no approval access.
 - **Cross-ecosystem**: works across EVM protocols, Solana, and L2 environments.
 
-## Part I – Protocol Integrations
+## Protocol Integrations
 
 ### Overview
 
@@ -35,9 +35,9 @@ Protocols can integrate Reflex at different levels of depth. From pool-level hoo
 
 Arbitrage is inevitable, but today it benefits external actors who have no alignment with your protocol. Reflex ensures the same arbitrage happens within your ecosystem and its profits are redistributed according to your rules.
 
-## Integration Types
+### Integration Types
 
-### 1. Protocol Hooks
+#### 1. Protocol Hooks
 
 Reflex integrates natively with modern hook/plugin architectures:
 
@@ -45,22 +45,40 @@ Reflex integrates natively with modern hook/plugin architectures:
 - Algebra Integral plugins
 - Uniswap v4 hooks
 
-**How it works:**
+**_How it works:_**
 
 When a user executes a swap, Reflex's integrated `afterSwap` is triggered to capture arbitrage opportunities across pools and protocols, with profits routed back to the protocol treasury or designated addresses.
 
-### 2. Router Integration
+#### 2. Router Integration
 
 For DEXs that don't use a hook system, Reflex can integrate directly into the router contract. This method enables the router to trigger Reflex opportunities whenever trades pass through it.
 
-### 3. EIP-7702 (Account Abstraction Bundles)
+#### 3. EIP-7702 (Account Abstraction Bundles)
 
 Reflex supports account abstraction environments where trades can be wrapped into bundles. This allows traders and protocols to:
 
 - Embed Reflex backruns into user-submitted bundles.
 - Ensure arbitrage profits are redirected back on-chain.
 
-## Getting Started
+#### 4. SDK Integration
+
+Use the TypeScript SDK for custom MEV strategies and manual triggers. This approach gives you full control over when and how backruns are executed, perfect for building sophisticated MEV bots, custom trading strategies, or integrating Reflex into existing applications with specific requirements.
+
+### Supported Protocols
+
+Reflex is protocol-agnostic and already runs with leading DEXs and aggregators across EVM ecosystem.
+
+### Getting Started
+
+1. Contact us to request an API key.
+
+2. Configure payout addresses.
+
+3. Plug and play integration (hook, router, sdk).
+
+4. Start capturing MEV profits immediately.
+
+## Technical Documentation
 
 Ready to integrate Reflex into your protocol? Check out our comprehensive guides:
 
