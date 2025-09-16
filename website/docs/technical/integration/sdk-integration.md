@@ -514,4 +514,4 @@ describe('MEV Integration', () => {
 ---
 
 For smart contract integration, see the [Smart Contract Integration Guide](./smart-contract).
-For complete examples, check out the [Integration Examples](./examples).
+For complete examples, check out the [Basic Backrun Example](../examples/basic-backrun).

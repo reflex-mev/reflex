@@ -592,17 +592,16 @@ if (process.env.DEBUG === "true") {
 
 Now that you have a basic backrun system working:
 
-1. **[Advanced Examples](uniswap-v3)** - Learn V3 integration
-2. **[Custom Strategies](custom-dex)** - Build custom MEV strategies
-3. **[Production Deployment](../integration/testing)** - Deploy to mainnet
-4. **[Monitoring & Analytics](../api/events)** - Track performance
+1. **Advanced Examples** - Learn V3 integration patterns
+2. **Custom Strategies** - Build custom MEV strategies
+3. **Production Deployment** - Deploy to mainnet with proper testing
+4. **Monitoring & Analytics** - Track performance with custom dashboards
 
 ## 📚 Additional Resources
 
-- [Reflex SDK Documentation](../api/typescript-sdk)
 - [Smart Contracts API](../api/smart-contracts)
 - [Integration Guide](../integration/overview)
-- [Security Best Practices](../security/best-practices)
+- [Security Overview](../security/overview)
 
 ---
 

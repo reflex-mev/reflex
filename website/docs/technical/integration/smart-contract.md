@@ -354,4 +354,4 @@ contract PluginIntegrationTest {
 ---
 
 For SDK integration, see the [SDK Integration Guide](./sdk-integration).
-For detailed examples, check out the [Integration Examples](./examples).
+For detailed examples, check out the [Basic Backrun Example](../examples/basic-backrun).
