@@ -13,9 +13,9 @@ The Reflex SDK provides a powerful and easy-to-use interface for building MEV-en
 ## Installation
 
 ```bash
-npm install @reflex/sdk ethers
+npm install @reflex-mev/sdk ethers
 # or
-yarn add @reflex/sdk ethers
+yarn add @reflex-mev/sdk ethers
 ```
 
 ## Quick Start
@@ -23,7 +23,7 @@ yarn add @reflex/sdk ethers
 ### Basic Setup
 
 ```typescript
-import { ReflexSDK } from "@reflex/sdk";
+import { ReflexSDK } from "@reflex-mev/sdk";
 import { ethers } from "ethers";
 
 // Initialize provider and signer
@@ -33,14 +33,9 @@ const provider = new ethers.JsonRpcProvider(
 const signer = new ethers.Wallet("YOUR_PRIVATE_KEY", provider);
 
 // Create SDK instance
-const reflex = new ReflexSDK({
-  provider,
-  signer,
-  chainId: 1, // Mainnet
-  options: {
-    gasLimit: 300000,
-    slippageTolerance: 0.005, // 0.5%
-  },
+const reflex = new ReflexSDK(provider, signer, {
+  routerAddress: "0xYourReflexRouterAddress",
+  defaultGasLimit: 300000n,
 });
 ```
 
@@ -51,7 +46,7 @@ const reflex = new ReflexSDK({
 ```typescript
 // React hook for MEV integration
 import { useState, useEffect, useCallback } from "react";
-import { ReflexSDK } from "@reflex/sdk";
+import { ReflexSDK } from "@reflex-mev/sdk";
 
 export function useReflexMEV(provider, signer) {
   const [reflex, setReflex] = useState(null);
@@ -63,22 +58,15 @@ export function useReflexMEV(provider, signer) {
 
   useEffect(() => {
     if (provider && signer) {
-      const reflexInstance = new ReflexSDK({
-        provider,
-        signer,
-        chainId: 1,
+      const reflexInstance = new ReflexSDK(provider, signer, {
+        routerAddress: "0xYourReflexRouterAddress",
+        defaultGasLimit: 500000n,
       });
 
       setReflex(reflexInstance);
 
-      // Listen for MEV events
-      reflexInstance.on("BackrunExecuted", (event) => {
-        setMevStats((prev) => ({
-          ...prev,
-          totalCaptured: prev.totalCaptured + event.profit,
-          userRewards: prev.userRewards + (event.profit * 3n) / 10n, // 30% to users
-        }));
-      });
+      // Note: Event listening would be implemented through provider event filters
+      // Example: Listen for BackrunExecuted events directly from the contract
     }
   }, [provider, signer]);
 
@@ -94,14 +82,14 @@ export function useReflexMEV(provider, signer) {
           callData: swapParams.swapCallData,
         };
 
-        // Prepare backrun parameters
+        // Prepare backrun parameters (array of BackrunParams)
         const backrunParams = [
           {
             triggerPoolId: swapParams.poolAddress,
             swapAmountIn: swapParams.amountIn / 20n, // 5% of swap
             token0In: swapParams.token0In,
             recipient: swapParams.user,
-            configId: swapParams.configId || ethers.ZeroHash,
+            configId: swapParams.configId,
           },
         ];
 
@@ -114,9 +102,9 @@ export function useReflexMEV(provider, signer) {
         return {
           success: result.success,
           transactionHash: result.transactionHash,
-          swapExecuted: result.success,
-          mevProfit: result.profits[0] || 0n,
-          profitToken: result.profitTokens[0],
+          returnData: result.returnData,
+          profits: result.profits,
+          profitTokens: result.profitTokens,
         };
       } catch (error) {
         console.error("Swap with MEV failed:", error);
@@ -163,13 +151,13 @@ export function MEVTradingInterface({ useReflexMEV }) {
         swapCallData: encodedSwapData, // Pre-encoded swap transaction
       });
 
-      if (result.success && result.mevProfit > 0n) {
+      if (result.success && result.profits.length > 0 && result.profits[0] > 0n) {
         showNotification({
           type: "success",
           title: "Swap Completed with MEV Bonus!",
           message: `You received an additional ${ethers.formatEther(
-            result.mevProfit
-          )} ETH from MEV capture`,
+            result.profits[0]
+          )} ${result.profitTokens[0]} from MEV capture`,
         });
       }
     } catch (error) {
@@ -223,46 +211,42 @@ export function MEVTradingInterface({ useReflexMEV }) {
 
 ```typescript
 // Advanced gas optimization
-const reflex = new ReflexSDK({
-  provider,
-  signer,
-  chainId: 1,
-  options: {
-    gasStrategy: {
-      type: "dynamic",
-      priorityFeeMultiplier: 1.1,
-      maxFeePerGasMultiplier: 1.2,
-      gasLimitMultiplier: 1.1,
-    },
-    mevSettings: {
-      maxSlippage: 0.005,
-      minProfitThreshold: ethers.parseEther("0.01"),
-      maxGasPrice: ethers.parseUnits("100", "gwei"),
-    },
-  },
+const reflex = new ReflexSDK(provider, signer, {
+  routerAddress: "0xYourReflexRouterAddress",
+  defaultGasLimit: 500000n,
+  gasPriceMultiplier: 1.2,
 });
+
+// Transaction options can be passed to backrunedExecute
+const options = {
+  gasLimit: 600000n,
+  maxFeePerGas: ethers.parseUnits("100", "gwei"),
+  maxPriorityFeePerGas: ethers.parseUnits("2", "gwei"),
+};
 ```
 
 ### Event Monitoring
 
 ```typescript
-// Comprehensive event monitoring
-reflex.on("BackrunExecuted", (event) => {
+// Event monitoring through provider
+import { Interface } from "ethers";
+import { REFLEX_ROUTER_ABI } from "@reflex-mev/sdk";
+
+const routerInterface = new Interface(REFLEX_ROUTER_ABI);
+
+// Listen for BackrunExecuted events
+provider.on({
+  address: reflexConfig.routerAddress,
+  topics: [routerInterface.getEvent("BackrunExecuted").topicHash]
+}, (log) => {
+  const event = routerInterface.parseLog(log);
+  
   analytics.track("MEV_Captured", {
-    profit: event.profit,
-    pool: event.triggerPoolId,
-    recipient: event.recipient,
-    timestamp: event.timestamp,
+    profit: event.args.profit,
+    triggerPoolId: event.args.triggerPoolId,
+    recipient: event.args.recipient,
+    timestamp: Date.now(),
   });
-});
-
-reflex.on("BackrunFailed", (event) => {
-  console.warn("MEV capture failed:", event.reason);
-
-  // Implement retry logic or alerts
-  if (event.reason === "INSUFFICIENT_PROFIT") {
-    adjustProfitThreshold(event.triggerPoolId);
-  }
 });
 ```
 
@@ -272,42 +256,45 @@ reflex.on("BackrunFailed", (event) => {
 
 ```typescript
 // Test your integration
-import { createMockProvider, createTestWallet } from "@reflex/sdk/testing";
+import { ethers } from "ethers";
+import { ReflexSDK } from "@reflex-mev/sdk";
 
 describe("MEV Integration", () => {
   let reflex: ReflexSDK;
+  let provider: ethers.Provider;
+  let signer: ethers.Wallet;
 
   beforeEach(() => {
-    const provider = createMockProvider();
-    const wallet = createTestWallet();
+    // Create test provider and wallet
+    provider = new ethers.JsonRpcProvider("http://localhost:8545");
+    signer = new ethers.Wallet("0x" + "1".repeat(64), provider);
 
-    reflex = new ReflexSDK({
-      provider,
-      signer: wallet,
-      chainId: 31337, // Hardhat
-      options: { mockMode: true },
+    reflex = new ReflexSDK(provider, signer, {
+      routerAddress: "0x1234567890123456789012345678901234567890",
+      defaultGasLimit: 500000n,
     });
   });
 
   it("should capture MEV successfully", async () => {
     const executeParams = {
-      to: "0xTokenContract...",
-      value: 0,
-      data: "0x123...", // encoded swap data
+      target: "0x1234567890123456789012345678901234567890",
+      value: 0n,
+      callData: "0x123456", // encoded swap data
     };
 
-    const backrunParams = {
-      triggerPoolId: "0x123...",
+    const backrunParams = [{
+      triggerPoolId: "0x1234567890123456789012345678901234567890",
       swapAmountIn: ethers.parseEther("1"),
       token0In: true,
-      recipient: "0xUser...",
-      configId: ethers.ZeroHash,
-    };
+      recipient: "0x1234567890123456789012345678901234567890",
+      configId: "0x0000000000000000000000000000000000000000000000000000000000000000",
+    }];
 
     const result = await reflex.backrunedExecute(executeParams, backrunParams);
 
     expect(result.success).toBe(true);
-    expect(result.mevProfit).toBeGreaterThan(0n);
+    expect(result.profits.length).toBeGreaterThan(0);
+    expect(result.profits[0]).toBeGreaterThan(0n);
   });
 });
 ```
