@@ -1,10 +1,15 @@
 # Reflex Core Contracts
 
-![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue.svg)
+![Solidity](https://img.shields.io/badge/Solidity-0.8.205. **MEV Check**: System checks if MEV capture is enabled
+6. **Profit Extraction**: If enabled, triggers MEV capture through ReflexRouter with config ID
+7. **Config Resolution**: Router# When reflexRouter performs MEV capture - zero fee automatically applied
+reflexRouter.triggerBackrun() -> beforeSwap(reflexRouter, ...) -> fee = 0 (0%)ses config ID to determine profit distribution rules
+8. **Profit Distribution**: Captured profits are split according to the configuration
+9. **Failsafe**: Any errors are caught to prevent disruption.svg)
 ![Foundry](https://img.shields.io/badge/Built%20with-Foundry-red.svg)
-![Tests](https://img.shields.io/badge/Tests-368%20Passing-brightgreen.svg)
+![Tests](https://img.shields.io/badge/Tests-300%20Passing-brightgreen.svg)
 
-The core Solidity contracts that power the Reflex MEV capture engine, designed for seamless integration into DEX protocols and AMM systems.
+The core Solidity contracts that power the Reflex MEV capture engine, designed for seamless integration into DEX protocols and AMM systems. Instead of letting external actors extract value, Reflex routes that value back into the protocol environment.
 
 ## 🚀 Key Features
 
@@ -28,7 +33,7 @@ The core Solidity contracts that power the Reflex MEV capture engine, designed f
 
 - **Reentrancy Protection**: Built-in guards against reentrancy attacks
 - **Dust Handling**: Proper handling of token remainders to prevent value loss
-- **Comprehensive Testing**: 368+ tests covering all functionality and edge cases
+- **Comprehensive Testing**: 300+ tests covering all functionality and edge cases
 - **MIT Licensed**: Open source with permissive licensing
 
 ## 🏗️ Architecture
@@ -37,12 +42,13 @@ The core Solidity contracts that power the Reflex MEV capture engine, designed f
 
 #### `ReflexRouter`
 
-Main router contract handling backrun execution:
+Main router contract handling MEV capture execution:
 
-- Executes arbitrary calldata and triggers multiple backruns
+- Executes arbitrary calldata and triggers multiple MEV capture operations
 - Gas-optimized execution paths
-- Built-in reentrancy protection
+- Built-in graceful reentrancy protection
 - Event emission for monitoring and analytics
+- Integrated revenue distribution with ConfigurableRevenueDistributor
 
 #### `ReflexAfterSwap`
 
@@ -180,7 +186,7 @@ forge test
 
 ```
 src/
-├── ReflexRouter.sol                   # Main router with backrun functionality
+├── ReflexRouter.sol                   # Main router with MEV capture functionality
 ├── integrations/
 │   ├── algebra/
 │   │   └── full/
@@ -368,6 +374,10 @@ cast --help
 
 ## 📚 Additional Resources
 
+- [Reflex Documentation](https://reflex-mev.github.io/reflex) - Complete protocol documentation
+- [Integration Guide](https://reflex-mev.github.io/reflex/integration/overview) - How to integrate Reflex
+- [API Reference](https://reflex-mev.github.io/reflex/api/smart-contracts) - Smart contract API documentation
+- [Security Guide](https://reflex-mev.github.io/reflex/security) - Security considerations and best practices
 - [Foundry Book](https://book.getfoundry.sh/) - Comprehensive Foundry documentation
 - [Algebra Documentation](https://docs.algebra.finance/) - Algebra protocol documentation
 - [Solidity Documentation](https://docs.soliditylang.org/) - Solidity language reference
@@ -381,6 +391,18 @@ cast --help
 5. Commit your changes (`git commit -m 'Add amazing feature'`)
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
+
+For detailed contribution guidelines, see our [documentation](https://reflex-mev.github.io/reflex).
+
+## 📞 Support
+
+For questions, issues, or contributions:
+
+- **📋 Issues**: [Open an issue](https://github.com/reflex-mev/reflex/issues/new/choose) for bugs or feature requests
+- **📖 Documentation**: Check our [comprehensive docs](https://reflex-mev.github.io/reflex) for detailed guides
+- **🛡️ Security**: Follow our [Security Policy](https://reflex-mev.github.io/reflex/security) for vulnerability reports
+- **🐦 Twitter**: Follow [@ReflexMEV](https://x.com/ReflexMEV) for updates
+- **📧 Email**: Contact us at team@reflexmev.io
 
 ## 📄 License
 
