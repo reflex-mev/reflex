@@ -1,15 +1,10 @@
 # Reflex Core Contracts
 
-![Solidity](https://img.shields.io/badge/Solidity-0.8.205. **MEV Check**: System checks if MEV capture is enabled
-6. **Profit Extraction**: If enabled, triggers MEV capture through ReflexRouter with config ID
-7. **Config Resolution**: Router# When reflexRouter performs MEV capture - zero fee automatically applied
-reflexRouter.triggerBackrun() -> beforeSwap(reflexRouter, ...) -> fee = 0 (0%)ses config ID to determine profit distribution rules
-8. **Profit Distribution**: Captured profits are split according to the configuration
-9. **Failsafe**: Any errors are caught to prevent disruption.svg)
+![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue.svg)
 ![Foundry](https://img.shields.io/badge/Built%20with-Foundry-red.svg)
 ![Tests](https://img.shields.io/badge/Tests-300%20Passing-brightgreen.svg)
 
-The core Solidity contracts that power the Reflex MEV capture engine, designed for seamless integration into DEX protocols and AMM systems. Instead of letting external actors extract value, Reflex routes that value back into the protocol environment.
+The core Solidity contracts that power the Reflex MEV capture engine, designed for seamless integration into DEX protocols and AMM systems.
 
 ## 🚀 Key Features
 
