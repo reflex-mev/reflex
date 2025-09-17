@@ -20,11 +20,7 @@ const sidebars = {
       type: "category",
       label: "Technical Reference",
       items: [
-        {
-          type: "category",
-          label: "Architecture",
-          items: ["technical/architecture/overview"],
-        },
+        "technical/architecture/overview",
         {
           type: "category",
           label: "Integrations",
@@ -44,11 +40,7 @@ const sidebars = {
             "technical/api/sdk-reference",
           ],
         },
-        {
-          type: "category",
-          label: "Security",
-          items: ["technical/security/overview"],
-        },
+        "technical/security/overview",
         "technical/troubleshooting",
       ],
     },
