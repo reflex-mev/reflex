@@ -82,17 +82,17 @@ Reflex is protocol-agnostic and already runs with leading DEXs and aggregators a
 
 Ready to integrate Reflex into your protocol? Check out our comprehensive guides:
 
-- 📚 [**Installation Guide**](./technical/getting-started/installation) - Set up your development environment
-- 🚀 [**Quick Start**](./technical/getting-started/quick-start) - Get up and running in minutes
-- 🔗 [**Integration Guide**](./technical/integration/overview) - Step-by-step integration instructions
-- 📖 [**API Reference**](./technical/api/smart-contracts) - Complete contract documentation
+- � [**Integration Guide**](./technical/integration/overview) - Step-by-step integration instructions
+- � [**API Reference**](./technical/api/smart-contracts) - Complete contract documentation
+- 🏗️ [**Architecture**](./technical/architecture) - Understand the system design
+- � [**Security**](./technical/security) - Security considerations and best practices
 
 ## What's Next?
 
-1. **[Install Reflex](./technical/getting-started/installation)** - Set up your development environment
-2. **[Try the Examples](./technical/examples/basic-backrun)** - See Reflex in action
-3. **[Read the Architecture](./technical/architecture/overview)** - Understand the system design
-4. **[Deploy Your First Plugin](./technical/integration/overview)** - Start capturing MEV
+1. **[Start with Integration](./technical/integration/overview)** - Learn how to integrate Reflex
+2. **[Read the Architecture](./technical/architecture)** - Understand the system design
+3. **[Deploy Your First Integration](./technical/integration/smart-contract)** - Start capturing MEV
+4. **[Use the SDK](./technical/integration/sdk-integration)** - Build with the TypeScript SDK
 
 ---
 

@@ -312,4 +312,4 @@ contract YourPoolFactory {
 
 For revenue configuration details, see the [Revenue Configuration Guide](./revenue-configuration).
 For SDK integration, see the [SDK Integration Guide](./sdk-integration).
-For detailed examples, check out the [Basic Backrun Example](../examples/basic-backrun).
+For SDK integration details, see the [SDK Integration Guide](./sdk-integration).
