@@ -36,7 +36,6 @@ const sidebars = {
       ],
     },
     "security",
-    "troubleshooting",
   ],
 };
 
