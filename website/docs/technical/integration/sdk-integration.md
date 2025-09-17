@@ -151,7 +151,11 @@ export function MEVTradingInterface({ useReflexMEV }) {
         swapCallData: encodedSwapData, // Pre-encoded swap transaction
       });
 
-      if (result.success && result.profits.length > 0 && result.profits[0] > 0n) {
+      if (
+        result.success &&
+        result.profits.length > 0 &&
+        result.profits[0] > 0n
+      ) {
         showNotification({
           type: "success",
           title: "Swap Completed with MEV Bonus!",
@@ -235,19 +239,22 @@ import { REFLEX_ROUTER_ABI } from "@reflex-mev/sdk";
 const routerInterface = new Interface(REFLEX_ROUTER_ABI);
 
 // Listen for BackrunExecuted events
-provider.on({
-  address: reflexConfig.routerAddress,
-  topics: [routerInterface.getEvent("BackrunExecuted").topicHash]
-}, (log) => {
-  const event = routerInterface.parseLog(log);
-  
-  analytics.track("MEV_Captured", {
-    profit: event.args.profit,
-    triggerPoolId: event.args.triggerPoolId,
-    recipient: event.args.recipient,
-    timestamp: Date.now(),
-  });
-});
+provider.on(
+  {
+    address: reflexConfig.routerAddress,
+    topics: [routerInterface.getEvent("BackrunExecuted").topicHash],
+  },
+  (log) => {
+    const event = routerInterface.parseLog(log);
+
+    analytics.track("MEV_Captured", {
+      profit: event.args.profit,
+      triggerPoolId: event.args.triggerPoolId,
+      recipient: event.args.recipient,
+      timestamp: Date.now(),
+    });
+  }
+);
 ```
 
 ## Testing
@@ -282,13 +289,16 @@ describe("MEV Integration", () => {
       callData: "0x123456", // encoded swap data
     };
 
-    const backrunParams = [{
-      triggerPoolId: "0x1234567890123456789012345678901234567890",
-      swapAmountIn: ethers.parseEther("1"),
-      token0In: true,
-      recipient: "0x1234567890123456789012345678901234567890",
-      configId: "0x0000000000000000000000000000000000000000000000000000000000000000",
-    }];
+    const backrunParams = [
+      {
+        triggerPoolId: "0x1234567890123456789012345678901234567890",
+        swapAmountIn: ethers.parseEther("1"),
+        token0In: true,
+        recipient: "0x1234567890123456789012345678901234567890",
+        configId:
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+      },
+    ];
 
     const result = await reflex.backrunedExecute(executeParams, backrunParams);
 

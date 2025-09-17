@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# Architecture Overview
+# Architecture
 
 Understanding Reflex Protocol's architecture is key to building effective MEV capture strategies. This document provides a comprehensive overview of the system design, components, and data flow.
 

@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# Security Overview
+# Security
 
 Reflex Protocol prioritizes security at every level of the system. This document outlines our security measures, audit results, and best practices for safe integration.
 
@@ -68,25 +68,27 @@ Comprehensive validation on all user inputs:
 
 ### Professional Audits
 
-| Auditor | Date | Scope | Status | Report |
-|---------|------|-------|--------|--------|
-| **Trail of Bits** | Q2 2024 | Core Contracts | ✅ Complete | [View Report](#) |
-| **Consensys Diligence** | Q3 2024 | Router & Distributor | ✅ Complete | [View Report](#) |
-| **Code4rena** | Q4 2024 | Full System | 🔄 In Progress | [Contest](#) |
+| Auditor                 | Date    | Scope                | Status         | Report           |
+| ----------------------- | ------- | -------------------- | -------------- | ---------------- |
+| **Trail of Bits**       | Q2 2024 | Core Contracts       | ✅ Complete    | [View Report](#) |
+| **Consensys Diligence** | Q3 2024 | Router & Distributor | ✅ Complete    | [View Report](#) |
+| **Code4rena**           | Q4 2024 | Full System          | 🔄 In Progress | [Contest](#)     |
 
 ### Key Findings & Resolutions
 
 #### High Severity Issues: **0**
+
 No high severity issues found in any audit.
 
 #### Medium Severity Issues: **2** (All Fixed)
 
 1. **Potential Front-running in Configuration Updates**
+
    - **Status**: ✅ Fixed
    - **Solution**: Added time-lock mechanism for sensitive parameter changes
 
 2. **Gas Griefing in Batch Operations**
-   - **Status**: ✅ Fixed  
+   - **Status**: ✅ Fixed
    - **Solution**: Implemented gas limits and circuit breakers
 
 #### Low Severity Issues: **5** (All Addressed)
@@ -120,6 +122,7 @@ function scheduleUpdate(bytes32 updateHash) external onlyOwner {
 #### 3. Monitor for Anomalies
 
 Set up monitoring for:
+
 - Unusual profit distributions
 - Failed transaction patterns
 - Gas usage spikes
@@ -138,7 +141,7 @@ const GOERLI_ROUTER = "0x9E545E3C0baAB3E08CdfD552C960A1050f373042";
 
 // Verify before interaction
 if (routerAddress !== MAINNET_ROUTER) {
-    throw new Error("Invalid router address");
+  throw new Error("Invalid router address");
 }
 ```
 
@@ -153,6 +156,7 @@ const minAmountOut = expectedAmount * (1 - slippageTolerance);
 #### 3. Check Transaction Details
 
 Review all transaction parameters before signing:
+
 - Recipient addresses
 - Token amounts
 - Gas limits
@@ -192,7 +196,7 @@ Before integrating Reflex, ensure:
 Reflex includes automated circuit breakers that pause operations if:
 
 - Unusual profit patterns detected
-- Gas costs exceed thresholds  
+- Gas costs exceed thresholds
 - Failed transaction rate spikes
 - External oracle failures
 
@@ -221,13 +225,13 @@ Found a potential security issue? We appreciate responsible disclosure:
 
 ### Reward Program
 
-| Severity | Reward Range |
-|----------|-------------|
+| Severity | Reward Range       |
+| -------- | ------------------ |
 | Critical | $25,000 - $100,000 |
-| High | $5,000 - $25,000 |
-| Medium | $1,000 - $5,000 |
-| Low | $100 - $1,000 |
+| High     | $5,000 - $25,000   |
+| Medium   | $1,000 - $5,000    |
+| Low      | $100 - $1,000      |
 
 ---
 
-*Security is a journey, not a destination. We continuously improve our security posture and welcome community feedback.*
+_Security is a journey, not a destination. We continuously improve our security posture and welcome community feedback._
