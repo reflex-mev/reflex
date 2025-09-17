@@ -7,7 +7,7 @@
 ![DeFi](https://img.shields.io/badge/DeFi-Integration-purple.svg)
 ![Coverage](https://img.shields.io/badge/Coverage-94%25-brightgreen.svg)
 
-**Reflex** is a sophisticated on-chain MEV (Maximum Extractable Value) capture engine designed for seamless integration into DEX protocols and AMM systems. The system captures MEV opportunities while maintaining safety, decentralization, and ensuring zero interference with pool state or user experience.
+**Reflex** is a sophisticated on-chain MEV (Maximum Extractable Value) capture engine designed for seamless integration into DEX protocols and AMM systems. Instead of letting external actors extract value, Reflex routes that value back into the protocol environment.
 
 ## 📁 Monorepo Structure
 
@@ -26,7 +26,11 @@ reflex/
 │   ├── tests/             # SDK test suite (49+ tests)
 │   ├── examples/          # Usage examples
 │   └── README.md          # SDK documentation
-├── docs/                  # Protocol documentation
+├── website/               # Protocol documentation and website
+│   ├── docs/              # Documentation content
+│   ├── blog/              # Blog posts
+│   ├── src/               # Website source
+│   └── docusaurus.config.js # Site configuration
 └── README.md             # This file (main documentation)
 ```
 
@@ -36,11 +40,11 @@ reflex/
 
 The foundational Solidity contracts that power the Reflex MEV system:
 
-- **ReflexRouter**: Main router contract handling backrun execution and profit distribution
-- **ReflexAfterSwap**: Abstract base for MEV capture logic with configurable profit distribution
-- **ConfigurableRevenueDistributor**: Advanced multi-configuration profit distribution system
-- **FundsSplitter**: Multi-party profit distribution system
-- **Comprehensive Test Suite**: 368+ tests ensuring system reliability and security
+- **ReflexRouter**: Main router contract handling MEV capture execution and profit distribution
+- **ConfigurableRevenueDistributor**: Integrated revenue distribution system with basis points precision
+- **GracefulReentrancyGuard**: Custom reentrancy protection that gracefully exits instead of reverting
+- **ReflexAfterSwap**: Integration base contracts for DEX protocols
+- **Comprehensive Test Suite**: 300+ tests ensuring system reliability and security
 
 [→ See Core Documentation](/core/README.md)
 
@@ -104,18 +108,16 @@ For detailed setup and usage instructions, see the individual package READMEs:
 
 ## 📚 Documentation
 
-Comprehensive documentation is available in the [`/docs`](./docs) directory:
+Comprehensive documentation is available at [reflex-mev.github.io/reflex](https://reflex-mev.github.io/reflex):
 
-- **[🏗️ Architecture Overview](./docs/ARCHITECTURE.md)** - System design and component interactions
-- **[🔌 Integration Guide](./docs/INTEGRATION.md)** - How to integrate Reflex into your protocol
-- **[📖 API Reference](./docs/API.md)** - Complete API documentation for contracts and SDK
-- **[🛡️ Security Policy](./docs/SECURITY.md)** - Security guidelines and vulnerability reporting
-- **[🤝 Contributing Guide](./docs/CONTRIBUTING.md)** - Development setup and contribution guidelines
-- **[📋 Changelog](./docs/CHANGELOG.md)** - Version history and release notes
+- **[🏗️ Architecture Overview](https://reflex-mev.github.io/reflex/architecture)** - System design and component interactions
+- **[🔌 Integration Guide](https://reflex-mev.github.io/reflex/integration/overview)** - How to integrate Reflex into your protocol
+- **[📖 API Reference](https://reflex-mev.github.io/reflex/api/smart-contracts)** - Complete API documentation for contracts and SDK
+- **[🛡️ Security Policy](https://reflex-mev.github.io/reflex/security)** - Security guidelines and vulnerability reporting
 
 ## 🤝 Contributing
 
-We welcome contributions from the community! Please see our [Contributing Guide](./docs/CONTRIBUTING.md) for detailed instructions.
+We welcome contributions from the community! Please see our [Contributing Guide](https://reflex-mev.github.io/reflex) for detailed instructions.
 
 **Quick start:**
 
@@ -127,7 +129,7 @@ We welcome contributions from the community! Please see our [Contributing Guide]
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
 
-For detailed development setup, testing procedures, and coding standards, see [CONTRIBUTING.md](./docs/CONTRIBUTING.md).
+For detailed development setup, testing procedures, and coding standards, see our [documentation](https://reflex-mev.github.io/reflex).
 
 ## 📄 License
 
@@ -145,9 +147,11 @@ For questions, issues, or contributions:
 
 - **📋 Issues**: [Open an issue](https://github.com/reflex-mev/reflex/issues/new/choose) for bugs or feature requests
 - **💬 Discussions**: [GitHub Discussions](https://github.com/reflex-mev/reflex/discussions) for questions and ideas
-- **📖 Documentation**: Check our [comprehensive docs](./docs) for detailed guides
+- **📖 Documentation**: Check our [comprehensive docs](https://reflex-mev.github.io/reflex) for detailed guides
 - **🔍 Examples**: Review the [examples directory](./examples) for implementation patterns
-- **🛡️ Security**: Follow our [Security Policy](./docs/SECURITY.md) for vulnerability reports
+- **🛡️ Security**: Follow our [Security Policy](https://reflex-mev.github.io/reflex/security) for vulnerability reports
+- **🐦 Twitter**: Follow [@ReflexMEV](https://x.com/ReflexMEV) for updates
+- **📧 Email**: Contact us at team@reflexmev.io
 
 ## 🏷️ Badges & Status
 
