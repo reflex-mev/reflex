@@ -68,8 +68,6 @@ Executes a backrun arbitrage opportunity.
 
 - `BackrunExecuted(triggerPoolId, swapAmountIn, token0In, profit, profitToken, recipient)`
 
-**Gas Usage:** ~150,000 gas (varies by route complexity)
-
 **Example:**
 
 ```solidity
@@ -263,8 +261,6 @@ struct SwapDecodedData {
 - `1` - UniswapV2 (with callback)
 - `2` - UniswapV2 (without callback)
 - `3` - UniswapV3
-- `4` - Curve
-- `5` - Balancer
 - `6` - Algebra (Quickswap)
 
 ## 💰 ConfigurableRevenueDistributor
@@ -273,277 +269,312 @@ Manages profit distribution across multiple stakeholders.
 
 ### Core Functions
 
-#### configureRevenue
+#### updateShares
 
 ```solidity
-function configureRevenue(
+function updateShares(
     bytes32 configId,
     address[] calldata recipients,
-    uint256[] calldata shares
-) external onlyFundsAdmin
+    uint256[] calldata sharesBps,
+    uint256 dustShareBps
+) external
 ```
 
-Configures profit distribution for a specific configuration ID.
+Configures profit distribution for a specific configuration ID using basis points.
 
 **Parameters:**
 
 - `configId` - Unique identifier for the configuration
 - `recipients` - Array of recipient addresses
-- `shares` - Array of share percentages (must sum to 100)
+- `sharesBps` - Array of share amounts in basis points (1% = 100 bps)
+- `dustShareBps` - Dust recipient's share in basis points
 
 **Constraints:**
 
-- Maximum 10 recipients per configuration
-- Shares must sum to exactly 100
-- Recipients must be non-zero addresses
+- Recipients and shares arrays must have equal length
+- All recipients must be non-zero addresses
+- All shares must be greater than 0
+- Total shares (including dust) must equal 10,000 bps (100%)
 
-#### distributeRevenue
+#### getConfig
 
 ```solidity
-function distributeRevenue(
-    bytes32 configId,
-    address token,
-    uint256 amount,
-    address dustRecipient
-) external returns (uint256[] memory distributed)
+function getConfig(bytes32 configId)
+    external view returns (SplitConfig memory config)
 ```
 
-Distributes revenue according to the specified configuration.
+Retrieves the complete revenue configuration for a given ID.
 
-**Parameters:**
-
-- `configId` - Configuration to use for distribution
-- `token` - ERC20 token to distribute
-- `amount` - Total amount to distribute
-- `dustRecipient` - Address to receive any remaining dust
-
-**Returns:**
-
-- `distributed` - Array of amounts distributed to each recipient
-
-#### getRevenueConfig
+#### getRecipients
 
 ```solidity
-function getRevenueConfig(bytes32 configId)
+function getRecipients(bytes32 configId)
     external view returns (
         address[] memory recipients,
-        uint256[] memory shares,
-        bool isActive
+        uint256[] memory sharesBps,
+        uint256 dustShareBps
     )
 ```
 
-Retrieves the revenue configuration for a given ID.
+Retrieves the revenue configuration details for a given ID.
 
 ### Events
 
-#### RevenueConfigured
+#### SharesUpdated
 
 ```solidity
-event RevenueConfigured(
+event SharesUpdated(
     bytes32 indexed configId,
     address[] recipients,
-    uint256[] shares
+    uint256[] sharesBps,
+    uint256 dustShareBps
 );
 ```
 
-#### RevenueDistributed
+#### SplitExecuted
 
 ```solidity
-event RevenueDistributed(
+event SplitExecuted(
     bytes32 indexed configId,
     address indexed token,
     uint256 totalAmount,
-    uint256[] amounts
+    address[] recipients,
+    uint256[] amounts,
+    address dustRecipient,
+    uint256 dustAmount
 );
 ```
 
+Emitted when revenue is successfully distributed.
+
 ## 🔌 ReflexAfterSwap (Base Plugin)
 
-Abstract base contract for DEX plugin integration.
+Abstract base contract for DEX plugin integration with failsafe mechanisms.
 
 ### Constructor
 
 ```solidity
-constructor(address _reflexRouter, address _pool)
+constructor(address _router, bytes32 _configId)
 ```
 
 **Parameters:**
 
-- `_reflexRouter` - Address of the ReflexRouter contract
-- `_pool` - Address of the target pool to monitor
+- `_router` - Address of the ReflexRouter contract
+- `_configId` - Configuration ID for profit distribution
 
-### Abstract Functions
+**Validation:**
 
-#### afterSwap
+- Router address must be non-zero
+- Fetches admin address from the router contract
 
-```solidity
-function afterSwap(
-    address sender,
-    uint256 amount0,
-    uint256 amount1,
-    bytes calldata data
-) external virtual
-```
-
-Called after each swap to trigger MEV capture. Must be implemented by derived contracts.
-
-**Implementation Example:**
+### State Variables
 
 ```solidity
-function afterSwap(
-    address sender,
-    uint256 amount0,
-    uint256 amount1,
-    bytes calldata data
-) external override onlyPool {
-    uint256 swapAmount = amount0 > 0 ? amount0 : amount1;
-    bool token0In = amount0 > 0;
-
-    if (swapAmount >= minBackrunThreshold) {
-        reflexRouter.triggerBackrun(
-            bytes32(uint256(uint160(pool))),
-            uint112(swapAmount / 10), // 10% of swap size
-            token0In,
-            sender, // Give profits to swapper
-            defaultConfigId
-        );
-    }
-}
+address reflexRouter;      // Address of the Reflex router contract
+address reflexAdmin;       // Address of the reflex admin (authorized controller)
+bytes32 reflexConfigId;    // Configuration ID for profit distribution
 ```
+
+### Administrative Functions
+
+#### setReflexRouter
+
+```solidity
+function setReflexRouter(address _router) external onlyReflexAdmin
+```
+
+Updates the Reflex router address and refreshes admin.
+
+**Parameters:**
+
+- `_router` - New router address to set
+
+**Access:** Reflex admin only
+
+#### setReflexConfigId
+
+```solidity
+function setReflexConfigId(bytes32 _configId) external onlyReflexAdmin
+```
+
+Updates the configuration ID for profit distribution.
+
+**Parameters:**
+
+- `_configId` - New configuration ID to set
+
+**Access:** Reflex admin only
+
+### View Functions
+
+#### getRouter
+
+```solidity
+function getRouter() public view returns (address)
+```
+
+Returns the current router address.
+
+#### getReflexAdmin
+
+```solidity
+function getReflexAdmin() external view returns (address)
+```
+
+Returns the current reflex admin address.
+
+#### getConfigId
+
+```solidity
+function getConfigId() external view returns (bytes32)
+```
+
+Returns the current configuration ID for profit distribution.
+
+### Internal Functions
+
+#### reflexAfterSwap
+
+```solidity
+function reflexAfterSwap(
+    bytes32 triggerPoolId,
+    int256 amount0Delta,
+    int256 amount1Delta,
+    bool zeroForOne,
+    address recipient
+) internal gracefulNonReentrant returns (uint256 profit, address profitToken)
+```
+
+Main entry point for post-swap profit extraction via backrunning.
+
+**Parameters:**
+
+- `triggerPoolId` - Unique identifier for the pool that triggered the swap
+- `amount0Delta` - The change in token0 balance from the original swap
+- `amount1Delta` - The change in token1 balance from the original swap
+- `zeroForOne` - Direction of the original swap (true if token0 → token1)
+- `recipient` - Address that should receive the extracted profits
+
+**Returns:**
+
+- `profit` - Amount of profit extracted (0 if router call fails)
+- `profitToken` - Address of the token in which profit was extracted (address(0) if failed)
+
+**Features:**
+
+- ✅ Failsafe operation with try-catch mechanism
+- ✅ Router failures won't break main swap operations
+- ✅ Reentrancy protection via graceful reentrancy guard
+- ✅ Automatic profit distribution using configured settings
 
 ### Modifiers
 
-#### onlyPool
+#### onlyReflexAdmin
 
 ```solidity
-modifier onlyPool() {
-    require(msg.sender == pool, "Only pool can call");
+modifier onlyReflexAdmin() {
+    require(msg.sender == reflexAdmin, "Caller is not the reflex admin");
     _;
 }
 ```
 
-## 📊 Gas Usage Reference
+Restricts access to reflex admin only.
 
-| Function            | Typical Gas                    | Max Gas | Notes                     |
-| ------------------- | ------------------------------ | ------- | ------------------------- |
-| `triggerBackrun`    | 150,000                        | 300,000 | Varies by route length    |
-| `backrunedExecute`  | 200,000                        | 500,000 | Base + execution costs    |
-| `configureRevenue`  | 80,000                         | 120,000 | One-time setup            |
-| `distributeRevenue` | 50,000 + (recipients × 20,000) | 250,000 | Scales with recipients    |
-| `getQuote`          | 30,000                         | 100,000 | View function (off-chain) |
-
-## 🔍 Error Codes
-
-### ReflexRouter Errors
+### Implementation Example
 
 ```solidity
-error InsufficientProfit(uint256 required, uint256 available);
-error InvalidPoolId(bytes32 poolId);
-error UnauthorizedCallback(address caller);
-error InvalidSwapAmount(uint256 amount);
-error CallbackTypeMismatch(uint8 expected, uint8 actual);
-```
-
-### RevenueDistributor Errors
-
-```solidity
-error InvalidConfiguration(bytes32 configId);
-error SharesSumError(uint256 sum);
-error TooManyRecipients(uint256 count);
-error ZeroAddress();
-error InsufficientBalance(uint256 required, uint256 available);
-```
-
-## 🔗 Contract Addresses
-
-### Mainnet
-
-```
-ReflexRouter:     0x742d35Cc6634C0532925a3b8D598C4B4B3A3A3A3
-ReflexQuoter:     0x9E545E3C0baAB3E08CdfD552C960A1050f373042
-```
-
-### Goerli Testnet
-
-```
-ReflexRouter:     0x1234567890123456789012345678901234567890
-ReflexQuoter:     0x0987654321098765432109876543210987654321
-```
-
-### Polygon
-
-```
-ReflexRouter:     0xABCDEF1234567890ABCDEF1234567890ABCDEF12
-ReflexQuoter:     0x1234567890ABCDEF1234567890ABCDEF12345678
-```
-
-## 📖 Integration Examples
-
-### Basic Integration
-
-```solidity
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "@reflex/contracts/ReflexAfterSwap.sol";
 
-contract MyDEXPlugin is ReflexAfterSwap {
-    uint256 public constant MIN_BACKRUN_AMOUNT = 1e18;
-    bytes32 public constant CONFIG_ID = keccak256("MY_DEX_CONFIG");
+contract UniswapV3Plugin is ReflexAfterSwap {
+    address public immutable pool;
+    uint256 public constant MIN_BACKRUN_THRESHOLD = 1000e6; // 1000 USDC minimum
 
-    constructor(address _reflexRouter, address _pool)
-        ReflexAfterSwap(_reflexRouter, _pool) {}
+    constructor(
+        address _reflexRouter,
+        address _pool,
+        bytes32 _configId
+    ) ReflexAfterSwap(_reflexRouter, _configId) {
+        pool = _pool;
+    }
 
-    function afterSwap(
-        address sender,
-        uint256 amount0,
-        uint256 amount1,
+    modifier onlyPool() {
+        require(msg.sender == pool, "Only pool can call");
+        _;
+    }
+
+    // This would be called by the Uniswap V3 pool after each swap
+    function uniswapV3SwapCallback(
+        int256 amount0Delta,
+        int256 amount1Delta,
         bytes calldata data
-    ) external override onlyPool {
-        uint256 swapAmount = amount0 > 0 ? amount0 : amount1;
+    ) external onlyPool {
+        // Extract swap information
+        uint256 swapAmount = uint256(amount0Delta > 0 ? amount0Delta : -amount0Delta);
+        if (amount1Delta < 0) {
+            swapAmount = uint256(-amount1Delta);
+        }
 
-        if (swapAmount >= MIN_BACKRUN_AMOUNT) {
-            try reflexRouter.triggerBackrun(
-                bytes32(uint256(uint160(pool))),
-                uint112(swapAmount / 20), // 5% of swap
-                amount0 > 0,
-                sender,
-                CONFIG_ID
-            ) returns (uint256 profit, address profitToken) {
-                emit BackrunSuccess(sender, profit, profitToken);
-            } catch Error(string memory reason) {
-                emit BackrunFailed(sender, reason);
+        // Only trigger backrun for significant swaps
+        if (swapAmount >= MIN_BACKRUN_THRESHOLD) {
+            // Determine swap direction
+            bool zeroForOne = amount0Delta > 0;
+
+            // Extract recipient from callback data (implementation specific)
+            address recipient = abi.decode(data, (address));
+
+            // Trigger backrun using ReflexAfterSwap's internal function
+            (uint256 profit, address profitToken) = reflexAfterSwap(
+                bytes32(uint256(uint160(pool))), // Pool ID from pool address
+                amount0Delta,
+                amount1Delta,
+                zeroForOne,
+                recipient
+            );
+
+            // Emit event if profit was extracted
+            if (profit > 0) {
+                emit BackrunExecuted(recipient, profit, profitToken);
             }
         }
     }
 
-    event BackrunSuccess(address indexed user, uint256 profit, address token);
-    event BackrunFailed(address indexed user, string reason);
+    // Admin function to update configuration
+    function updateConfig(bytes32 newConfigId) external {
+        // This will call ReflexAfterSwap's setReflexConfigId with admin check
+        setReflexConfigId(newConfigId);
+    }
+
+    event BackrunExecuted(
+        address indexed recipient,
+        uint256 profit,
+        address profitToken
+    );
 }
 ```
 
-### Advanced Revenue Configuration
+## Error Messages
 
-```solidity
-// Configure 4-way profit split
-address[] memory recipients = new address[](4);
-recipients[0] = protocolTreasury;    // 40%
-recipients[1] = userAddress;         // 30%
-recipients[2] = lpProviders;         // 20%
-recipients[3] = validatorTips;       // 10%
+### ReflexRouter Error Messages
 
-uint256[] memory shares = new uint256[](4);
-shares[0] = 40;
-shares[1] = 30;
-shares[2] = 20;
-shares[3] = 10;
+The ReflexRouter uses `require` statements with descriptive error messages:
 
-reflexRouter.configureRevenue(
-    keccak256("ADVANCED_CONFIG"),
-    recipients,
-    shares
-);
-```
+- `"Only admin can manage revenue configurations"` - Access control for admin functions
+- `"Only self-call allowed"` - Internal function access restriction
+- `"Initial call failed"` - When the executed call in `backrunedExecute` fails
 
----
+### ConfigurableRevenueDistributor Error Messages
 
-For more implementation details, see our [Integration Guide](../integration/overview) and [SDK Integration](../integration/sdk-integration).
+- `"ETH transfer failed"` - ETH transfer to recipient failed
+- `"ETH dust transfer failed"` - ETH dust transfer failed
+- `"Recipients and shares length mismatch"` - Array length mismatch
+- `"No recipients provided"` - Empty recipients array
+- `"Invalid recipient address"` - Zero address recipient
+- `"Invalid share amount"` - Zero share amount
+- `"Total shares must equal 100%"` - Share distribution doesn't sum to 10,000 bps
+
+### ReflexAfterSwap Error Messages
+
+- `"Invalid router address"` - Router address is zero in constructor or setReflexRouter
+- `"Caller is not the reflex admin"` - Access control for admin-only functions
