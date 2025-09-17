@@ -2,7 +2,7 @@
 
 ![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue.svg)
 ![Foundry](https://img.shields.io/badge/Built%20with-Foundry-red.svg)
-![Tests](https://img.shields.io/badge/Tests-300%20Passing-brightgreen.svg)
+![Tests](https://img.shields.io/badge/Tests-373%20Passing-brightgreen.svg)
 
 The core Solidity contracts that power the Reflex MEV capture engine, designed for seamless integration into DEX protocols and AMM systems.
 
@@ -28,7 +28,7 @@ The core Solidity contracts that power the Reflex MEV capture engine, designed f
 
 - **Reentrancy Protection**: Built-in guards against reentrancy attacks
 - **Dust Handling**: Proper handling of token remainders to prevent value loss
-- **Comprehensive Testing**: 300+ tests covering all functionality and edge cases
+- **Comprehensive Testing**: 373+ tests covering all functionality and edge cases
 - **MIT Licensed**: Open source with permissive licensing
 
 ## 🏗️ Architecture
