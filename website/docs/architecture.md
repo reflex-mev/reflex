@@ -43,10 +43,10 @@ graph LR
     %% Client connections to core contracts
     PluginDEX -->|triggerBackrun| Router
     RegularDEX -->|triggerBackrun| Router
-    SDKApps -->|backrunExecute| Router
+    SDKApps -->|backrunedExecute| Router
 ```
 
-**Reflex Router** - The central execution engine that coordinates all MEV capture activities. Handles both automatic MEV capture through `triggerBackrun()` and protected transaction execution through `backrunExecute()`.
+**Reflex Router** - The central execution engine that coordinates all MEV capture activities. Handles both automatic MEV capture through `triggerBackrun()` and protected transaction execution through `backrunedExecute()`.
 
 **Reflex Quoter** - The analysis engine that detects MEV opportunities by analyzing price differences across DEX pools, calculating optimal arbitrage routes, and estimating profitability.
 
@@ -70,7 +70,7 @@ The central execution engine that coordinates all MEV capture activities. **One 
 
 - Executes MEV capture through two main entry points
 - Coordinates with the quoter for profitability analysis
-- Manages flash loan execution for arbitrage trades
+- Manages arbitrage execution for MEV capture
 - Handles revenue distribution to configured recipients
 - Maintains security through reentrancy protection
 
@@ -128,28 +128,19 @@ Reflex supports three main integration patterns to accommodate different use cas
 ```mermaid
 sequenceDiagram
     participant User
-    participant DEX as DEX Pool
-    participant Plugin as Reflex Plugin
+    participant Integration as Reflex Integration<br/>(Plugin/SDK/Direct)
     participant Router as Reflex Router
     participant Quoter as Reflex Quoter
-    participant Distributor as Revenue Distributor
 
-    User->>DEX: Execute Swap
-    DEX->>Plugin: afterSwap() callback
-    Plugin->>Router: triggerBackrun()
+    User->>Integration: Execute Swap
+    Integration->>Integration: Execute user swap
+    Integration->>Router: triggerBackrun()
     Router->>Quoter: getQuote()
     Quoter-->>Router: profit estimate + route
 
     alt Profitable Opportunity
-        Router->>DEX: Execute flash loan
-        DEX->>Router: Flash loan callback
         Router->>Router: Execute arbitrage route
-        Router->>DEX: Repay flash loan
-        Router->>Distributor: Distribute profits
-        Distributor->>User: User share
-        Distributor->>Plugin: Protocol share
-    else Not Profitable
-        Router-->>Plugin: No action taken
+        Router->>Router: Distribute profits to user & protocol
     end
 ```
 
@@ -188,9 +179,9 @@ Reflex Protocol implements multiple security layers to ensure safe and reliable 
 
 **Failsafe Mechanisms** - Built-in safety checks that prevent execution if profitability thresholds aren't met or if gas costs exceed expected limits. All operations can be safely reverted without affecting user transactions.
 
-**Independent Operation** - Reflex operates completely independently from protocol and user swaps. The system has no access to user funds or protocol treasuries, only capturing MEV through legitimate arbitrage opportunities using loan based swaps.
+**Independent Operation** - Reflex operates completely independently from protocol and user swaps. The system has no access to user funds or protocol treasuries, only capturing MEV through legitimate arbitrage opportunities.
 
-**Reentrancy Protection** - All router functions implement strict reentrancy guards to prevent malicious contracts from exploiting callback mechanisms during flash loan executions.
+**Reentrancy Protection** - All router functions implement strict reentrancy guards to prevent malicious contracts from exploiting callback mechanisms during MEV executions.
 
 **Access Controls** - Granular permission system ensures only authorized contracts can trigger specific functions, with different access levels for plugins, direct integrations, and administrative operations.
 
