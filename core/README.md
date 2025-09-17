@@ -65,15 +65,6 @@ Advanced profit distribution system supporting multiple configurations:
 - **Default Configuration**: Fallback distribution when specific config not found
 - **Admin-Controlled**: Secure configuration management with access controls
 
-#### `FundsSplitter`
-
-Handles distribution of captured profits:
-
-- Supports multiple recipients with configurable shares
-- Basis points system for precise percentage allocation
-- Handles both ERC20 tokens and ETH distribution
-- Dust handling ensures no value is lost
-
 ### Integration Flow
 
 1. **Swap Execution**: User performs swap on supported DEX
