@@ -16,33 +16,27 @@ const sidebars = {
   // By default, Docusaurus generates a sidebar from the docs folder structure
   tutorialSidebar: [
     "index",
+    "architecture",
     {
       type: "category",
-      label: "Technical Reference",
+      label: "Integrations",
       items: [
-        "technical/architecture",
-        {
-          type: "category",
-          label: "Integrations",
-          items: [
-            "technical/integration/overview",
-            "technical/integration/revenue-configuration",
-            "technical/integration/smart-contract",
-            "technical/integration/sdk-integration",
-          ],
-        },
-        {
-          type: "category",
-          label: "API Reference",
-          items: [
-            "technical/api/smart-contracts",
-            "technical/api/sdk-reference",
-          ],
-        },
-        "technical/security",
-        "troubleshooting",
+        "integration/overview",
+        "integration/revenue-configuration",
+        "integration/smart-contract",
+        "integration/sdk-integration",
       ],
     },
+    {
+      type: "category",
+      label: "API Reference",
+      items: [
+        "api/smart-contracts",
+        "api/sdk-reference",
+      ],
+    },
+    "security",
+    "troubleshooting",
   ],
 };
 
