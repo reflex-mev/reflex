@@ -343,4 +343,4 @@ export interface TokenInfo {
 
 ---
 
-*For more examples and advanced usage, check out our [Examples](../examples/basic-backrun) section.*
+*For more detailed integration guidance, check out our [SDK Integration Guide](../integration/sdk-integration) and [Smart Contract Integration](../integration/smart-contract) sections.*

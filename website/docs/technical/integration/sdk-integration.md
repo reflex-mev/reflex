@@ -336,4 +336,3 @@ describe("MEV Integration", () => {
 
 For revenue configuration details, see the [Revenue Configuration Guide](./revenue-configuration).
 For smart contract integration, see the [Smart Contract Integration Guide](./smart-contract).
-For complete examples, check out the [Basic Backrun Example](../examples/basic-backrun).

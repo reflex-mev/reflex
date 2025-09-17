@@ -231,4 +231,4 @@ Reflex is designed to work across multiple blockchain networks and supported by 
 
 This architecture enables Reflex to provide efficient, secure, and fair MEV capture that benefits all participants in the DeFi ecosystem. The modular design allows for easy integration with existing protocols while maintaining the flexibility to adapt to future innovations.
 
-For implementation details, see our [Integration Guide](../integration/overview) and [API Reference](../api/smart-contracts).
+For implementation details, see our [Integration Guide](./integration/overview) and [API Reference](./api/smart-contracts).

@@ -89,16 +89,16 @@ const config = {
             title: "Docs",
             items: [
               {
-                label: "Getting Started",
-                to: "/technical/getting-started/installation",
+                label: "Integration Guide",
+                to: "/technical/integration/overview",
               },
               {
                 label: "API Reference",
                 to: "/technical/api/smart-contracts",
               },
               {
-                label: "Integration Guide",
-                to: "/technical/integration/overview",
+                label: "Security",
+                to: "/technical/security",
               },
             ],
           },

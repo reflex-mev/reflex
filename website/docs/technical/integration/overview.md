@@ -97,4 +97,4 @@ For protocols requiring different profit distribution, contact the Reflex team t
 
 ---
 
-For more advanced integration patterns and examples, see our [Examples](../examples/basic-backrun) section and [API Reference](../api/smart-contracts).
+For more detailed implementation guidance, see our [Smart Contract Integration](./smart-contract) and [SDK Integration](./sdk-integration) guides, and check our [API Reference](../api/smart-contracts).

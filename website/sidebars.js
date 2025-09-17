@@ -20,7 +20,7 @@ const sidebars = {
       type: "category",
       label: "Technical Reference",
       items: [
-        "technical/architecture/overview",
+        "technical/architecture",
         {
           type: "category",
           label: "Integrations",
@@ -29,7 +29,6 @@ const sidebars = {
             "technical/integration/revenue-configuration",
             "technical/integration/smart-contract",
             "technical/integration/sdk-integration",
-            "technical/examples/basic-backrun",
           ],
         },
         {
@@ -40,8 +39,8 @@ const sidebars = {
             "technical/api/sdk-reference",
           ],
         },
-        "technical/security/overview",
-        "technical/troubleshooting",
+        "technical/security",
+        "troubleshooting",
       ],
     },
   ],

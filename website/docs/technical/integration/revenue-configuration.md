@@ -202,4 +202,4 @@ If you have questions about revenue configuration:
 **Next Steps:**
 - For smart contract integration, see [Smart Contract Integration](./smart-contract)
 - For SDK integration, see [SDK Integration Guide](./sdk-integration)
-- For examples, check out [Integration Examples](../examples/basic-backrun)
+- For implementation details, check out [Smart Contract Integration](./smart-contract) and [SDK Integration](./sdk-integration)

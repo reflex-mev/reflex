@@ -546,4 +546,4 @@ reflexRouter.configureRevenue(
 
 ---
 
-For more implementation details and examples, see our [Integration Guide](../integration/overview) and [Examples](../examples/basic-backrun).
+For more implementation details, see our [Integration Guide](../integration/overview) and [SDK Integration](../integration/sdk-integration).
