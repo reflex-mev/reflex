@@ -106,12 +106,8 @@ const config = {
             title: "Community",
             items: [
               {
-                label: "Discord",
-                href: "https://discord.gg/reflex",
-              },
-              {
-                label: "Twitter",
-                href: "https://twitter.com/reflex_protocol",
+                label: "Twitter/X",
+                href: "https://x.com/ReflexMEV",
               },
             ],
           },

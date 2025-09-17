@@ -758,8 +758,7 @@ Reflex includes built-in protection mechanisms that automatically pause operatio
 
 - **Security Team**: security@reflexmev.io
 - **Emergency Response**: emergency@reflexmev.io
-- **Discord Alert Channel**: [#security-alerts](https://discord.gg/reflex)
-- **Telegram Emergency**: [@reflex_security](https://t.me/reflex_security)
+- **Twitter/X**: [@ReflexMEV](https://x.com/ReflexMEV)
 
 **Response Time Commitments:**
 

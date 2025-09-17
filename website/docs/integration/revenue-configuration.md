@@ -36,9 +36,8 @@ Reach out to the Reflex team with your requirements:
 - Integration timeline
 
 **Contact Methods:**
-- Discord: [Reflex Protocol Discord](https://discord.gg/reflex)
-- Email: partnerships@reflex.finance
-- Telegram: @reflexprotocol
+- **Email**: support@reflexmev.io
+- **Twitter/X**: [@ReflexMEV](https://x.com/ReflexMEV)
 
 ### 2. Configuration Review
 
@@ -193,8 +192,8 @@ Configuration updates require:
 If you have questions about revenue configuration:
 
 1. **Documentation**: Check this documentation first
-2. **Discord**: Join our Discord for community support
-3. **Support Tickets**: Create a support ticket for complex issues
+2. **Email Support**: Contact support@reflexmev.io for assistance
+3. **Twitter/X**: Follow [@ReflexMEV](https://x.com/ReflexMEV) for updates
 4. **Partnership Team**: Contact partnerships team for enterprise needs
 
 ---
