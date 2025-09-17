@@ -72,7 +72,7 @@ const config = {
         title: "Reflex Protocol",
         logo: {
           alt: "Reflex Logo",
-          src: "img/min_logo.svg",
+          src: "img/min_logo_2.png",
         },
         items: [
           {
@@ -90,15 +90,15 @@ const config = {
             items: [
               {
                 label: "Integration Guide",
-                to: "/technical/integration/overview",
+                to: "/integration/overview",
               },
               {
                 label: "API Reference",
-                to: "/technical/api/smart-contracts",
+                to: "/api/smart-contracts",
               },
               {
                 label: "Security",
-                to: "/technical/security",
+                to: "/security",
               },
             ],
           },
