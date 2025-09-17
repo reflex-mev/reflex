@@ -14,7 +14,7 @@ Reflex is an on-chain MEV capture engine designed to reclaim backrun profits for
 - **100% on-chain**: no backend dependencies, no private servers.
 - **Plug and play**: integration requires no changes to existing smart contracts.
 - **Secure by design**: Reflex is fully non-custodial, operating independently of user funds and requiring no approval access.
-- **Cross-ecosystem**: works across EVM protocols, Solana, and L2 environments.
+- **Cross-ecosystem**: works across EVM protocols, and L1,L2 environments.
 
 ## Protocol Integrations
 
