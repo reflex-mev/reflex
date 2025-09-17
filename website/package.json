@@ -7,7 +7,7 @@
     "start": "docusaurus start",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
-    "deploy": "GITHUB_HOST=github.com-reflex docusaurus deploy",
+    "deploy": "GIT_USER_NAME='Reflex Core Maintainer' GIT_USER_EMAIL='core.maintainer@reflexmev.com' GITHUB_HOST='github.com-reflex' docusaurus deploy",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
