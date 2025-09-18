@@ -4,10 +4,12 @@ pragma abicoder v2;
 
 import "./interfaces/IReflexQuoter.sol";
 import "@reflex/interfaces/IReflexRouter.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./utils/GracefulReentrancyGuard.sol";
 import "./libraries/DexTypes.sol";
 import "./integrations/ConfigurableRevenueDistributor/ConfigurableRevenueDistributor.sol";
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IUniswapV3Pool {
     function swap(
@@ -39,6 +41,8 @@ uint8 constant LOAN_CALLBACK_TYPE_UNI3 = 3; // Initial loan from uniswap v3
  * Inherits from ConfigurableRevenueDistributor to support profit splitting across multiple configurations
  */
 contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRevenueDistributor {
+    using SafeERC20 for IERC20;
+
     /// @notice The address of the contract owner/admin
     address public owner;
 
@@ -273,11 +277,11 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
 
         // For uniswap v2 like pools we need to send the input amount before calling swap on the pool
         if (DexTypes.isUniswapV2Like(_types[nextHopIndex])) {
-            IERC20(tokens[nextHopIndex]).transfer(address(_pairs[nextHopIndex]), valid[nextHopIndex]);
+            IERC20(tokens[nextHopIndex]).safeTransfer(address(_pairs[nextHopIndex]), valid[nextHopIndex]);
         }
         swapFlow(_pairs, valid, _types, _meta, initialHopIndex, tokens);
 
-        IERC20(tokens[initialHopIndex]).transfer(address(_pairs[initialHopIndex]), valid[initialHopIndex]);
+        IERC20(tokens[initialHopIndex]).safeTransfer(address(_pairs[initialHopIndex]), valid[initialHopIndex]);
     }
 
     /**
@@ -348,7 +352,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
                     && DexTypes.isUniswapV2Like(_dexType[0])
             ) {
                 to = pairs[0];
-                IERC20(tokens[0]).transfer(to, amounts[0]);
+                IERC20(tokens[0]).safeTransfer(to, amounts[0]);
             }
         }
     }
@@ -390,7 +394,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @param _to The address to send the withdrawn tokens to
      */
     function withdrawToken(address token, uint256 amount, address _to) public isAdmin {
-        IERC20(token).transfer(_to, amount);
+        IERC20(token).safeTransfer(_to, amount);
     }
 
     /**
@@ -414,7 +418,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
         if (loanCallbackType == LOAN_CALLBACK_TYPE_ONGOING) {
             (int256 t0, int256 t1, bytes memory data) = decodeUniswapV3LikeCallbackParams();
             if (data.length == 20) {
-                IERC20(bytesToAddress(data)).transfer(msg.sender, uint256(t0 > 0 ? t0 : t1));
+                IERC20(bytesToAddress(data)).safeTransfer(msg.sender, uint256(t0 > 0 ? t0 : t1));
             }
         } else if (loanCallbackType == LOAN_CALLBACK_TYPE_UNI3) {
             (,, bytes memory data) = decodeUniswapV3LikeCallbackParams();
