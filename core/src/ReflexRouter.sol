@@ -71,10 +71,10 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
     }
 
     /**
-     * @notice Modifier to restrict access to admin functions
+     * @notice Modifier to restrict access to owner functions
      * @dev Requires that the caller is the contract owner
      */
-    modifier isAdmin() {
+    modifier isOwner() {
         require(msg.sender == owner);
         _;
     }
@@ -92,7 +92,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @dev Only callable by admin. Used to update the quoter contract address
      * @param _reflexQuoter The address of the new ReflexQuoter contract
      */
-    function setReflexQuoter(address _reflexQuoter) public isAdmin {
+    function setReflexQuoter(address _reflexQuoter) public isOwner {
         address oldQuoter = reflexQuoter;
         reflexQuoter = _reflexQuoter;
         emit ReflexQuoterUpdated(oldQuoter, _reflexQuoter);
@@ -404,7 +404,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @param amount The amount of tokens to withdraw
      * @param _to The address to send the withdrawn tokens to
      */
-    function withdrawToken(address token, uint256 amount, address _to) public isAdmin {
+    function withdrawToken(address token, uint256 amount, address _to) public isOwner {
         IERC20(token).safeTransfer(_to, amount);
     }
 
@@ -414,7 +414,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @param amount The amount of ETH to withdraw (in wei)
      * @param _to The address to send the withdrawn ETH to
      */
-    function withdrawEth(uint256 amount, address payable _to) public isAdmin {
+    function withdrawEth(uint256 amount, address payable _to) public isOwner {
         _to.transfer(amount);
     }
 
