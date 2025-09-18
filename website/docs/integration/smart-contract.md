@@ -60,16 +60,14 @@ function executeSwapWithMEV(
 
 #### 3. Revenue Configuration
 
-Revenue sharing configurations are managed by the Reflex Protocol team. For detailed information on how to set up custom revenue sharing, see the [Revenue Configuration Guide](./revenue-configuration).
+Revenue sharing configurations are managed by the Reflex team. For detailed information on how to set up custom revenue sharing, see the [Revenue Configuration Guide](./revenue-configuration).
 
-**Quick Summary:**
-1. **Contact Reflex Protocol** with your desired revenue sharing structure
-2. **Receive your configId** after configuration is set up by the Reflex team  
-3. **Use the configId** in your contract calls
+#### Setting Up Custom Revenue Sharing
+1. **Contact Reflex** with your desired revenue sharing structure
 
 ```solidity
 contract YourProtocol {
-    // ConfigId provided by Reflex Protocol team
+    // ConfigId provided by Reflex team
     bytes32 public immutable CONFIG_ID;
 
     constructor(address _reflexRouter, bytes32 _configId) {

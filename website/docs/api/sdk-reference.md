@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # SDK Reference
 
-Complete reference for the Reflex TypeScript SDK, providing easy integration with Reflex Protocol smart contracts.
+Complete reference for the Reflex TypeScript SDK, providing easy integration with Reflex smart contracts.
 
 ## 📦 Installation
 

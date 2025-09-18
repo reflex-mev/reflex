@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Smart Contracts API
 
-Complete API reference for Reflex Protocol smart contracts, covering all functions, events, and data structures.
+Complete API reference for Reflex smart contracts, covering all functions, events, and data structures.
 
 ## 📋 Contract Overview
 

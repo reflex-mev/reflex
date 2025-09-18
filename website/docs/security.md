@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Security
 
-Reflex Protocol prioritizes security through multiple defensive layers designed to ensure safe and reliable MEV operations. This document outlines our comprehensive security architecture, implementation details, and best practices for secure integration.
+Reflex prioritizes security through multiple defensive layers designed to ensure safe and reliable MEV operations. This document outlines our comprehensive security architecture, implementation details, and best practices for secure integration.
 
 ## 🛡️ Security Architecture
 
@@ -31,7 +31,7 @@ Reflex implements a multi-layered security approach that protects all participan
 
 ### 🛡️ Failsafe Architecture: Zero Impact on User Transactions
 
-**Critical Safety Guarantee**: Reflex Protocol is designed with comprehensive failsafe mechanisms that ensure **zero impact on user transactions and funds** under all circumstances.
+**Critical Safety Guarantee**: Reflex is designed with comprehensive failsafe mechanisms that ensure **zero impact on user transactions and funds** under all circumstances.
 
 #### Try-Catch Protection for All MEV Operations
 
@@ -471,7 +471,7 @@ contract EmergencyManagement {
 
 #### 🛡️ User Fund Safety Guarantee
 
-**Important**: Reflex Protocol provides absolute guarantees that your funds and transactions are completely safe:
+**Important**: Reflex provides absolute guarantees that your funds and transactions are completely safe:
 
 - **Zero fund access**: Reflex never touches your tokens or requires approvals
 - **Transaction isolation**: MEV operations cannot affect your swaps or transactions
@@ -807,4 +807,4 @@ Once our audit process is complete, we will launch a comprehensive bug bounty pr
 
 ---
 
-_Security is fundamental to Reflex Protocol's mission. We continuously evolve our security posture and welcome community collaboration in keeping the ecosystem safe._
+_Security is fundamental to Reflex's mission. We continuously evolve our security posture and welcome community collaboration in keeping the ecosystem safe._
