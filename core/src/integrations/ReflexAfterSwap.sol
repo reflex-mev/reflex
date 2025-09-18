@@ -2,13 +2,12 @@
 pragma solidity ^0.8.20;
 
 import "../interfaces/IReflexRouter.sol";
-import "../utils/GracefulReentrancyGuard.sol";
 
 /// @title ReflexAfterSwap
 /// @notice Abstract contract that integrates with Reflex Router for post-swap profit extraction
 /// @dev Implements failsafe mechanisms to prevent router failures from affecting main swap operations
 /// @dev Profit distribution is handled externally - this contract only extracts profits
-abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
+abstract contract ReflexAfterSwap {
     // ========== Events ==========
 
     /// @notice Emitted when the Reflex router address is updated
@@ -92,7 +91,7 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
         int256 amount1Delta,
         bool zeroForOne,
         address recipient
-    ) internal gracefulNonReentrant returns (uint256 profit, address profitToken) {
+    ) internal returns (uint256 profit, address profitToken) {
         uint256 swapAmountIn = uint256(amount0Delta > 0 ? amount0Delta : amount1Delta);
 
         // Failsafe: Use try-catch to prevent router failures from breaking the main swap
