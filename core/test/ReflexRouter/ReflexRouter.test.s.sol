@@ -199,7 +199,9 @@ contract ReflexRouterTest is Test {
 
         // Execute the backrun
         vm.expectEmit(true, true, true, true);
-        emit BackrunExecuted(triggerPoolId, swapAmountIn, token0In, expectedProfit, expectedProfit, address(token0), alice);
+        emit BackrunExecuted(
+            triggerPoolId, swapAmountIn, token0In, expectedProfit, expectedProfit, address(token0), alice
+        );
 
         (uint256 profit, address profitToken) =
             reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, token0In, alice, bytes32(0));
@@ -263,7 +265,9 @@ contract ReflexRouterTest is Test {
         );
 
         vm.expectEmit(true, true, true, true);
-        emit BackrunExecuted(triggerPoolId, swapAmountIn, token0In, expectedProfit, expectedProfit, address(token1), bob);
+        emit BackrunExecuted(
+            triggerPoolId, swapAmountIn, token0In, expectedProfit, expectedProfit, address(token1), bob
+        );
 
         (uint256 profit, address profitToken) =
             reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, token0In, bob, bytes32(0));
@@ -591,7 +595,9 @@ contract ReflexRouterTest is Test {
 
         // Test event emission
         vm.expectEmit(true, true, true, true);
-        emit BackrunExecuted(triggerPoolId, swapAmountIn, token0In, expectedProfit, expectedProfit, address(token0), alice);
+        emit BackrunExecuted(
+            triggerPoolId, swapAmountIn, token0In, expectedProfit, expectedProfit, address(token0), alice
+        );
 
         reflexRouter.triggerBackrun(triggerPoolId, swapAmountIn, token0In, alice, bytes32(0));
     }
@@ -798,7 +804,9 @@ contract ReflexRouterTest is Test {
 
         // Expect BackrunExecuted event to be emitted
         vm.expectEmit(true, true, true, true);
-        emit BackrunExecuted(triggerPoolId, swapAmountIn, token0In, expectedProfit, expectedProfit, address(token0), alice);
+        emit BackrunExecuted(
+            triggerPoolId, swapAmountIn, token0In, expectedProfit, expectedProfit, address(token0), alice
+        );
 
         // Execute the function
         reflexRouter.backrunedExecute(executeParams, backrunParams);
