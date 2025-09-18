@@ -18,13 +18,13 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
     /// @notice Total basis points used to express 100% (1% = 100 bps)
     uint256 public constant TOTAL_BPS = 10_000;
 
+    /// @notice Default configuration ID used when no specific config is provided
+    bytes32 public constant DEFAULT_CONFIG_ID = keccak256("DEFAULT_CONFIG");
+
     // ========== Storage ==========
 
     /// @notice Mapping of configuration ID to split configuration
     mapping(bytes32 => SplitConfig) public configs;
-
-    /// @notice Default configuration used when no specific config is found
-    SplitConfig public defaultConfig;
 
     // ========== Constructor ==========
 
@@ -33,11 +33,17 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
         address deployer = msg.sender;
 
         // Set up default configuration: 80% to deployer, 20% to varied recipient
-        defaultConfig.recipients = new address[](1);
-        defaultConfig.recipients[0] = deployer;
-        defaultConfig.sharesBps = new uint256[](1);
-        defaultConfig.sharesBps[0] = 8000; // 80%
-        defaultConfig.variedShareBps = 2000; // 20%
+        address[] memory recipients = new address[](1);
+        recipients[0] = deployer;
+        uint256[] memory sharesBps = new uint256[](1);
+        sharesBps[0] = 8000; // 80%
+        uint256 variedShareBps = 2000; // 20%
+
+        // Store default config in the configs mapping
+        SplitConfig storage defaultConfig = configs[DEFAULT_CONFIG_ID];
+        defaultConfig.recipients = recipients;
+        defaultConfig.sharesBps = sharesBps;
+        defaultConfig.variedShareBps = variedShareBps;
     }
 
     // ========== Access Control Hook ==========
@@ -63,6 +69,18 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
         return (config.recipients, config.sharesBps, config.variedShareBps);
     }
 
+    /// @notice Returns the default configuration
+    /// @return The default split configuration
+    function getDefaultConfig() external view returns (SplitConfig memory) {
+        return configs[DEFAULT_CONFIG_ID];
+    }
+
+    /// @notice Returns the default configuration ID
+    /// @return The default configuration ID
+    function getDefaultConfigId() external pure returns (bytes32) {
+        return DEFAULT_CONFIG_ID;
+    }
+
     /// @inheritdoc IConfigurableRevenueDistributor
     function updateShares(
         bytes32 configId,
@@ -83,7 +101,7 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
         external
     {
         _onlyFundsAdmin();
-        _setDefaultShares(_recipients, _sharesBps, _variedShareBps);
+        _setShares(DEFAULT_CONFIG_ID, _recipients, _sharesBps, _variedShareBps);
     }
 
     // ========== Internal Methods ==========
@@ -97,7 +115,7 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
         // Use requested config if it exists, otherwise fall back to default
         SplitConfig memory config;
         if (configs[configId].recipients.length == 0) {
-            config = defaultConfig;
+            config = configs[DEFAULT_CONFIG_ID];
         } else {
             config = configs[configId];
         }
@@ -143,7 +161,7 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
         // Use requested config if it exists, otherwise fall back to default
         SplitConfig memory config;
         if (configs[configId].recipients.length == 0) {
-            config = defaultConfig;
+            config = configs[DEFAULT_CONFIG_ID];
         } else {
             config = configs[configId];
         }
@@ -217,34 +235,5 @@ abstract contract ConfigurableRevenueDistributor is IConfigurableRevenueDistribu
         config.recipients = _recipients;
         config.sharesBps = _sharesBps;
         config.variedShareBps = _variedShareBps;
-    }
-
-    /// @notice Internal function to update the default split configuration
-    /// @param _recipients List of recipient addresses for the default config
-    /// @param _sharesBps List of corresponding shares in basis points for the default config
-    /// @param _variedShareBps Varied recipient's share in basis points for the default config
-    function _setDefaultShares(address[] memory _recipients, uint256[] memory _sharesBps, uint256 _variedShareBps)
-        internal
-    {
-        require(_recipients.length == _sharesBps.length, "Recipients and shares length mismatch");
-        require(_recipients.length > 0, "No recipients provided");
-
-        uint256 totalShares = _variedShareBps;
-
-        // Validate recipients and calculate total shares
-        for (uint256 i = 0; i < _recipients.length; i++) {
-            address recipient = _recipients[i];
-            uint256 share = _sharesBps[i];
-            require(recipient != address(0), "Invalid recipient address");
-            require(share > 0, "Invalid share amount");
-            totalShares += share;
-        }
-
-        require(totalShares == TOTAL_BPS, "Total shares must equal 100%");
-
-        // Update default configuration
-        defaultConfig.recipients = _recipients;
-        defaultConfig.sharesBps = _sharesBps;
-        defaultConfig.variedShareBps = _variedShareBps;
     }
 }
