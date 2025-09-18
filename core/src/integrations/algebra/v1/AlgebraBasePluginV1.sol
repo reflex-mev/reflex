@@ -105,7 +105,7 @@ contract AlgebraBasePluginV1 is DynamicFeePlugin, FarmingProxyPlugin, Volatility
         // Only execute ReflexAfterSwap if enabled
         if (reflexEnabled) {
             bytes32 triggerPoolId = bytes32(uint256(uint160(pool)));
-            reflexAfterSwap(triggerPoolId, amount0, amount1, zeroToOne, recipient);
+            _reflexAfterSwap(triggerPoolId, amount0, amount1, zeroToOne, recipient);
         }
 
         return IAlgebraPlugin.afterSwap.selector;
