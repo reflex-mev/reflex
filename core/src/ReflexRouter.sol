@@ -139,7 +139,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @return profit The amount of profit generated from the arbitrage
      * @return profitToken The address of the token in which profit was generated
      */
-    function _triggerBackrunSafe(
+    function triggerBackrunSafe(
         bytes32 triggerPoolId,
         uint112 swapAmountIn,
         bool token0In,
@@ -183,7 +183,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
 
         profitToken = decoded.tokens[0];
         uint256 balanceBefore = IERC20(profitToken).balanceOf(address(this));
-        triggerSwapRoute(decoded, amountsOut, initialHopIndex);
+        _triggerSwapRoute(decoded, amountsOut, initialHopIndex);
         profit = IERC20(profitToken).balanceOf(address(this)) - balanceBefore;
 
         // Split the profit using the revenue distributor (handles default config fallback internally)
@@ -224,7 +224,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
 
         // Execute each backrun with failsafe mechanism
         for (uint256 i = 0; i < backrunParams.length; i++) {
-            try this._triggerBackrunSafe(
+            try this.triggerBackrunSafe(
                 backrunParams[i].triggerPoolId,
                 backrunParams[i].swapAmountIn,
                 backrunParams[i].token0In,
@@ -249,10 +249,10 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @param valid Array of valid amounts for each hop in the swap route
      * @param index The index of the initial hop to start the swap route
      */
-    function triggerSwapRoute(IReflexQuoter.SwapDecodedData memory decoded, uint256[] memory valid, uint256 index)
+    function _triggerSwapRoute(IReflexQuoter.SwapDecodedData memory decoded, uint256[] memory valid, uint256 index)
         internal
     {
-        bool isZeroForOne = decodeIsZeroForOne(decoded.dexMeta[index]);
+        bool isZeroForOne = _decodeIsZeroForOne(decoded.dexMeta[index]);
 
         // Encode data for callback
         bytes memory data = abi.encode(decoded.pools, decoded.dexType, decoded.dexMeta, valid, index, decoded.tokens);
@@ -266,7 +266,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
         } else if (DexTypes.isUniswapV3Like(decoded.dexType[index])) {
             //Uniswap v3, algebra
             loanCallbackType = LOAN_CALLBACK_TYPE_UNI3;
-            swapUniswapV3Pool(decoded.pools[index], address(this), valid[index], isZeroForOne, bytes(data));
+            _swapUniswapV3Pool(decoded.pools[index], address(this), valid[index], isZeroForOne, bytes(data));
         }
     }
 
@@ -275,7 +275,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @dev Called by DEX pools during flash loans to continue the arbitrage swap route
      * @param data Encoded data containing swap route information (pools, types, metadata, amounts, etc.)
      */
-    function handleLoanCallback(bytes memory data) internal {
+    function _handleLoanCallback(bytes memory data) internal {
         (
             address[] memory _pairs,
             uint8[] memory _types,
@@ -290,7 +290,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
         if (DexTypes.isUniswapV2Like(_types[nextHopIndex])) {
             IERC20(tokens[nextHopIndex]).safeTransfer(address(_pairs[nextHopIndex]), valid[nextHopIndex]);
         }
-        swapFlow(_pairs, valid, _types, _meta, initialHopIndex, tokens);
+        _swapFlow(_pairs, valid, _types, _meta, initialHopIndex, tokens);
 
         IERC20(tokens[initialHopIndex]).safeTransfer(address(_pairs[initialHopIndex]), valid[initialHopIndex]);
     }
@@ -305,7 +305,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @param initialHopIndex The starting index for the swap route
      * @param tokens Array of token addresses involved in the swap route
      */
-    function swapFlow(
+    function _swapFlow(
         address[] memory pairs,
         uint256[] memory amounts,
         uint8[] memory _dexType,
@@ -324,7 +324,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
         for (uint8 pairIndex = 1; pairIndex < size; pairIndex++) {
             curHopIndex = (initialHopIndex + pairIndex) % size;
             dexType = (_dexType[curHopIndex]);
-            zeroForOne = decodeIsZeroForOne(_meta[curHopIndex]);
+            zeroForOne = _decodeIsZeroForOne(_meta[curHopIndex]);
             {
                 uint256 nextHopIndex = (curHopIndex + 1) % size;
 
@@ -352,7 +352,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
                     }
                 }
             } else if (DexTypes.isUniswapV3Like(dexType)) {
-                swapUniswapV3Pool(
+                _swapUniswapV3Pool(
                     pairs[curHopIndex], to, amounts[curHopIndex], zeroForOne, abi.encodePacked(tokens[curHopIndex])
                 );
             }
@@ -378,7 +378,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @param data Additional data to pass to the swap callback
      * @return amountOut The amount of tokens received from the swap
      */
-    function swapUniswapV3Pool(address pair, address recipient, uint256 amountIn, bool zeroForOne, bytes memory data)
+    function _swapUniswapV3Pool(address pair, address recipient, uint256 amountIn, bool zeroForOne, bytes memory data)
         internal
         returns (uint256 amountOut)
     {
@@ -427,21 +427,21 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
         // UniswapV3 Flashloan callback from the middle hop, used to pass input of the tokens to the pool
         // for uni2 we pass it before the swap
         if (loanCallbackType == LOAN_CALLBACK_TYPE_ONGOING) {
-            (int256 t0, int256 t1, bytes memory data) = decodeUniswapV3LikeCallbackParams();
+            (int256 t0, int256 t1, bytes memory data) = _decodeUniswapV3LikeCallbackParams();
             if (data.length == 20) {
-                IERC20(bytesToAddress(data)).safeTransfer(msg.sender, uint256(t0 > 0 ? t0 : t1));
+                IERC20(_bytesToAddress(data)).safeTransfer(msg.sender, uint256(t0 > 0 ? t0 : t1));
             }
         } else if (loanCallbackType == LOAN_CALLBACK_TYPE_UNI3) {
-            (,, bytes memory data) = decodeUniswapV3LikeCallbackParams();
+            (,, bytes memory data) = _decodeUniswapV3LikeCallbackParams();
             loanCallbackType = LOAN_CALLBACK_TYPE_ONGOING; // Reset the callback type
 
             // Convert the uniswapv3 callback amounts to the external flash call format which relys on the uniswapv2 callback
             // We pass the amounts out for token0 and token1, if amount is negative it means amount out is 0
-            handleLoanCallback(data);
+            _handleLoanCallback(data);
         } else if (loanCallbackType == LOAN_CALLBACK_TYPE_UNI2) {
             loanCallbackType = LOAN_CALLBACK_TYPE_ONGOING; // Reset the callback type
-            (,, bytes memory data) = decodeUniswapV2LikeCallbackParams();
-            handleLoanCallback(data);
+            (,, bytes memory data) = _decodeUniswapV2LikeCallbackParams();
+            _handleLoanCallback(data);
         }
     }
 
@@ -452,7 +452,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @return tt1 The amount of token1 (can be positive or negative)
      * @return data Additional data passed in the callback
      */
-    function decodeUniswapV3LikeCallbackParams() internal pure returns (int256 tt0, int256 tt1, bytes memory data) {
+    function _decodeUniswapV3LikeCallbackParams() internal pure returns (int256 tt0, int256 tt1, bytes memory data) {
         (tt0, tt1, data) = abi.decode(msg.data[4:], (int256, int256, bytes));
     }
 
@@ -463,7 +463,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @return tt1 The amount of token1
      * @return data Additional data passed in the callback
      */
-    function decodeUniswapV2LikeCallbackParams() internal pure returns (uint256 tt0, uint256 tt1, bytes memory data) {
+    function _decodeUniswapV2LikeCallbackParams() internal pure returns (uint256 tt0, uint256 tt1, bytes memory data) {
         (tt0, tt1, data) = abi.decode(msg.data[4:], (uint256, uint256, bytes));
     }
 
@@ -473,7 +473,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @param d The bytes data containing the address
      * @return addr The extracted address
      */
-    function bytesToAddress(bytes memory d) internal pure returns (address addr) {
+    function _bytesToAddress(bytes memory d) internal pure returns (address addr) {
         assembly {
             addr := mload(add(add(d, 20), 0))
         }
@@ -493,7 +493,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @return zeroForOne True if swapping token0 for token1, false otherwise
      */
     // 1 byte - <1 bit zeroForOne><7 bits- other data>
-    function decodeIsZeroForOne(uint8 b) public pure returns (bool zeroForOne) {
+    function _decodeIsZeroForOne(uint8 b) internal pure returns (bool zeroForOne) {
         assembly {
             zeroForOne := and(b, 0x80)
         }

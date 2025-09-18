@@ -15,11 +15,11 @@ contract TestableReflexRouter is ReflexRouter {
         uint256[] memory valid,
         uint256 index
     ) external {
-        triggerSwapRoute(decoded, valid, index);
+        _triggerSwapRoute(decoded, valid, index);
     }
 
     function exposedHandleLoanCallback(bytes memory data) external {
-        handleLoanCallback(data);
+        _handleLoanCallback(data);
     }
 
     function exposedSwapFlow(
@@ -30,7 +30,7 @@ contract TestableReflexRouter is ReflexRouter {
         uint8 initialHopIndex,
         address[] memory tokens
     ) external {
-        swapFlow(pairs, amounts, _dexType, _meta, initialHopIndex, tokens);
+        _swapFlow(pairs, amounts, _dexType, _meta, initialHopIndex, tokens);
     }
 
     function exposedSwapUniswapV3Pool(
@@ -40,7 +40,7 @@ contract TestableReflexRouter is ReflexRouter {
         bool zeroForOne,
         bytes memory data
     ) external returns (uint256) {
-        return swapUniswapV3Pool(pair, recipient, amountIn, zeroForOne, data);
+        return _swapUniswapV3Pool(pair, recipient, amountIn, zeroForOne, data);
     }
 
     function exposedDecodeUniswapV3LikeCallbackParams()
@@ -48,7 +48,7 @@ contract TestableReflexRouter is ReflexRouter {
         pure
         returns (int256 tt0, int256 tt1, bytes memory data)
     {
-        return decodeUniswapV3LikeCallbackParams();
+        return _decodeUniswapV3LikeCallbackParams();
     }
 
     function exposedDecodeUniswapV2LikeCallbackParams()
@@ -56,17 +56,21 @@ contract TestableReflexRouter is ReflexRouter {
         pure
         returns (uint256 tt0, uint256 tt1, bytes memory data)
     {
-        return decodeUniswapV2LikeCallbackParams();
+        return _decodeUniswapV2LikeCallbackParams();
     }
 
     function exposedBytesToAddress(bytes memory d) external pure returns (address) {
-        return bytesToAddress(d);
+        return _bytesToAddress(d);
     }
 
     function getLoanCallbackType() external pure returns (uint8) {
         // Since loanCallbackType is private, we can't access it directly
         // This function serves as a placeholder for testing callback state
         return 1; // LOAN_CALLBACK_TYPE_ONGOING
+    }
+
+    function decodeIsZeroForOne(uint8 b) external pure returns (bool zeroForOne) {
+        return _decodeIsZeroForOne(b);
     }
 }
 
@@ -202,6 +206,13 @@ contract ReflexRouterInternalTest is Test {
             bool expected = (i & 0x80) != 0;
             assertEq(result, expected, string(abi.encodePacked("Failed for value: ", vm.toString(i))));
         }
+    }
+
+    function testFuzz_decodeIsZeroForOne(uint256 input) public view {
+        uint8 inputByte = uint8(input); // Cast to uint8 to match function signature
+        bool result = testRouter.decodeIsZeroForOne(inputByte);
+        bool expected = (inputByte & 0x80) != 0;
+        assertEq(result, expected);
     }
 
     function test_bytesToAddress_conversion() public view {

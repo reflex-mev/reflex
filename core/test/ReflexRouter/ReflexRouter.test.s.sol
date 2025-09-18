@@ -291,31 +291,6 @@ contract ReflexRouterTest is Test {
     }
 
     // =============================================================================
-    // Callback Handling Tests
-    // =============================================================================
-
-    function test_fallback_uniswapV3_callback() public {
-        // Test the fallback function handling UniswapV3 callbacks
-        // This is complex to test directly, so we'll test the helper functions
-
-        // Test decodeIsZeroForOne function
-        assertTrue(reflexRouter.decodeIsZeroForOne(0x80)); // MSB set
-        assertFalse(reflexRouter.decodeIsZeroForOne(0x7F)); // MSB not set
-        assertFalse(reflexRouter.decodeIsZeroForOne(0x00)); // Zero
-        assertTrue(reflexRouter.decodeIsZeroForOne(0xFF)); // All bits set
-    }
-
-    function test_decodeIsZeroForOne_variousInputs() public view {
-        // Test the bit manipulation logic
-        assertFalse(reflexRouter.decodeIsZeroForOne(0x00));
-        assertFalse(reflexRouter.decodeIsZeroForOne(0x01));
-        assertFalse(reflexRouter.decodeIsZeroForOne(0x7F));
-        assertTrue(reflexRouter.decodeIsZeroForOne(0x80));
-        assertTrue(reflexRouter.decodeIsZeroForOne(0x81));
-        assertTrue(reflexRouter.decodeIsZeroForOne(0xFF));
-    }
-
-    // =============================================================================
     // Admin Functions Tests
     // =============================================================================
 
@@ -465,13 +440,6 @@ contract ReflexRouterTest is Test {
         (uint256 profit,) = reflexRouter.triggerBackrun(triggerPoolId, 1000 * 10 ** 18, true, recipient, bytes32(0));
 
         assertEq(profit, 0);
-    }
-
-    function testFuzz_decodeIsZeroForOne(uint256 input) public view {
-        uint8 inputByte = uint8(input); // Cast to uint8 to match function signature
-        bool result = reflexRouter.decodeIsZeroForOne(inputByte);
-        bool expected = (inputByte & 0x80) != 0;
-        assertEq(result, expected);
     }
 
     function testFuzz_withdrawToken_amounts(uint256 amount) public {
