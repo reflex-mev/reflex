@@ -68,6 +68,7 @@ interface IReflexRouter {
         bytes32 indexed triggerPoolId,
         uint112 swapAmountIn,
         bool token0In,
+        uint256 quoteProfit,
         uint256 profit,
         address profitToken,
         address indexed recipient

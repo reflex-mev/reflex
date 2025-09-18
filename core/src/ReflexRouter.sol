@@ -190,7 +190,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
         _splitERC20(configId, profitToken, profit, recipient);
 
         loanCallbackType = LOAN_CALLBACK_TYPE_EMPTY;
-        emit BackrunExecuted(triggerPoolId, swapAmountIn, token0In, profit, profitToken, recipient);
+        emit BackrunExecuted(triggerPoolId, swapAmountIn, token0In, quoteProfit, profit, profitToken, recipient);
     }
 
     /**
