@@ -18,6 +18,7 @@ contract ReflexRouterIntegrationTest is Test {
         bytes32 indexed triggerPoolId,
         uint112 swapAmountIn,
         bool token0In,
+        uint256 quoteProfit,
         uint256 profit,
         address profitToken,
         address indexed recipient
@@ -456,7 +457,7 @@ contract ReflexRouterIntegrationTest is Test {
 
         // Expect the BackrunExecuted event
         vm.expectEmit(true, true, true, true);
-        emit BackrunExecuted(triggerPoolId, uint112(swapAmount), true, expectedProfit, address(tokenA), recipient);
+        emit BackrunExecuted(triggerPoolId, uint112(swapAmount), true, expectedProfit, expectedProfit, address(tokenA), recipient);
 
         reflexRouter.triggerBackrun(triggerPoolId, uint112(swapAmount), true, recipient, bytes32(0));
     }
