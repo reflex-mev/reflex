@@ -9,6 +9,20 @@ import "../utils/GracefulReentrancyGuard.sol";
 /// @dev Implements failsafe mechanisms to prevent router failures from affecting main swap operations
 /// @dev Profit distribution is handled externally - this contract only extracts profits
 abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
+    // ========== Events ==========
+
+    /// @notice Emitted when the Reflex router address is updated
+    /// @param oldRouter The address of the previous router contract
+    /// @param newRouter The address of the new router contract
+    event ReflexRouterUpdated(address oldRouter, address newRouter);
+
+    /// @notice Emitted when the Reflex configuration ID is updated
+    /// @param oldConfigId The previous configuration ID
+    /// @param newConfigId The new configuration ID
+    event ReflexConfigIdUpdated(bytes32 oldConfigId, bytes32 newConfigId);
+
+    // ========== State Variables ==========
+
     /// @notice Address of the Reflex router contract
     address reflexRouter;
 
@@ -34,7 +48,9 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
     function setReflexRouter(address _router) external {
         _onlyReflexAdmin();
         require(_router != address(0), "Invalid router address");
+        address oldRouter = reflexRouter;
         reflexRouter = _router;
+        emit ReflexRouterUpdated(oldRouter, _router);
     }
 
     /// @notice Returns the current router address
@@ -54,7 +70,9 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
     /// @dev Only callable by current reflex admin
     function setReflexConfigId(bytes32 _configId) external {
         _onlyReflexAdmin();
+        bytes32 oldConfigId = reflexConfigId;
         reflexConfigId = _configId;
+        emit ReflexConfigIdUpdated(oldConfigId, _configId);
     }
 
     /// @notice Main entry point for post-swap profit extraction via backrunning

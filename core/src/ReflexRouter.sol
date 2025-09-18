@@ -43,6 +43,15 @@ uint8 constant LOAN_CALLBACK_TYPE_UNI3 = 3; // Initial loan from uniswap v3
 contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRevenueDistributor {
     using SafeERC20 for IERC20;
 
+    // ========== Events ==========
+
+    /// @notice Emitted when the ReflexQuoter address is updated
+    /// @param oldQuoter The address of the previous quoter contract
+    /// @param newQuoter The address of the new quoter contract
+    event ReflexQuoterUpdated(address indexed oldQuoter, address indexed newQuoter);
+
+    // ========== State Variables ==========
+
     /// @notice The address of the contract owner/admin
     address public owner;
 
@@ -84,7 +93,9 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @param _reflexQuoter The address of the new ReflexQuoter contract
      */
     function setReflexQuoter(address _reflexQuoter) public isAdmin {
+        address oldQuoter = reflexQuoter;
         reflexQuoter = _reflexQuoter;
+        emit ReflexQuoterUpdated(oldQuoter, _reflexQuoter);
     }
 
     /**
