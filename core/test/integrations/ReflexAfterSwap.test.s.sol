@@ -22,7 +22,7 @@ contract TestableReflexAfterSwap is ReflexAfterSwap {
         bool zeroForOne,
         address recipient
     ) external returns (uint256 profit, address profitToken) {
-        return reflexAfterSwap(triggerPoolId, amount0Delta, amount1Delta, zeroForOne, recipient);
+        return _reflexAfterSwap(triggerPoolId, amount0Delta, amount1Delta, zeroForOne, recipient);
     }
 
     // Implementation of the abstract function

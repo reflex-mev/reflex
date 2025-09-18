@@ -86,7 +86,7 @@ abstract contract ReflexAfterSwap is GracefulReentrancyGuard {
     /// @dev Internal function with reentrancy protection using graceful reentrancy guard
     /// @dev Uses try-catch for failsafe operation - router failures won't break main swap
     /// @dev Profit distribution is handled externally - this contract only extracts profits
-    function reflexAfterSwap(
+    function _reflexAfterSwap(
         bytes32 triggerPoolId,
         int256 amount0Delta,
         int256 amount1Delta,
