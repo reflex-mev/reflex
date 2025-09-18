@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Revenue Configuration
 
-Revenue sharing configurations in Reflex Protocol are centrally managed by the Reflex team to ensure security, consistency, and proper validation of all profit distribution mechanisms.
+Revenue sharing configurations in Reflex are centrally managed by the Reflex team to ensure security, consistency, and proper validation of all profit distribution mechanisms.
 
 ## Overview
 
@@ -15,16 +15,16 @@ All MEV profits captured by Reflex are distributed according to predefined confi
 
 ## Default Configuration
 
-Reflex Protocol provides a default revenue sharing configuration that works for most integrations:
+Reflex provides a default revenue sharing configuration that works for most integrations:
 
-- **Protocol Fee**: 80% to Reflex Protocol for infrastructure and development
+- **Protocol Fee**: 80% to Reflex for infrastructure and development
 - **User Rewards**: 20% back to traders/users
 
 ## Custom Configuration Process
 
 If you need a custom profit sharing structure different from the default, follow this process:
 
-### 1. Contact Reflex Protocol
+### 1. Contact Reflex
 
 Reach out to the Reflex team with your requirements:
 
@@ -110,7 +110,7 @@ const result = await reflexSDK.backrunedExecute(
 ```javascript
 const dexConfig = {
   recipients: [
-    "0xReflexProtocol...",    // Reflex Protocol
+    "0xReflex...",    // Reflex
     "0xDEXTreasury...",       // Protocol treasury
     "0xLPRewardsPool...",     // Liquidity provider rewards
   ],
@@ -124,7 +124,7 @@ const dexConfig = {
 ```javascript
 const aggregatorConfig = {
   recipients: [
-    "0xReflexProtocol...",     // Reflex Protocol  
+    "0xReflex...",     // Reflex  
     "0xUserCashback...",       // Direct user cashback
     "0xAggregatorTreasury...", // Protocol development
   ],
@@ -138,7 +138,7 @@ const aggregatorConfig = {
 ```javascript
 const walletConfig = {
   recipients: [
-    "0xReflexProtocol...",     // Reflex Protocol
+    "0xReflex...",     // Reflex
     "0xUserRewards...",        // Direct user benefits
     "0xWalletTreasury...",     // Wallet development
   ],

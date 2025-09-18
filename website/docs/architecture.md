@@ -4,11 +4,11 @@ sidebar_position: 1
 
 # Architecture
 
-Understanding Reflex Protocol's architecture is key to building effective MEV capture strategies. This document provides a comprehensive overview of the system design, components, and data flow.
+Understanding Reflex's architecture is key to building effective MEV capture strategies. This document provides a comprehensive overview of the system design, components, and data flow.
 
 ## 🏗️ High-Level Architecture
 
-Reflex Protocol operates through a simple yet powerful architecture consisting of core smart contracts deployed per chain and multiple integration pathways for different entities. The system is designed to capture MEV opportunities and distribute profits fairly across the ecosystem.
+Reflex operates through a simple yet powerful architecture consisting of core smart contracts deployed per chain and multiple integration pathways for different entities. The system is designed to capture MEV opportunities and distribute profits fairly across the ecosystem.
 
 ### Core Components Per Chain
 
@@ -173,9 +173,9 @@ graph LR
 
 ## 🛡️ Security Architecture
 
-### Reflex Protocol Security
+### Reflex Security
 
-Reflex Protocol implements multiple security layers to ensure safe and reliable MEV operations:
+Reflex implements multiple security layers to ensure safe and reliable MEV operations:
 
 **Failsafe Mechanisms** - Built-in safety checks that prevent execution if profitability thresholds aren't met or if gas costs exceed expected limits. All operations can be safely reverted without affecting user transactions.
 
@@ -196,7 +196,7 @@ Reflex Protocol implements multiple security layers to ensure safe and reliable 
 
 ### Efficient Profit Detection
 
-Reflex Protocol implements a multi-stage gas optimization strategy that minimizes costs while maximizing MEV capture efficiency:
+Reflex implements a multi-stage gas optimization strategy that minimizes costs while maximizing MEV capture efficiency:
 
 **Stage 1: Profit Check (Minimal Gas)** - Initial profitability assessment adds virtually no gas overhead. This lightweight check determines if an MEV opportunity exists without committing to expensive calculations.
 

@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Integration Overview
 
-Learn how to integrate Reflex Protocol into your DeFi protocol to capture and distribute MEV fairly among your users.
+Learn how to integrate Reflex into your DeFi protocol to capture and distribute MEV fairly among your users.
 
 ## 🎯 Integration Types
 
@@ -87,7 +87,7 @@ Your application uses the Reflex SDK to monitor transactions, detect MEV opportu
 All integration types use Reflex's centralized revenue configuration system:
 
 **Default Configuration:**
-- 80% to Reflex Protocol
+- 80% to Reflex
 - 20% to users/traders
 
 **Custom Configuration:**

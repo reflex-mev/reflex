@@ -1,8 +1,8 @@
 # Reflex SDK
 
-> **Part of the [Reflex MEV Protocol](../README.md) monorepo**
+> **Part of the [Reflex MEV](../README.md) monorepo**
 
-A TypeScript SDK for interacting with the Reflex Protocol, enabling seamless execution of MEV capture and arbitrage opportunities.
+A TypeScript SDK for interacting with Reflex, enabling seamless execution of MEV capture and arbitrage opportunities.
 
 The Reflex SDK provides a developer-friendly interface to the core Reflex MEV system, abstracting away the complexity of smart contract interactions while providing full type safety and comprehensive testing.
 

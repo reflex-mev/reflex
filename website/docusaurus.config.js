@@ -8,7 +8,7 @@ import { themes as prismThemes } from "prism-react-renderer";
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "Reflex Protocol",
+  title: "Reflex",
   tagline: "Advanced MEV Infrastructure for DeFi",
   favicon: "img/favicon.ico",
 
@@ -69,7 +69,7 @@ const config = {
       // Replace with your project's social card
       image: "img/reflex-social-card.jpg",
       navbar: {
-        title: "Reflex Protocol",
+        title: "Reflex",
         logo: {
           alt: "Reflex Logo",
           src: "img/min_logo_2.png",
@@ -121,7 +121,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Reflex Protocol. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Reflex. Built with Docusaurus.`,
       },
       prism: {
         theme: prismThemes.github,
