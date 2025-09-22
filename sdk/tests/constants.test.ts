@@ -40,7 +40,7 @@ describe("Constants", () => {
       );
 
       expect(triggerBackrun).toBeDefined();
-      expect(triggerBackrun?.inputs).toHaveLength(4);
+      expect(triggerBackrun?.inputs).toHaveLength(5); // Updated to include configId
       expect(triggerBackrun?.outputs).toHaveLength(2);
       expect(triggerBackrun?.stateMutability).toBe("nonpayable");
     });

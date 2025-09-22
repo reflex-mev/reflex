@@ -44,6 +44,7 @@ export const REFLEX_ROUTER_ABI = [
       { name: "swapAmountIn", type: "uint112" },
       { name: "token0In", type: "bool" },
       { name: "recipient", type: "address" },
+      { name: "configId", type: "bytes32" },
     ],
     outputs: [
       { name: "profit", type: "uint256" },
