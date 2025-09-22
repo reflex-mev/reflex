@@ -1,4 +1,4 @@
-import { BigNumberish, BytesLike } from "ethers";
+import { BigNumberish, BytesLike } from 'ethers';
 
 /**
  * Parameters for executing arbitrary calldata before a backrun
@@ -24,6 +24,8 @@ export interface BackrunParams {
   token0In: boolean;
   /** Address that will receive the arbitrage profit */
   recipient: string;
+  /** Configuration ID for profit splitting (uses default if not provided) */
+  configId?: string;
 }
 
 /**

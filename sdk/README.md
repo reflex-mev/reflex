@@ -1,14 +1,14 @@
 # Reflex SDK
 
-> **Part of the [Reflex MEV Protocol](../README.md) monorepo**
+> **Part of the [Reflex MEV](../README.md) monorepo**
 
-A TypeScript SDK for interacting with the Reflex Router contract, enabling seamless execution of MEV backruns and arbitrage opportunities.
+A TypeScript SDK for interacting with Reflex, enabling seamless execution of MEV capture and arbitrage opportunities.
 
 The Reflex SDK provides a developer-friendly interface to the core Reflex MEV system, abstracting away the complexity of smart contract interactions while providing full type safety and comprehensive testing.
 
 ## Features
 
-- 🚀 **Easy Integration**: Simple API for executing backruns and arbitrage
+- 🚀 **Easy Integration**: Simple API for executing MEV capture and arbitrage
 - 🔒 **Type Safety**: Full TypeScript support with comprehensive type definitions
 - 🧪 **Well Tested**: 49+ tests covering all functionality
 - 🛠 **Utility Functions**: Built-in helpers for address validation, token formatting, and more
@@ -90,19 +90,19 @@ new ReflexSDK(provider: Provider, signer: Signer, config: ReflexConfig)
 
 ##### `backrunedExecute(executeParams, backrunParams, options?)`
 
-Executes arbitrary calldata and triggers multiple backruns.
+Executes arbitrary calldata and triggers multiple MEV capture operations.
 
 **Parameters:**
 
 - `executeParams: ExecuteParams` - Parameters for the initial execution
-- `backrunParams: BackrunParams[]` - Array of backrun parameters
+- `backrunParams: BackrunParams[]` - Array of MEV capture parameters
 - `options?: TransactionOptions` - Optional transaction settings
 
 **Returns:** `Promise<BackrunedExecuteResult>`
 
 ##### `estimateBackrunedExecuteGas(executeParams, backrunParams)`
 
-Estimates gas for a backruned execute operation.
+Estimates gas for a MEV capture execution operation.
 
 **Returns:** `Promise<bigint>`
 
@@ -120,7 +120,7 @@ Gets the current ReflexQuoter address.
 
 ##### `watchBackrunExecuted(callback, options?)`
 
-Listens for BackrunExecuted events.
+Listens for MEV capture executed events.
 
 **Parameters:**
 
@@ -155,6 +155,7 @@ interface BackrunParams {
   swapAmountIn: BigNumberish; // Input amount for arbitrage
   token0In: boolean; // Whether to use token0 as input
   recipient: string; // Address to receive profits
+  configId?: string; // Configuration ID for profit splitting
 }
 ```
 
@@ -164,7 +165,7 @@ interface BackrunParams {
 interface BackrunedExecuteResult {
   success: boolean; // Whether initial call succeeded
   returnData: string; // Return data from initial call
-  profits: bigint[]; // Profit amounts from each backrun
+  profits: bigint[]; // Profit amounts from each MEV capture
   profitTokens: string[]; // Token addresses for each profit
   transactionHash: string; // Transaction hash
 }
@@ -204,10 +205,10 @@ calculateProfitPercentage(BigInt('100'), BigInt('1000')); // 10 (%)
 ## Event Monitoring
 
 ```typescript
-// Watch for backrun events
+// Watch for MEV capture events
 const unsubscribe = reflexSdk.watchBackrunExecuted(
   event => {
-    console.log('Backrun executed:', event);
+    console.log('MEV capture executed:', event);
   },
   {
     triggerPoolId: '0x1234...', // Optional filter
@@ -228,13 +229,13 @@ The SDK provides detailed error messages for common issues:
 try {
   const result = await reflexSdk.backrunedExecute(executeParams, backrunParams);
 } catch (error) {
-  console.error('Backrun failed:', error.message);
+  console.error('MEV capture failed:', error.message);
 }
 ```
 
 ## Testing
 
-The SDK includes a comprehensive test suite with 49 tests covering all functionality:
+The SDK includes a comprehensive test suite with 49+ tests covering all functionality:
 
 ```bash
 # Run all tests
@@ -251,11 +252,11 @@ npm test -- tests/integration.test.ts
 
 ### Test Coverage
 
-- **ReflexSDK.test.ts**: Core SDK functionality (17 tests)
-- **utils.test.ts**: Utility functions (15 tests)
-- **types.test.ts**: Type definitions (8 tests)
-- **constants.test.ts**: Constants and ABI (3 tests)
-- **integration.test.ts**: End-to-end scenarios (3 tests)
+- **ReflexSDK.test.ts**: Core SDK functionality (10+ tests)
+- **utils.test.ts**: Utility functions (8+ tests)
+- **types.test.ts**: Type definitions (4+ tests)
+- **constants.test.ts**: Constants and ABI (3+ tests)
+- **integration.test.ts**: End-to-end scenarios (3+ tests)
 
 ## Development
 
@@ -372,5 +373,5 @@ npm run publish:dry
 For issues and questions:
 
 - GitHub Issues: [Create an issue](https://github.com/reflex-mev/reflex/issues)
-- Documentation: [View docs](https://github.com/reflex-mev/reflex/tree/main/sdk)
+- Documentation: [View docs](https://reflex-mev.github.io/reflex)
 - NPM Package: [@reflex-mev/sdk](https://www.npmjs.com/package/@reflex-mev/sdk)
