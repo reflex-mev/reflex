@@ -45,20 +45,6 @@ export interface BackrunedExecuteResult {
 }
 
 /**
- * Configuration for the Reflex SDK
- */
-export interface ReflexConfig {
-  /** Address of the deployed Reflex Router contract */
-  routerAddress: string;
-  /** Optional address of the Reflex Quoter contract */
-  quoterAddress?: string;
-  /** Default gas limit for transactions (default: 500000) */
-  defaultGasLimit?: bigint;
-  /** Multiplier for gas price estimation (default: 1.1) */
-  gasPriceMultiplier?: number;
-}
-
-/**
  * Transaction options for gas and fee configuration
  */
 export interface TransactionOptions {
