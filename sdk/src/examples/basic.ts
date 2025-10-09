@@ -7,9 +7,11 @@ const provider = new ethers.JsonRpcProvider('http://localhost:8545');
 const signer = new ethers.Wallet('your-private-key', provider);
 
 // Initialize ReflexSDK
-const reflexSDK = new ReflexSDK(provider, signer, {
-  routerAddress: '0x1234567890123456789012345678901234567890',
-});
+const reflexSDK = new ReflexSDK(
+  provider,
+  signer,
+  '0x1234567890123456789012345678901234567890'
+);
 
 async function basicExample() {
   try {
