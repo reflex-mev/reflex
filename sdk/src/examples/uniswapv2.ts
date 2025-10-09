@@ -66,6 +66,7 @@ async function uniswapV2Example() {
       swapAmountIn: ethers.parseEther('0.5'), // 0.5 ETH arbitrage
       token0In: true, // WETH is token0 in most pairs
       recipient: wallet.address,
+      // configId: '0x0000...0000', // Optional: Custom profit split configuration
     };
 
     console.log('Executing backruned execute...');
@@ -106,6 +107,7 @@ async function uniswapV2Example() {
       swapAmountIn: ethers.parseEther('2'),
       token0In: false, // Use USDT as input
       recipient: wallet.address,
+      // configId: '0x0000...0000', // Optional: Custom profit split configuration
     };
 
     const arbitrageResult = await reflexSDK.backrunedExecute(executeParams2, [

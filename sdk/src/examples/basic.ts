@@ -29,6 +29,7 @@ async function basicExample() {
         swapAmountIn: BigInt(1000000), // 1 token with 6 decimals
         token0In: true,
         recipient: '0xC2c86a33E6441d7c0AD4f7b2A36E82F6D7ca40C9',
+        // configId: '0x0000...0000', // Optional: Specify custom profit split configuration
       },
     ];
 

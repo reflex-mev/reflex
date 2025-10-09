@@ -79,6 +79,7 @@ async function uniswapV3Example() {
       swapAmountIn: ethers.parseEther('0.8'), // 0.8 ETH arbitrage
       token0In: false, // USDC is token0, WETH is token1 in this pool
       recipient: wallet.address,
+      // configId: '0x0000...0000', // Optional: Custom profit split configuration
     };
 
     console.log('Executing V3 backruned execute...');
@@ -121,6 +122,7 @@ async function uniswapV3Example() {
       swapAmountIn: ethers.parseEther('2'),
       token0In: false, // Use USDC as input
       recipient: wallet.address,
+      // configId: '0x0000...0000', // Optional: Custom profit split configuration
     };
 
     const crossTierResult = await reflexSDK.backrunedExecute(executeParams2, [
@@ -168,6 +170,7 @@ async function uniswapV3Example() {
       swapAmountIn: ethers.parseEther('1.5'),
       token0In: true,
       recipient: wallet.address,
+      // configId: '0x0000...0000', // Optional: Custom profit split configuration
     };
 
     console.log('Executing multi-hop swap + backrun...');
