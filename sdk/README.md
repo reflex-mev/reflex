@@ -48,12 +48,12 @@ import { ethers } from 'ethers';
 const provider = new ethers.JsonRpcProvider('YOUR_RPC_URL');
 const signer = new ethers.Wallet('YOUR_PRIVATE_KEY', provider);
 
-// Create SDK instance
-const reflexSdk = new ReflexSDK(provider, signer, {
-  routerAddress: '0xYourReflexRouterAddress',
-  defaultGasLimit: 500000n,
-  gasPriceMultiplier: 1.1,
-});
+// Create SDK instance with router address
+const reflexSdk = new ReflexSDK(
+  provider,
+  signer,
+  '0xYourReflexRouterAddress'
+);
 
 // Execute a backruned transaction
 const executeParams: ExecuteParams = {
@@ -68,6 +68,7 @@ const backrunParams: BackrunParams[] = [
     swapAmountIn: BigInt(1000000),
     token0In: true,
     recipient: '0xRecipientAddress',
+    configId: '0x0000...0000', // Optional: Use specific profit split configuration
   },
 ];
 
@@ -83,8 +84,13 @@ console.log('Profit tokens:', result.profitTokens);
 #### Constructor
 
 ```typescript
-new ReflexSDK(provider: Provider, signer: Signer, config: ReflexConfig)
+new ReflexSDK(provider: Provider, signer: Signer, routerAddress: string)
 ```
+
+**Parameters:**
+- `provider: Provider` - Ethers.js provider for reading blockchain data
+- `signer: Signer` - Ethers.js signer for sending transactions
+- `routerAddress: string` - Address of the deployed Reflex Router contract
 
 #### Methods
 
@@ -96,7 +102,7 @@ Executes arbitrary calldata and triggers multiple MEV capture operations.
 
 - `executeParams: ExecuteParams` - Parameters for the initial execution
 - `backrunParams: BackrunParams[]` - Array of MEV capture parameters
-- `options?: TransactionOptions` - Optional transaction settings
+- `options?: TransactionOptions` - Optional transaction settings (gasLimit, gasPrice, etc.)
 
 **Returns:** `Promise<BackrunedExecuteResult>`
 
@@ -109,12 +115,6 @@ Estimates gas for a MEV capture execution operation.
 ##### `getAdmin()`
 
 Gets the current admin address of the Reflex Router.
-
-**Returns:** `Promise<string>`
-
-##### `getQuoter()`
-
-Gets the current ReflexQuoter address.
 
 **Returns:** `Promise<string>`
 
@@ -151,11 +151,11 @@ interface ExecuteParams {
 
 ```typescript
 interface BackrunParams {
-  triggerPoolId: string; // Pool ID that triggered the opportunity
+  triggerPoolId: string; // Pool ID that triggered the opportunity (bytes32)
   swapAmountIn: BigNumberish; // Input amount for arbitrage
   token0In: boolean; // Whether to use token0 as input
   recipient: string; // Address to receive profits
-  configId?: string; // Configuration ID for profit splitting
+  configId?: string; // Optional: Configuration ID for profit splitting (bytes32)
 }
 ```
 

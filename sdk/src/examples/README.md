@@ -93,8 +93,12 @@ async function exampleFunction() {
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
-  // 2. Initialize Reflex SDK
-  const reflexSDK = new ReflexSDK(provider, wallet, config);
+  // 2. Initialize Reflex SDK with router address
+  const reflexSDK = new ReflexSDK(
+    provider,
+    wallet,
+    process.env.REFLEX_ROUTER || '0x...'
+  );
 
   // 3. Execute operations
   const result = await reflexSDK.backrunedExecute(executeParams, backrunParams);
