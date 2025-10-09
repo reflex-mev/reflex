@@ -1,6 +1,6 @@
 {
   "name": "@reflex-mev/sdk",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "TypeScript SDK for Reflex Router - Execute MEV backruns with ease",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

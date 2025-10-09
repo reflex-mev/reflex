@@ -30,33 +30,15 @@ import { ethers } from 'ethers';
 const provider = new ethers.JsonRpcProvider('https://mainnet.infura.io/v3/YOUR_KEY');
 const signer = new ethers.Wallet('YOUR_PRIVATE_KEY', provider);
 
-// Configuration
-const config = {
-    routerAddress: '0x742d35Cc6634C0532925a3b8D598C4B4B3A3A3A3',
-    defaultGasLimit: 500000n,
-    gasPriceMultiplier: 1.1,
-};
-
-// Create SDK instance
-const reflex = new ReflexSDK(provider, signer, config);
+// Create SDK instance with router address
+const reflex = new ReflexSDK(
+    provider,
+    signer,
+    '0x742d35Cc6634C0532925a3b8D598C4B4B3A3A3A3' // Reflex Router address
+);
 ```
 
 ## 🔧 Configuration
-
-### ReflexConfig Interface
-
-```typescript
-interface ReflexConfig {
-    /** Address of the deployed Reflex Router contract */
-    routerAddress: string;
-    /** Optional address of the Reflex Quoter contract */
-    quoterAddress?: string;
-    /** Default gas limit for transactions (default: 500000) */
-    defaultGasLimit?: bigint;
-    /** Multiplier for gas price estimation (default: 1.1) */
-    gasPriceMultiplier?: number;
-}
-```
 
 ### Constructor
 
@@ -64,14 +46,14 @@ interface ReflexConfig {
 constructor(
     provider: Provider, 
     signer: Signer, 
-    config: ReflexConfig
+    routerAddress: string
 )
 ```
 
 **Parameters:**
 - `provider` - Ethers provider for reading blockchain data
 - `signer` - Ethers signer for sending transactions  
-- `config` - Configuration for the Reflex Router
+- `routerAddress` - Address of the deployed Reflex Router contract
 
 ## 📋 Core Methods
 
@@ -97,11 +79,11 @@ interface ExecuteParams {
 }
 
 interface BackrunParams {
-    triggerPoolId: string;    // Pool ID that triggered the opportunity
+    triggerPoolId: string;      // Pool ID that triggered the opportunity (bytes32)
     swapAmountIn: BigNumberish; // Input swap amount
-    token0In: boolean;        // Whether token0 is used as input
-    recipient: string;        // Address to receive profits
-    configId?: string;        // Configuration ID for profit splitting
+    token0In: boolean;          // Whether token0 is used as input
+    recipient: string;          // Address to receive profits
+    configId?: string;          // Optional: Configuration ID for profit splitting (bytes32)
 }
 
 interface TransactionOptions {
@@ -138,7 +120,7 @@ const gasEstimate = await reflex.estimateBackrunedExecuteGas(
 
 **Returns:** `bigint` - Estimated gas limit
 
-## � Contract Information
+## 📋 Contract Information
 
 ### `getAdmin()`
 
@@ -149,16 +131,6 @@ const adminAddress = await reflex.getAdmin();
 ```
 
 **Returns:** `string` - The address of the current admin
-
-### `getQuoter()`
-
-Gets the current ReflexQuoter address.
-
-```typescript
-const quoterAddress = await reflex.getQuoter();
-```
-
-**Returns:** `string` - The address of the ReflexQuoter contract
 
 ## 📊 Events & Monitoring
 
@@ -300,7 +272,6 @@ import {
     ExecuteParams,
     BackrunParams,
     BackrunedExecuteResult,
-    ReflexConfig,
     TransactionOptions,
     BackrunExecutedEvent,
 } from '@reflex-mev/sdk';
@@ -313,11 +284,11 @@ interface ExecuteParams {
 }
 
 interface BackrunParams {
-    triggerPoolId: string;
-    swapAmountIn: BigNumberish;
-    token0In: boolean;
-    recipient: string;
-    configId?: string;
+    triggerPoolId: string;      // Pool ID that triggered the opportunity (bytes32)
+    swapAmountIn: BigNumberish; // Input swap amount
+    token0In: boolean;          // Whether token0 is used as input
+    recipient: string;          // Address to receive profits
+    configId?: string;          // Optional: Configuration ID for profit splitting (bytes32)
 }
 
 interface BackrunedExecuteResult {
@@ -350,10 +321,11 @@ async function executeBackrun() {
     const provider = new ethers.JsonRpcProvider(RPC_URL);
     const signer = new ethers.Wallet(PRIVATE_KEY, provider);
     
-    const reflex = new ReflexSDK(provider, signer, {
-        routerAddress: '0x742d35Cc6634C0532925a3b8D598C4B4B3A3A3A3',
-        defaultGasLimit: 500000n,
-    });
+    const reflex = new ReflexSDK(
+        provider,
+        signer,
+        '0x742d35Cc6634C0532925a3b8D598C4B4B3A3A3A3' // Router address
+    );
 
     // Prepare execute parameters (e.g., Uniswap swap)
     const executeParams = {
