@@ -33,10 +33,11 @@ const provider = new ethers.JsonRpcProvider(
 const signer = new ethers.Wallet("YOUR_PRIVATE_KEY", provider);
 
 // Create SDK instance
-const reflex = new ReflexSDK(provider, signer, {
-  routerAddress: "0xYourReflexRouterAddress",
-  defaultGasLimit: 300000n,
-});
+const reflex = new ReflexSDK(
+  provider,
+  signer,
+  "0xYourReflexRouterAddress" // Router address
+);
 ```
 
 ## DApp Integration
@@ -58,10 +59,11 @@ export function useReflexMEV(provider, signer) {
 
   useEffect(() => {
     if (provider && signer) {
-      const reflexInstance = new ReflexSDK(provider, signer, {
-        routerAddress: "0xYourReflexRouterAddress",
-        defaultGasLimit: 500000n,
-      });
+      const reflexInstance = new ReflexSDK(
+        provider,
+        signer,
+        "0xYourReflexRouterAddress" // Router address
+      );
 
       setReflex(reflexInstance);
 
@@ -214,19 +216,24 @@ export function MEVTradingInterface({ useReflexMEV }) {
 ### Gas Management
 
 ```typescript
-// Advanced gas optimization
-const reflex = new ReflexSDK(provider, signer, {
-  routerAddress: "0xYourReflexRouterAddress",
-  defaultGasLimit: 500000n,
-  gasPriceMultiplier: 1.2,
-});
-
 // Transaction options can be passed to backrunedExecute
+const reflex = new ReflexSDK(
+  provider,
+  signer,
+  "0xYourReflexRouterAddress" // Router address
+);
+
 const options = {
   gasLimit: 600000n,
   maxFeePerGas: ethers.parseUnits("100", "gwei"),
   maxPriorityFeePerGas: ethers.parseUnits("2", "gwei"),
 };
+
+const result = await reflex.backrunedExecute(
+  executeParams,
+  backrunParams,
+  options // Pass transaction options
+);
 ```
 
 ### Event Monitoring
@@ -276,10 +283,11 @@ describe("MEV Integration", () => {
     provider = new ethers.JsonRpcProvider("http://localhost:8545");
     signer = new ethers.Wallet("0x" + "1".repeat(64), provider);
 
-    reflex = new ReflexSDK(provider, signer, {
-      routerAddress: "0x1234567890123456789012345678901234567890",
-      defaultGasLimit: 500000n,
-    });
+    reflex = new ReflexSDK(
+      provider,
+      signer,
+      "0x1234567890123456789012345678901234567890" // Router address
+    );
   });
 
   it("should capture MEV successfully", async () => {
