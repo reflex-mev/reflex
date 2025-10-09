@@ -30,12 +30,11 @@ async function uniswapV2Example() {
   );
 
   // Initialize the Reflex SDK
-  const reflexSDK = new ReflexSDK(provider, wallet, {
-    routerAddress:
-      process.env.REFLEX_ROUTER || '0x1234567890123456789012345678901234567890',
-    defaultGasLimit: 800000n, // Higher gas limit for V2 operations
-    gasPriceMultiplier: 1.2, // Slightly higher multiplier for MEV
-  });
+  const reflexSDK = new ReflexSDK(
+    provider,
+    wallet,
+    process.env.REFLEX_ROUTER || '0x1234567890123456789012345678901234567890'
+  );
 
   try {
     console.log('🦄 Starting Uniswap V2 backrunning example...');

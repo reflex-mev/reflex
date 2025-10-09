@@ -1,24 +1,18 @@
 import {
-  ethers,
   Contract,
   Provider,
   Signer,
-  BigNumberish,
-  BytesLike,
-  TransactionReceipt,
-  TransactionResponse,
   ContractTransactionResponse,
   Interface,
-} from "ethers";
-import { REFLEX_ROUTER_ABI } from "./abi";
+} from 'ethers';
+import { REFLEX_ROUTER_ABI } from './abi';
 import {
   ExecuteParams,
   BackrunParams,
   BackrunedExecuteResult,
-  ReflexConfig,
   TransactionOptions,
   BackrunExecutedEvent,
-} from "./types";
+} from './types';
 
 /**
  * Reflex SDK - TypeScript SDK for interacting with Reflex Router
@@ -29,7 +23,6 @@ import {
 export class ReflexSDK {
   private provider: Provider;
   private signer: Signer;
-  private config: ReflexConfig;
   private contract: Contract;
 
   /**
@@ -39,20 +32,11 @@ export class ReflexSDK {
    * @param signer - Ethers signer for sending transactions
    * @param config - Configuration for the Reflex Router
    */
-  constructor(provider: Provider, signer: Signer, config: ReflexConfig) {
+  constructor(provider: Provider, signer: Signer, routerAddress: string) {
     this.provider = provider;
     this.signer = signer;
-    this.config = {
-      defaultGasLimit: 500000n,
-      gasPriceMultiplier: 1.1,
-      ...config,
-    };
 
-    this.contract = new Contract(
-      this.config.routerAddress,
-      REFLEX_ROUTER_ABI,
-      this.signer
-    );
+    this.contract = new Contract(routerAddress, REFLEX_ROUTER_ABI, this.signer);
   }
 
   /**
@@ -70,10 +54,28 @@ export class ReflexSDK {
   ): Promise<BackrunedExecuteResult> {
     try {
       // Prepare transaction parameters
-      const txOptions = await this.prepareTxOptions(
-        options,
-        executeParams.value
-      );
+      const txOptions = {
+        value: executeParams.value,
+        ...options,
+      };
+      // Set default gas limit if not provided
+      if (!txOptions.gasLimit) {
+        txOptions.gasLimit = await this.estimateBackrunedExecuteGas(
+          executeParams,
+          backrunParams
+        );
+      }
+
+      // Handle gas price with multiplier
+      if (!txOptions.gasPrice && !txOptions.maxFeePerGas) {
+        const feeData = await this.provider.getFeeData();
+        if (feeData.gasPrice) {
+          txOptions.gasPrice = feeData.gasPrice;
+          txOptions.maxFeePerGas = feeData.maxFeePerGas ?? undefined;
+          txOptions.maxPriorityFeePerGas =
+            feeData.maxPriorityFeePerGas ?? undefined;
+        }
+      }
 
       // Execute the backruned execute transaction
       const tx: ContractTransactionResponse =
@@ -86,7 +88,7 @@ export class ReflexSDK {
       // Wait for transaction receipt
       const receipt = await tx.wait();
       if (!receipt || receipt.status !== 1) {
-        throw new Error("Transaction failed");
+        throw new Error('Transaction failed');
       }
 
       // Parse the transaction receipt to get return values
@@ -134,15 +136,6 @@ export class ReflexSDK {
   }
 
   /**
-   * Gets the current ReflexQuoter address
-   *
-   * @returns The address of the ReflexQuoter contract
-   */
-  async getQuoter(): Promise<string> {
-    return await this.contract.reflexQuoter();
-  }
-
-  /**
    * Listens for BackrunExecuted events
    *
    * @param callback - Function to call when an event is received
@@ -173,8 +166,7 @@ export class ReflexSDK {
         token0In: boolean,
         profit: bigint,
         profitToken: string,
-        recipient: string,
-        event: any
+        recipient: string
       ) => {
         callback({
           triggerPoolId,
@@ -205,7 +197,7 @@ export class ReflexSDK {
     backrunParams: BackrunParams[]
   ): string {
     const iface = new Interface(REFLEX_ROUTER_ABI);
-    return iface.encodeFunctionData("backrunedExecute", [
+    return iface.encodeFunctionData('backrunedExecute', [
       executeParams,
       backrunParams,
     ]);
@@ -213,41 +205,10 @@ export class ReflexSDK {
 
   // Private helper methods
 
-  private async prepareTxOptions(
-    options: TransactionOptions,
-    value: bigint = BigInt(0)
-  ): Promise<any> {
-    const txOptions: any = {
-      value,
-      ...options,
-    };
-
-    // Set default gas limit if not provided
-    if (!txOptions.gasLimit && !txOptions.gas) {
-      txOptions.gasLimit = this.config.defaultGasLimit;
-    }
-
-    // Handle gas price with multiplier
-    if (
-      !txOptions.gasPrice &&
-      !txOptions.maxFeePerGas &&
-      this.config.gasPriceMultiplier
-    ) {
-      const feeData = await this.provider.getFeeData();
-      if (feeData.gasPrice) {
-        txOptions.gasPrice = BigInt(
-          Math.floor(Number(feeData.gasPrice) * this.config.gasPriceMultiplier)
-        );
-      }
-    }
-
-    return txOptions;
-  }
-
   private async parseBackrunedExecuteResult(
     hash: string,
     receipt: any
-  ): Promise<Omit<BackrunedExecuteResult, "transactionHash">> {
+  ): Promise<Omit<BackrunedExecuteResult, 'transactionHash'>> {
     // For ethers, we need to parse events or simulate the call to get return values
     try {
       // Parse all BackrunExecuted events from the receipt
@@ -255,7 +216,7 @@ export class ReflexSDK {
         .map((log: any) => {
           try {
             const parsedLog = this.contract.interface.parseLog(log);
-            return parsedLog?.name === "BackrunExecuted" ? parsedLog : null;
+            return parsedLog?.name === 'BackrunExecuted' ? parsedLog : null;
           } catch {
             return null;
           }
@@ -270,13 +231,13 @@ export class ReflexSDK {
           profits.push(event.args?.profit || BigInt(0));
           profitTokens.push(
             event.args?.profitToken ||
-              "0x0000000000000000000000000000000000000000"
+              '0x0000000000000000000000000000000000000000'
           );
         }
 
         return {
           success: true,
-          returnData: "0x",
+          returnData: '0x',
           profits,
           profitTokens,
         };
@@ -284,7 +245,7 @@ export class ReflexSDK {
 
       return {
         success: receipt.status === 1,
-        returnData: "0x",
+        returnData: '0x',
         profits: [],
         profitTokens: [],
       };
