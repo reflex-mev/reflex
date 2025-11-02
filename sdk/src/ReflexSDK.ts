@@ -5,7 +5,7 @@ import {
   ContractTransactionResponse,
   Interface,
 } from 'ethers';
-import { REFLEX_ROUTER_ABI } from './abi';
+import { REFLEX_ROUTER_ABI } from './constants/abi';
 import {
   ExecuteParams,
   BackrunParams,
@@ -60,17 +60,18 @@ export class ReflexSDK {
       };
       // Set default gas limit if not provided
       if (!txOptions.gasLimit) {
-        txOptions.gasLimit = await this.estimateBackrunedExecuteGas(
+        const estimate = await this.estimateBackrunedExecuteGas(
           executeParams,
           backrunParams
         );
+        const gasLimit = (estimate * 110n) / 100n; // Add 10% buffer
+        txOptions.gasLimit = gasLimit;
       }
 
       // Handle gas price with multiplier
       if (!txOptions.gasPrice && !txOptions.maxFeePerGas) {
         const feeData = await this.provider.getFeeData();
-        if (feeData.gasPrice) {
-          txOptions.gasPrice = feeData.gasPrice;
+        if (feeData.maxFeePerGas) {
           txOptions.maxFeePerGas = feeData.maxFeePerGas ?? undefined;
           txOptions.maxPriorityFeePerGas =
             feeData.maxPriorityFeePerGas ?? undefined;
@@ -118,7 +119,7 @@ export class ReflexSDK {
       const gasEstimate = await this.contract.backrunedExecute.estimateGas(
         executeParams,
         backrunParams,
-        { value: executeParams.value }
+        { value: executeParams.value } // Slightly overestimate to be safe
       );
       return gasEstimate;
     } catch (error) {
