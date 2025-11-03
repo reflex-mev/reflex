@@ -15,8 +15,7 @@
  *   npx ts-node scripts/test-swap-proxy.ts
  */
 
-import { ethers } from 'ethers';
-import { BackrunParams } from '../src/types';
+import { BigNumberish, ethers } from 'ethers';
 
 // BackrunEnabledSwapProxy ABI
 const SWAP_PROXY_ABI = [
@@ -240,6 +239,22 @@ const ERC20_ABI = [
   },
 ];
 
+/**
+ * Parameters for triggering a backrun arbitrage
+ */
+interface BackrunParams {
+  /** Unique identifier of the pool that triggered the backrun opportunity */
+  triggerPoolId: string;
+  /** Amount of tokens to use as input for the arbitrage swap */
+  swapAmountIn: BigNumberish;
+  /** Whether to use token0 (true) or token1 (false) as the input token */
+  token0In: boolean;
+  /** Address that will receive the arbitrage profit */
+  recipient: string;
+  /** Configuration ID for profit splitting (uses default if not provided) */
+  configId?: string;
+}
+
 // Configuration
 const config = {
   rpcUrl: process.env.TEST_RPC_URL || 'http://localhost:8545',
@@ -424,22 +439,6 @@ async function main() {
         : config.tokenOut;
     const isToken0In = config.tokenIn.toLowerCase() === token0.toLowerCase();
 
-    // Use Uniswap V3 min/max sqrt price limit values
-    // MIN_SQRT_RATIO + 1 and MAX_SQRT_RATIO - 1 from Uniswap V3
-    const MIN_SQRT_RATIO = BigInt('4295128739') + 1n;
-    const MAX_SQRT_RATIO =
-      BigInt('1461446703485210103287273052203988822378723970342') - 1n;
-
-    // Set sqrtPriceLimitX96 based on swap direction
-    // If selling token0 for token1: use max (allow price to go up)
-    // If selling token1 for token0: use min (allow price to go down)
-    const sqrtPriceLimitX96 = isToken0In ? MAX_SQRT_RATIO : MIN_SQRT_RATIO;
-
-    const minAmountOut = ethers.parseUnits(
-      config.minAmountOut,
-      tokenOutDecimals
-    );
-
     const swapParams = {
       tokenIn: config.tokenIn,
       tokenOut: config.tokenOut,
@@ -525,11 +524,6 @@ async function main() {
     console.log(
       `   Gas Price: ${ethers.formatUnits(receipt.gasPrice || 0n, 'gwei')} gwei`
     );
-
-    // Reset approval to zero for security
-    console.log(`\n🔒 Resetting token approval to zero...`);
-    const approveTx = await tokenInContract.approve(config.swapProxyAddress, 0);
-    await approveTx.wait();
 
     // Decode return values from logs if available
     // Note: The actual values are returned from the function call, not events
