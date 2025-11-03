@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {IReflexRouter} from "../interfaces/IReflexRouter.sol";
+import {IReflexRouter} from "../../interfaces/IReflexRouter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -84,7 +84,7 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
     /// @return swapReturnData The raw return data from the swap execution
     /// @return profits Array of profit amounts from each backrun operation (0 if failed)
     /// @return profitTokens Array of profit token addresses from each backrun (zero address if failed)
-    function swapWithbackrun(
+    function swapWithBackrun(
         bytes calldata swapTxCallData,
         address tokenIn,
         uint256 amountIn,
@@ -126,7 +126,7 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
 
         // ============ Swap Execution ============
 
-        // Reset approval to 0 first (required by some tokens like USDT)
+        // Reset approval to 0 first
         IERC20(tokenIn).forceApprove(targetRouter, 0);
 
         // Approve the target router to spend the exact amount needed for the swap

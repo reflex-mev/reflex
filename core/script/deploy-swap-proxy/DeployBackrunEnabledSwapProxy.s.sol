@@ -54,7 +54,6 @@ contract DeployBackrunEnabledSwapProxy is Script {
 
         // Validate target router address
         require(targetRouterAddress != address(0), "Target router address cannot be zero");
-        require(targetRouterAddress.code.length > 0, "Target router address must be a contract");
 
         // Load optional configuration
         try vm.envBool("VERIFY_CONTRACT") returns (bool verify) {
@@ -146,11 +145,7 @@ contract DeployBackrunEnabledSwapProxy is Script {
         console.log("\n=== Verification Command ===");
         console.log("forge verify-contract", address(swapProxy));
         console.log("  --chain-id", block.chainid);
-        console.log(
-            "  --constructor-args $(cast abi-encode \"constructor(address)\"",
-            targetRouterAddress,
-            ")"
-        );
+        console.log("  --constructor-args $(cast abi-encode \"constructor(address)\"", targetRouterAddress, ")");
         console.log("  src/integrations/BackrunEnabledSwapProxy.sol:BackrunEnabledSwapProxy");
         console.log("  --etherscan-api-key $ETHERSCAN_API_KEY");
     }
@@ -210,11 +205,7 @@ contract DeployBackrunEnabledSwapProxy is Script {
         );
 
         string memory filename = string.concat(
-            "deployment-swap-proxy-",
-            vm.toString(block.chainid),
-            "-",
-            vm.toString(block.timestamp),
-            ".json"
+            "deployment-swap-proxy-", vm.toString(block.chainid), "-", vm.toString(block.timestamp), ".json"
         );
 
         string memory filepath = string.concat("deployments/", filename);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../interfaces/IReflexRouter.sol";
+import "../../interfaces/IReflexRouter.sol";
 
 /// @title ReflexAfterSwap
 /// @notice Abstract contract that integrates with Reflex Router for post-swap profit extraction
