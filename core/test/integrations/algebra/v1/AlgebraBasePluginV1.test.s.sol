@@ -42,13 +42,7 @@ contract AlgebraBasePluginV1Test is Test {
 
         // Set up default fee configuration
         defaultConfig = AlgebraFeeConfiguration({
-            alpha1: 2900,
-            alpha2: 12000,
-            beta1: 360,
-            beta2: 60000,
-            gamma1: 59,
-            gamma2: 8500,
-            baseFee: 100
+            alpha1: 2900, alpha2: 12000, beta1: 360, beta2: 60000, gamma1: 59, gamma2: 8500, baseFee: 100
         });
 
         // Deploy plugin
@@ -141,15 +135,16 @@ contract AlgebraBasePluginV1Test is Test {
         plugin.afterInitialize(address(0), 0, 0);
 
         vm.prank(address(pool));
-        (bytes4 selector, uint24 fee, uint24 fee2) = plugin.beforeSwap(
-            address(reflexRouter), // ReflexRouter as sender,
-            address(0),
-            true,
-            1000,
-            0,
-            false,
-            ""
-        );
+        (bytes4 selector, uint24 fee, uint24 fee2) =
+            plugin.beforeSwap(
+                address(reflexRouter), // ReflexRouter as sender,
+                address(0),
+                true,
+                1000,
+                0,
+                false,
+                ""
+            );
 
         assertEq(selector, plugin.beforeSwap.selector);
         assertEq(fee, 1); // ReflexRouter gets minimal fee

@@ -173,9 +173,8 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
             IReflexQuoter.SwapDecodedData memory decoded,
             uint256[] memory amountsOut,
             uint256 initialHopIndex
-        ) = IReflexQuoter(reflexQuoter).getQuote(
-            address(uint160(uint256(triggerPoolId))), token0In ? 0 : 1, swapAmountIn
-        );
+        ) = IReflexQuoter(reflexQuoter)
+            .getQuote(address(uint160(uint256(triggerPoolId))), token0In ? 0 : 1, swapAmountIn);
 
         if (quoteProfit == 0) {
             return (0, address(0)); // No profit found
@@ -230,7 +229,9 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
                 backrunParams[i].token0In,
                 backrunParams[i].recipient,
                 backrunParams[i].configId
-            ) returns (uint256 profit, address profitToken) {
+            ) returns (
+                uint256 profit, address profitToken
+            ) {
                 profits[i] = profit;
                 profitTokens[i] = profitToken;
             } catch {
@@ -331,11 +332,9 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
                 // Determine whether to send swap output to next pool or to the contract
                 // In case of UniswapV3 we pay after the swap so we always want to get the funds to the contract
                 // Loan is payed back at the end of the flow
-                to = (
-                    curHopIndex < size - 1 // if not last
+                to = (curHopIndex < size - 1 // if not last
                         && (DexTypes.isUniswapV2Like(_dexType[nextHopIndex])) // next hop is uni type
-                        && (curHopIndex + 1 != initialHopIndex)
-                ) // loan scope
+                        && (curHopIndex + 1 != initialHopIndex))  // loan scope
                     ? pairs[nextHopIndex]
                     : address(this);
             }
@@ -382,17 +381,16 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
         internal
         returns (uint256 amountOut)
     {
-        (int256 amount0, int256 amount1) = IUniswapV3Pool(pair).swap(
-            recipient,
-            zeroForOne,
-            int256(amountIn),
-            (
-                zeroForOne /*MIN_SQRT_RATIO+1*/
-                    ? 4295128740 /*MAX_SQRT_RATIO-1*/
-                    : 1461446703485210103287273052203988822378723970341
-            ),
-            data
-        );
+        (int256 amount0, int256 amount1) = IUniswapV3Pool(pair)
+            .swap(
+                recipient,
+                zeroForOne,
+                int256(amountIn),
+                (zeroForOne  /*MIN_SQRT_RATIO+1*/
+                        ? 4295128740  /*MAX_SQRT_RATIO-1*/
+                        : 1461446703485210103287273052203988822378723970341),
+                data
+            );
 
         return uint256(-(zeroForOne ? amount1 : amount0));
     }

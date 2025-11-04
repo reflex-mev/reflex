@@ -47,13 +47,7 @@ contract BasePluginV1Factory is IBasePluginV1Factory {
 
         // Set default fee configuration similar to V1
         _defaultFeeConfiguration = AlgebraFeeConfiguration({
-            alpha1: 2900,
-            alpha2: 12000,
-            beta1: 360,
-            beta2: 60000,
-            gamma1: 59,
-            gamma2: 8500,
-            baseFee: 100
+            alpha1: 2900, alpha2: 12000, beta1: 360, beta2: 60000, gamma1: 59, gamma2: 8500, baseFee: 100
         });
     }
 

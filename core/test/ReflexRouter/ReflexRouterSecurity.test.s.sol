@@ -282,8 +282,9 @@ contract ReflexRouterSecurityTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(token0))));
 
         // Should handle malformed data gracefully (likely revert or return no profit)
-        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0)) returns (uint256 profit, address)
-        {
+        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0)) returns (
+            uint256 profit, address
+        ) {
             // If it doesn't revert, profit should be 0 due to malformed data
             assertEq(profit, 0);
         } catch {
@@ -301,8 +302,9 @@ contract ReflexRouterSecurityTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(token0))));
 
         // Should either revert due to gas limit or handle gracefully
-        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0)) returns (uint256 profit, address)
-        {
+        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0)) returns (
+            uint256 profit, address
+        ) {
             // If it completes, profit should be 0
             assertEq(profit, 0);
         } catch {
@@ -422,8 +424,9 @@ contract ReflexRouterSecurityTest is Test {
 
         // Attempt a transaction that might fail
         try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0)) {
-            // Transaction succeeded
-        } catch {
+        // Transaction succeeded
+        }
+            catch {
             // Transaction failed
         }
 
@@ -442,8 +445,9 @@ contract ReflexRouterSecurityTest is Test {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(maliciousPool))));
 
         // Should handle malicious callbacks gracefully
-        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0)) returns (uint256 profit, address)
-        {
+        try reflexRouter.triggerBackrun(triggerPoolId, 1000, true, alice, bytes32(0)) returns (
+            uint256 profit, address
+        ) {
             assertEq(profit, 0);
         } catch {
             // Reverting is acceptable for malicious callbacks
@@ -524,8 +528,9 @@ contract ReflexRouterSecurityTest is Test {
         // Random caller attempts to trigger backrun
         vm.prank(randomCaller);
         try reflexRouter.triggerBackrun(randomPoolId, randomAmount, randomBool, randomCaller, bytes32(0)) {
-            // Transaction succeeded
-        } catch {
+        // Transaction succeeded
+        }
+            catch {
             // Transaction failed
         }
 
