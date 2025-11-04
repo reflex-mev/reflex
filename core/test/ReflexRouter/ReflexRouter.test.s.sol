@@ -14,8 +14,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // Mock ReflexQuoter for testing
 contract MockReflexQuoter is SharedMockQuoter {
-// Inherit all functionality from SharedMockQuoter
-}
+    // Inherit all functionality from SharedMockQuoter
+
+    }
 
 /// @notice Mock contract for testing arbitrary call execution
 contract MockTargetContract {
@@ -180,11 +181,7 @@ contract ReflexRouterTest is Test {
         amountsOut[2] = 1050 * 10 ** 18; // Should be more than swapAmountIn to generate profit
 
         IReflexQuoter.SwapDecodedData memory decoded = IReflexQuoter.SwapDecodedData({
-            pools: pools,
-            dexType: dexTypes,
-            dexMeta: dexMeta,
-            amount: swapAmountIn,
-            tokens: tokens
+            pools: pools, dexType: dexTypes, dexMeta: dexMeta, amount: swapAmountIn, tokens: tokens
         });
 
         mockQuoter.setQuote(
@@ -247,11 +244,7 @@ contract ReflexRouterTest is Test {
         amountsOut[2] = 572 * 10 ** 18; // Get 572e18 token1 from V3 (110% of 520e18)
 
         IReflexQuoter.SwapDecodedData memory decoded = IReflexQuoter.SwapDecodedData({
-            pools: pools,
-            dexType: dexTypes,
-            dexMeta: dexMeta,
-            amount: swapAmountIn,
-            tokens: tokens
+            pools: pools, dexType: dexTypes, dexMeta: dexMeta, amount: swapAmountIn, tokens: tokens
         });
 
         mockQuoter.setQuote(
@@ -380,13 +373,14 @@ contract ReflexRouterTest is Test {
     function test_triggerBackrun_withZeroAmount() public {
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(mockV2Pair))));
 
-        (uint256 profit, address profitToken) = reflexRouter.triggerBackrun(
-            triggerPoolId,
-            0, // zero amount
-            true,
-            alice,
-            bytes32(0)
-        );
+        (uint256 profit, address profitToken) =
+            reflexRouter.triggerBackrun(
+                triggerPoolId,
+                0, // zero amount
+                true,
+                alice,
+                bytes32(0)
+            );
 
         assertEq(profit, 0);
         assertEq(profitToken, address(0));
@@ -502,11 +496,7 @@ contract ReflexRouterTest is Test {
         amountsOut[2] = 1050 * 10 ** 18; // Get 1050e18 token0 from V3 (profit!)
 
         IReflexQuoter.SwapDecodedData memory decoded = IReflexQuoter.SwapDecodedData({
-            pools: pools,
-            dexType: dexTypes,
-            dexMeta: dexMeta,
-            amount: swapAmountIn,
-            tokens: tokens
+            pools: pools, dexType: dexTypes, dexMeta: dexMeta, amount: swapAmountIn, tokens: tokens
         });
 
         mockQuoter.setQuote(
@@ -582,11 +572,7 @@ contract ReflexRouterTest is Test {
         amountsOut[2] = 1050 * 10 ** 18; // Should be more than swapAmountIn to generate profit
 
         IReflexQuoter.SwapDecodedData memory decoded = IReflexQuoter.SwapDecodedData({
-            pools: pools,
-            dexType: dexTypes,
-            dexMeta: dexMeta,
-            amount: swapAmountIn,
-            tokens: tokens
+            pools: pools, dexType: dexTypes, dexMeta: dexMeta, amount: swapAmountIn, tokens: tokens
         });
 
         mockQuoter.setQuote(
@@ -688,11 +674,7 @@ contract ReflexRouterTest is Test {
             amountsOut[2] = 1050 * 10 ** 18; // Should be more than swapAmountIn to generate profit
 
             IReflexQuoter.SwapDecodedData memory decoded = IReflexQuoter.SwapDecodedData({
-                pools: pools,
-                dexType: dexTypes,
-                dexMeta: dexMeta,
-                amount: swapAmountIn,
-                tokens: tokens
+                pools: pools, dexType: dexTypes, dexMeta: dexMeta, amount: swapAmountIn, tokens: tokens
             });
 
             mockQuoter.setQuote(
@@ -708,9 +690,7 @@ contract ReflexRouterTest is Test {
 
         // Prepare execute parameters with no ETH value
         IReflexRouter.ExecuteParams memory executeParams = IReflexRouter.ExecuteParams({
-            target: address(target),
-            value: 0,
-            callData: abi.encodeCall(target.setData, (54321))
+            target: address(target), value: 0, callData: abi.encodeCall(target.setData, (54321))
         });
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](1);
@@ -845,11 +825,7 @@ contract ReflexRouterTest is Test {
             amountsOut[2] = 1050 * 10 ** 18; // Should be more than swapAmountIn to generate profit
 
             IReflexQuoter.SwapDecodedData memory decoded = IReflexQuoter.SwapDecodedData({
-                pools: pools,
-                dexType: dexTypes,
-                dexMeta: dexMeta,
-                amount: swapAmountIn,
-                tokens: tokens
+                pools: pools, dexType: dexTypes, dexMeta: dexMeta, amount: swapAmountIn, tokens: tokens
             });
 
             mockQuoter.setQuote(
@@ -865,9 +841,7 @@ contract ReflexRouterTest is Test {
 
         // Prepare complex execute parameters with multiple function calls
         IReflexRouter.ExecuteParams memory executeParams = IReflexRouter.ExecuteParams({
-            target: address(target),
-            value: 0.1 ether,
-            callData: abi.encodeCall(target.setData, (11111))
+            target: address(target), value: 0.1 ether, callData: abi.encodeCall(target.setData, (11111))
         });
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](1);
@@ -932,11 +906,7 @@ contract ReflexRouterTest is Test {
             amountsOut[2] = swapAmountIn; // Same amount back = zero profit
 
             IReflexQuoter.SwapDecodedData memory decoded = IReflexQuoter.SwapDecodedData({
-                pools: pools,
-                dexType: dexTypes,
-                dexMeta: dexMeta,
-                amount: swapAmountIn,
-                tokens: tokens
+                pools: pools, dexType: dexTypes, dexMeta: dexMeta, amount: swapAmountIn, tokens: tokens
             });
 
             mockQuoter.setQuote(
@@ -952,9 +922,7 @@ contract ReflexRouterTest is Test {
 
         // Prepare execute parameters
         IReflexRouter.ExecuteParams memory executeParams = IReflexRouter.ExecuteParams({
-            target: address(target),
-            value: 0,
-            callData: abi.encodeCall(target.setData, (77777))
+            target: address(target), value: 0, callData: abi.encodeCall(target.setData, (77777))
         });
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](1);
@@ -1046,11 +1014,7 @@ contract ReflexRouterTest is Test {
         amountsOut[2] = swapAmountIn + expectedProfit; // Final amount should include profit
 
         IReflexQuoter.SwapDecodedData memory decoded = IReflexQuoter.SwapDecodedData({
-            pools: pools,
-            dexType: dexTypes,
-            dexMeta: dexMeta,
-            amount: swapAmountIn,
-            tokens: tokens
+            pools: pools, dexType: dexTypes, dexMeta: dexMeta, amount: swapAmountIn, tokens: tokens
         });
 
         mockQuoter.setQuote(
@@ -1108,11 +1072,7 @@ contract ReflexRouterTest is Test {
             amountsOut[2] = 520 * 10 ** 18; // Get 520e18 token0 from V3 (total profit of 20e18)
 
             IReflexQuoter.SwapDecodedData memory decoded = IReflexQuoter.SwapDecodedData({
-                pools: pools,
-                dexType: dexTypes,
-                dexMeta: dexMeta,
-                amount: swapAmountIn2,
-                tokens: tokens
+                pools: pools, dexType: dexTypes, dexMeta: dexMeta, amount: swapAmountIn2, tokens: tokens
             });
 
             mockQuoter.setQuote(

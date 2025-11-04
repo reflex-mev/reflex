@@ -244,11 +244,7 @@ library RouterTestHelper {
         }
     }
 
-    function setupProfitableRoute(uint256 swapAmount)
-        internal
-        pure
-        returns (uint256 profit, uint256[] memory amounts)
-    {
+    function setupProfitableRoute(uint256 swapAmount) internal pure returns (uint256 profit, uint256[] memory amounts) {
         // Setup a profitable route with realistic but favorable rates
         amounts = new uint256[](3);
         amounts[0] = swapAmount;

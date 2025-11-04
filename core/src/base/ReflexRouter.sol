@@ -2,11 +2,11 @@
 pragma solidity >=0.7.6;
 pragma abicoder v2;
 
-import "./interfaces/IReflexQuoter.sol";
+import "../interfaces/IReflexQuoter.sol";
 import "@reflex/interfaces/IReflexRouter.sol";
-import "./utils/GracefulReentrancyGuard.sol";
-import "./libraries/DexTypes.sol";
-import "./integrations/ConfigurableRevenueDistributor/ConfigurableRevenueDistributor.sol";
+import "../utils/GracefulReentrancyGuard.sol";
+import "../libraries/DexTypes.sol";
+import "./ConfigurableRevenueDistributor/ConfigurableRevenueDistributor.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";

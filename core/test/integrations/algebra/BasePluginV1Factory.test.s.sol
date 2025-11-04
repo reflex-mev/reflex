@@ -264,13 +264,7 @@ contract BasePluginV1FactoryTest is Test {
 
     function testSetDefaultFeeConfiguration() public {
         AlgebraFeeConfiguration memory newConfig = AlgebraFeeConfiguration({
-            alpha1: 3000,
-            alpha2: 13000,
-            beta1: 400,
-            beta2: 65000,
-            gamma1: 60,
-            gamma2: 9000,
-            baseFee: 150
+            alpha1: 3000, alpha2: 13000, beta1: 400, beta2: 65000, gamma1: 60, gamma2: 9000, baseFee: 150
         });
 
         vm.expectEmit(true, true, true, true);
@@ -323,13 +317,7 @@ contract BasePluginV1FactoryTest is Test {
 
     function testSetDefaultFeeConfigurationUnauthorized() public {
         AlgebraFeeConfiguration memory newConfig = AlgebraFeeConfiguration({
-            alpha1: 3000,
-            alpha2: 13000,
-            beta1: 400,
-            beta2: 65000,
-            gamma1: 60,
-            gamma2: 9000,
-            baseFee: 150
+            alpha1: 3000, alpha2: 13000, beta1: 400, beta2: 65000, gamma1: 60, gamma2: 9000, baseFee: 150
         });
 
         vm.prank(nonAdmin);
@@ -339,13 +327,7 @@ contract BasePluginV1FactoryTest is Test {
 
     function testPluginCreatedWithCorrectFeeConfiguration() public {
         AlgebraFeeConfiguration memory customConfig = AlgebraFeeConfiguration({
-            alpha1: 3500,
-            alpha2: 14000,
-            beta1: 450,
-            beta2: 70000,
-            gamma1: 65,
-            gamma2: 9500,
-            baseFee: 200
+            alpha1: 3500, alpha2: 14000, beta1: 450, beta2: 70000, gamma1: 65, gamma2: 9500, baseFee: 200
         });
 
         vm.prank(admin);
@@ -442,13 +424,7 @@ contract BasePluginV1FactoryTest is Test {
     function testPluginCreationWithAllParameters() public {
         address newFarmingAddress = address(0x789);
         AlgebraFeeConfiguration memory newConfig = AlgebraFeeConfiguration({
-            alpha1: 3200,
-            alpha2: 13500,
-            beta1: 420,
-            beta2: 68000,
-            gamma1: 62,
-            gamma2: 9200,
-            baseFee: 180
+            alpha1: 3200, alpha2: 13500, beta1: 420, beta2: 68000, gamma1: 62, gamma2: 9200, baseFee: 180
         });
         MockReflexRouter newRouter = MockReflexRouter(TestUtils.createSimpleMockReflexRouter(alice));
 

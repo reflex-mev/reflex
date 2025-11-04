@@ -254,11 +254,7 @@ contract ReflexRouterInternalTest is Test {
         amounts[1] = 950 * 10 ** 18;
 
         IReflexQuoter.SwapDecodedData memory decoded = IReflexQuoter.SwapDecodedData({
-            pools: pools,
-            dexType: dexTypes,
-            dexMeta: dexMeta,
-            amount: 1000 * 10 ** 18,
-            tokens: tokens
+            pools: pools, dexType: dexTypes, dexMeta: dexMeta, amount: 1000 * 10 ** 18, tokens: tokens
         });
 
         // This should trigger the V2 callback flow
@@ -287,11 +283,7 @@ contract ReflexRouterInternalTest is Test {
         amounts[1] = 950 * 10 ** 18;
 
         IReflexQuoter.SwapDecodedData memory decoded = IReflexQuoter.SwapDecodedData({
-            pools: pools,
-            dexType: dexTypes,
-            dexMeta: dexMeta,
-            amount: 1000 * 10 ** 18,
-            tokens: tokens
+            pools: pools, dexType: dexTypes, dexMeta: dexMeta, amount: 1000 * 10 ** 18, tokens: tokens
         });
 
         // This should trigger the V3 callback flow
@@ -498,11 +490,7 @@ contract ReflexRouterInternalTest is Test {
         uint256 initialBalance = token0.balanceOf(address(testRouter));
 
         IReflexQuoter.SwapDecodedData memory decoded = IReflexQuoter.SwapDecodedData({
-            pools: pairs,
-            dexType: dexTypes,
-            dexMeta: meta,
-            amount: 1000 * 10 ** 18,
-            tokens: tokens
+            pools: pairs, dexType: dexTypes, dexMeta: meta, amount: 1000 * 10 ** 18, tokens: tokens
         });
 
         // Start the arbitrage
