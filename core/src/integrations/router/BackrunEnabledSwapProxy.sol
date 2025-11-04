@@ -186,13 +186,16 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
 
         // Iterate through all backrun parameters and execute each one
         for (uint256 i = 0; i < backrunParams.length; i++) {
-            try IReflexRouter(reflexRouter).triggerBackrun(
-                backrunParams[i].triggerPoolId,
-                backrunParams[i].swapAmountIn,
-                backrunParams[i].token0In,
-                backrunParams[i].recipient,
-                backrunParams[i].configId
-            ) returns (uint256 profit, address profitToken) {
+            try IReflexRouter(reflexRouter)
+                .triggerBackrun(
+                    backrunParams[i].triggerPoolId,
+                    backrunParams[i].swapAmountIn,
+                    backrunParams[i].token0In,
+                    backrunParams[i].recipient,
+                    backrunParams[i].configId
+                ) returns (
+                uint256 profit, address profitToken
+            ) {
                 // Store successful backrun results
                 profits[i] = profit;
                 profitTokens[i] = profitToken;

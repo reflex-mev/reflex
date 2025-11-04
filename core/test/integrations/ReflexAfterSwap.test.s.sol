@@ -51,10 +51,7 @@ contract MaliciousReentrancyAfterSwap {
         shouldReenter = _shouldReenter;
     }
 
-    function attack(bytes32 poolKey, int256 amount0Delta, int256 amount1Delta, bool settle)
-        external
-        returns (uint256)
-    {
+    function attack(bytes32 poolKey, int256 amount0Delta, int256 amount1Delta, bool settle) external returns (uint256) {
         callCount++;
         if (shouldReenter && callCount < 3) {
             (uint256 profit,) =

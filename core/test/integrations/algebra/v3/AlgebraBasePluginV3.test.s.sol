@@ -5,7 +5,11 @@ import {Test} from "forge-std/Test.sol";
 import {AlgebraBasePluginV3} from "@reflex/integrations/algebra/full/AlgebraBasePluginV3.sol";
 import {IReflexRouter} from "@reflex/interfaces/IReflexRouter.sol";
 import {
-    TestUtils, MockToken, MockReflexRouter, MockAlgebraFactory, MockAlgebraPool
+    TestUtils,
+    MockToken,
+    MockReflexRouter,
+    MockAlgebraFactory,
+    MockAlgebraPool
 } from "../../../utils/TestUtils.sol";
 import {IAlgebraPlugin} from "@cryptoalgebra/core/interfaces/plugin/IAlgebraPlugin.sol";
 
@@ -478,39 +482,42 @@ contract AlgebraBasePluginV3Test is Test {
 
         // Test normal user pays fee
         vm.prank(address(pool));
-        (, uint24 normalFee,) = plugin.beforeSwap(
-            recipient, // sender = normal user
-            recipient,
-            true,
-            1000e18,
-            0,
-            false,
-            ""
-        );
+        (, uint24 normalFee,) =
+            plugin.beforeSwap(
+                recipient, // sender = normal user
+                recipient,
+                true,
+                1000e18,
+                0,
+                false,
+                ""
+            );
 
         // Test another router address pays fee
         vm.prank(address(pool));
-        (, uint24 otherRouterFee,) = plugin.beforeSwap(
-            anotherRouter, // sender = different router
-            recipient,
-            true,
-            1000e18,
-            0,
-            false,
-            ""
-        );
+        (, uint24 otherRouterFee,) =
+            plugin.beforeSwap(
+                anotherRouter, // sender = different router
+                recipient,
+                true,
+                1000e18,
+                0,
+                false,
+                ""
+            );
 
         // Test reflexRouter gets 500 fee
         vm.prank(address(pool));
-        (, uint24 reflexRouterFee,) = plugin.beforeSwap(
-            address(reflexRouter), // sender = reflexRouter
-            recipient,
-            true,
-            1000e18,
-            0,
-            false,
-            ""
-        );
+        (, uint24 reflexRouterFee,) =
+            plugin.beforeSwap(
+                address(reflexRouter), // sender = reflexRouter
+                recipient,
+                true,
+                1000e18,
+                0,
+                false,
+                ""
+            );
 
         // ReflexRouter should get 1 fee, others pay higher fees
         assertTrue(normalFee > 0);
@@ -523,27 +530,29 @@ contract AlgebraBasePluginV3Test is Test {
 
         // Test zero to one
         vm.prank(address(pool));
-        (, uint24 feeZeroToOne,) = plugin.beforeSwap(
-            address(reflexRouter),
-            recipient,
-            true, // zeroToOne = true
-            1000e18,
-            0,
-            false,
-            ""
-        );
+        (, uint24 feeZeroToOne,) =
+            plugin.beforeSwap(
+                address(reflexRouter),
+                recipient,
+                true, // zeroToOne = true
+                1000e18,
+                0,
+                false,
+                ""
+            );
 
         // Test one to zero
         vm.prank(address(pool));
-        (, uint24 feeOneToZero,) = plugin.beforeSwap(
-            address(reflexRouter),
-            recipient,
-            false, // zeroToOne = false
-            1000e18,
-            0,
-            false,
-            ""
-        );
+        (, uint24 feeOneToZero,) =
+            plugin.beforeSwap(
+                address(reflexRouter),
+                recipient,
+                false, // zeroToOne = false
+                1000e18,
+                0,
+                false,
+                ""
+            );
 
         // Both directions should have 1 fee for reflexRouter
         assertEq(feeZeroToOne, 1);
