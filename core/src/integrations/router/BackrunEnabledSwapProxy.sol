@@ -208,4 +208,9 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
             }
         }
     }
+    /**
+     * @notice Fallback function to receive Ether
+     * @dev Allows the contract to receive ETH transfers
+     */
+    receive() external payable {}
 }
