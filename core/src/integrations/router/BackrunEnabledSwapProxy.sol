@@ -110,7 +110,7 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
 
         // ============ Security Cleanup ============
 
-        // Reset approval to 0 for security (prevents approval race conditions)
+        // Reset approval to 0 for security
         IERC20(swapMetadata.tokenIn).forceApprove(targetRouter, 0);
 
         // ============ Return Leftover Funds ============
