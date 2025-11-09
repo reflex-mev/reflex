@@ -16,30 +16,9 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
 
     // ============ Custom Errors ============
 
-    /// @notice Thrown when the user's token balance is insufficient for the swap
-    /// @param token The token address that has insufficient balance
-    /// @param required The required amount for the swap
-    /// @param actual The actual balance of the user
-    error InsufficientBalance(address token, uint256 required, uint256 actual);
-
-    /// @notice Thrown when the user's allowance to this contract is insufficient
-    /// @param token The token address that has insufficient allowance
-    /// @param required The required allowance amount
-    /// @param actual The actual allowance amount
-    error InsufficientAllowance(address token, uint256 required, uint256 actual);
-
     /// @notice Thrown when the swap call to the target router fails
     /// @param returnData The error data returned from the failed call
     error SwapCallFailed(bytes returnData);
-
-    /// @notice Thrown when there's an unexpected token balance remaining after operations
-    /// @param token The token address with leftover balance
-    /// @param amount The leftover amount
-    error LeftoverTokenBalance(address token, uint256 amount);
-
-    /// @notice Thrown when there's an unexpected ETH balance remaining after operations
-    /// @param amount The leftover ETH amount
-    error LeftoverETHBalance(uint256 amount);
 
     /// @notice Thrown when an invalid target router address is provided (zero address)
     error InvalidTarget();
@@ -72,13 +51,20 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
         targetRouter = _targetRouter;
     }
 
+    struct SwapMetadata {
+        bytes swapTxCallData;
+        address tokenIn;
+        uint256 amountIn;
+        address tokenOut;
+        address recipient;
+    }
+
     // ============ External Functions ============
 
     /// @notice Executes a swap on the target router and then triggers backrun operations
     /// @dev This function is protected by the nonReentrant modifier to prevent reentrancy attacks
     /// @param swapTxCallData The calldata to execute on the target router for the swap
-    /// @param tokenIn The input token address for the swap
-    /// @param amountIn The amount of input tokens to swap
+    /// @param swapMetadata Struct containing swap metadata (swapMetadata.tokenIn, swapMetadata.amountIn, swapMetadata.tokenOut, swapMetadata.recipient)
     /// @param reflexRouter The address of the Reflex Router contract for backrun execution
     /// @param backrunParams Array of parameters for each backrun operation to execute
     /// @return swapReturnData The raw return data from the swap execution
@@ -86,8 +72,7 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
     /// @return profitTokens Array of profit token addresses from each backrun (zero address if failed)
     function swapWithBackrun(
         bytes calldata swapTxCallData,
-        address tokenIn,
-        uint256 amountIn,
+        SwapMetadata memory swapMetadata,
         address reflexRouter,
         IReflexRouter.BackrunParams[] calldata backrunParams
     )
@@ -99,38 +84,23 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
         // ============ Input Validation ============
 
         // Validate that tokenIn is not the zero address
-        if (tokenIn == address(0)) revert InvalidTokenIn();
+        if (swapMetadata.tokenIn == address(0)) revert InvalidTokenIn();
 
         // Validate that amountIn is not zero
-        if (amountIn == 0) revert InvalidAmountIn();
+        if (swapMetadata.amountIn == 0) revert InvalidAmountIn();
 
         // Validate that reflexRouter is not the zero address
         if (reflexRouter == address(0)) revert InvalidReflexRouter();
 
-        // Check that the caller has sufficient token balance
-        uint256 balance = IERC20(tokenIn).balanceOf(msg.sender);
-        if (balance < amountIn) {
-            revert InsufficientBalance(tokenIn, amountIn, balance);
-        }
-
-        // Check that the caller has approved this contract to spend their tokens
-        uint256 allowance = IERC20(tokenIn).allowance(msg.sender, address(this));
-        if (allowance < amountIn) {
-            revert InsufficientAllowance(tokenIn, amountIn, allowance);
-        }
-
         // ============ Token Transfer ============
 
         // Transfer the input tokens from the caller to this contract
-        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+        IERC20(swapMetadata.tokenIn).safeTransferFrom(msg.sender, address(this), swapMetadata.amountIn);
 
         // ============ Swap Execution ============
 
-        // Reset approval to 0 first
-        IERC20(tokenIn).forceApprove(targetRouter, 0);
-
         // Approve the target router to spend the exact amount needed for the swap
-        IERC20(tokenIn).forceApprove(targetRouter, amountIn);
+        IERC20(swapMetadata.tokenIn).forceApprove(targetRouter, swapMetadata.amountIn);
 
         // Execute the swap transaction on the target router
         // Forward any ETH sent with the transaction
@@ -141,16 +111,23 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
         // ============ Security Cleanup ============
 
         // Reset approval to 0 for security (prevents approval race conditions)
-        IERC20(tokenIn).forceApprove(targetRouter, 0);
+        IERC20(swapMetadata.tokenIn).forceApprove(targetRouter, 0);
 
         // ============ Return Leftover Funds ============
         {
             // Check for leftover input tokens after swap
-            uint256 tokenBalanceAfter = IERC20(tokenIn).balanceOf(address(this));
-            if (tokenBalanceAfter > 0) {
+            uint256 tokenInBalanceAfter = IERC20(swapMetadata.tokenIn).balanceOf(address(this));
+            if (tokenInBalanceAfter > 0) {
                 // Return any remaining input tokens to the caller
                 // This can happen if the swap didn't use the full amount
-                IERC20(tokenIn).safeTransfer(msg.sender, tokenBalanceAfter);
+                IERC20(swapMetadata.tokenIn).safeTransfer(swapMetadata.recipient, tokenInBalanceAfter);
+            }
+
+            // Check for leftover output tokens after swap
+            uint256 tokenOutBalanceAfter = IERC20(swapMetadata.tokenOut).balanceOf(address(this));
+            if (tokenOutBalanceAfter > 0) {
+                // Return any remaining output tokens to the caller
+                IERC20(swapMetadata.tokenOut).safeTransfer(swapMetadata.recipient, tokenOutBalanceAfter);
             }
 
             // Check for leftover ETH after swap
@@ -158,22 +135,8 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
             if (ethBalanceAfter > 0) {
                 // Return any remaining ETH to the caller
                 // Using call instead of transfer to support contracts with custom receive functions
-                (bool ethSuccess,) = payable(msg.sender).call{value: ethBalanceAfter}("");
+                (bool ethSuccess,) = payable(swapMetadata.recipient).call{value: ethBalanceAfter}("");
                 if (!ethSuccess) revert ETHTransferFailed();
-            }
-
-            // ============ Sanity Checks ============
-
-            // Verify no input tokens remain in the contract
-            uint256 finalTokenBalance = IERC20(tokenIn).balanceOf(address(this));
-            if (finalTokenBalance != 0) {
-                revert LeftoverTokenBalance(tokenIn, finalTokenBalance);
-            }
-
-            // Verify no ETH remains in the contract
-            uint256 finalETHBalance = address(this).balance;
-            if (finalETHBalance != 0) {
-                revert LeftoverETHBalance(finalETHBalance);
             }
         }
 
@@ -200,11 +163,9 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
                 profits[i] = profit;
                 profitTokens[i] = profitToken;
             } catch {
-                // If backrun fails, set profit to 0 and token to zero address
+                // If backrun fails, zero profit and 0 address default are returned
                 // This allows other backruns in the batch to continue executing
                 // The caller can identify failed backruns by checking for zero values
-                profits[i] = 0;
-                profitTokens[i] = address(0);
             }
         }
     }

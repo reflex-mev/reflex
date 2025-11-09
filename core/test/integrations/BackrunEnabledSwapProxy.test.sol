@@ -144,9 +144,17 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(0),
+            amountIn: 100 * 10 ** 18,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
         vm.expectRevert(BackrunEnabledSwapProxy.InvalidTokenIn.selector);
-        swapProxy.swapWithBackrun(swapCallData, address(0), 100 * 10 ** 18, address(reflexRouter), backrunParams);
+        swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
     }
 
     function test_SwapWithBackrun_RevertsOnZeroAmount() public {
@@ -156,9 +164,17 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: 0,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
         vm.expectRevert(BackrunEnabledSwapProxy.InvalidAmountIn.selector);
-        swapProxy.swapWithBackrun(swapCallData, address(tokenIn), 0, address(reflexRouter), backrunParams);
+        swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
     }
 
     function test_SwapWithBackrun_RevertsOnZeroReflexRouter() public {
@@ -168,51 +184,17 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: 100 * 10 ** 18,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
         vm.expectRevert(BackrunEnabledSwapProxy.InvalidReflexRouter.selector);
-        swapProxy.swapWithBackrun(swapCallData, address(tokenIn), 100 * 10 ** 18, address(0), backrunParams);
-    }
-
-    function test_SwapWithBackrun_RevertsOnInsufficientBalance() public {
-        bytes memory swapCallData = abi.encodeWithSelector(
-            MockTargetRouter.swap.selector, address(tokenIn), 100000 * 10 ** 18, address(tokenOut), user
-        );
-
-        IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
-
-        uint256 userBalance = tokenIn.balanceOf(user);
-        uint256 requestedAmount = 100000 * 10 ** 18;
-
-        vm.prank(user);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                BackrunEnabledSwapProxy.InsufficientBalance.selector, address(tokenIn), requestedAmount, userBalance
-            )
-        );
-        swapProxy.swapWithBackrun(swapCallData, address(tokenIn), requestedAmount, address(reflexRouter), backrunParams);
-    }
-
-    function test_SwapWithBackrun_RevertsOnInsufficientAllowance() public {
-        // Create a new user with no approval
-        address newUser = address(0x999);
-        tokenIn.mint(newUser, 10000 * 10 ** 18);
-
-        bytes memory swapCallData = abi.encodeWithSelector(
-            MockTargetRouter.swap.selector, address(tokenIn), 100 * 10 ** 18, address(tokenOut), newUser
-        );
-
-        IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
-
-        uint256 requestedAmount = 100 * 10 ** 18;
-        uint256 allowance = 0;
-
-        vm.prank(newUser);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                BackrunEnabledSwapProxy.InsufficientAllowance.selector, address(tokenIn), requestedAmount, allowance
-            )
-        );
-        swapProxy.swapWithBackrun(swapCallData, address(tokenIn), requestedAmount, address(reflexRouter), backrunParams);
+        swapProxy.swapWithBackrun(swapCallData, metadata, address(0), backrunParams);
     }
 
     // ============ Swap Execution Tests ============
@@ -226,9 +208,17 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
         (bytes memory swapReturnData, uint256[] memory profits, address[] memory profitTokens) =
-            swapProxy.swapWithBackrun(swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams);
+            swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Verify swap executed (returns true as a boolean)
         assertEq(swapReturnData.length, 32); // Returns a bool (32 bytes)
@@ -259,9 +249,17 @@ contract BackrunEnabledSwapProxyTest is Test {
             configId: keccak256("config1")
         });
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
         (bytes memory swapReturnData, uint256[] memory profits, address[] memory profitTokens) =
-            swapProxy.swapWithBackrun(swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams);
+            swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Verify backrun was triggered
         assertEq(profits.length, 1);
@@ -306,9 +304,17 @@ contract BackrunEnabledSwapProxyTest is Test {
             configId: keccak256("config3")
         });
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
         (bytes memory swapReturnData, uint256[] memory profits, address[] memory profitTokens) =
-            swapProxy.swapWithBackrun(swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams);
+            swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Verify all backruns were triggered
         assertEq(profits.length, 3);
@@ -345,9 +351,17 @@ contract BackrunEnabledSwapProxyTest is Test {
             configId: keccak256("config1")
         });
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
         (bytes memory swapReturnData, uint256[] memory profits, address[] memory profitTokens) =
-            swapProxy.swapWithBackrun(swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams);
+            swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Verify backrun failed gracefully
         assertEq(profits.length, 1);
@@ -389,6 +403,14 @@ contract BackrunEnabledSwapProxyTest is Test {
             configId: keccak256("config3")
         });
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         // Make the router succeed for first call, then fail, then succeed again
         vm.mockCallRevert(
             address(reflexRouter),
@@ -405,7 +427,7 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         vm.prank(user);
         (bytes memory swapReturnData, uint256[] memory profits, address[] memory profitTokens) =
-            swapProxy.swapWithBackrun(swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams);
+            swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Verify partial failure
         assertEq(profits.length, 3);
@@ -441,9 +463,17 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
         vm.expectRevert();
-        swapProxy.swapWithBackrun(swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams);
+        swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
     }
 
     // ============ Leftover Token Return Tests ============
@@ -460,10 +490,18 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         uint256 userBalanceBefore = tokenIn.balanceOf(user);
 
         vm.prank(user);
-        swapProxy.swapWithBackrun(swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams);
+        swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Verify leftover tokens were returned
         uint256 expectedBalance = userBalanceBefore - partialAmount;
@@ -471,6 +509,45 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         // Verify no leftover balances in proxy
         assertEq(tokenIn.balanceOf(address(swapProxy)), 0);
+        assertEq(address(swapProxy).balance, 0);
+    }
+
+    function test_SwapWithBackrun_ReturnsLeftoverOutputTokens() public {
+        uint256 amountIn = 100 * 10 ** 18;
+        uint256 leftoverAmount = 50 * 10 ** 18;
+
+        // Use the proxy address as the recipient in the swap calldata
+        // This simulates a router that sends tokens to the proxy
+        bytes memory swapCallData = abi.encodeWithSelector(
+            MockTargetRouter.swap.selector, address(tokenIn), amountIn, address(tokenOut), address(swapProxy)
+        );
+
+        IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
+
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: recipient // Actual recipient who should receive the tokens
+        });
+
+        // Pre-fund the proxy with some leftover tokens (simulating previous swap leftovers)
+        tokenOut.mint(address(swapProxy), leftoverAmount);
+
+        uint256 recipientBalanceBefore = tokenOut.balanceOf(recipient);
+
+        vm.prank(user);
+        swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
+
+        // Verify output tokens were sent to the specified recipient
+        // Should include both the swap output AND the leftover tokens
+        uint256 expectedBalance = recipientBalanceBefore + targetRouter.swapOutputAmount() + leftoverAmount;
+        assertEq(tokenOut.balanceOf(recipient), expectedBalance);
+
+        // Verify no leftover balances in proxy
+        assertEq(tokenIn.balanceOf(address(swapProxy)), 0);
+        assertEq(tokenOut.balanceOf(address(swapProxy)), 0);
         assertEq(address(swapProxy).balance, 0);
     }
 
@@ -482,15 +559,21 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         // Give user some ETH
         vm.deal(user, 10 ether);
 
         uint256 userEthBefore = user.balance;
 
         vm.prank(user);
-        swapProxy.swapWithBackrun{value: ethSent}(
-            swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams
-        );
+        swapProxy.swapWithBackrun{value: ethSent}(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Verify ETH was sent to the target router (not returned since it was consumed)
         // The target router keeps the ETH in our mock implementation
@@ -511,6 +594,14 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         // Give user some ETH
         vm.deal(user, 10 ether);
         uint256 ethSent = 1 ether;
@@ -518,9 +609,7 @@ contract BackrunEnabledSwapProxyTest is Test {
         uint256 userEthBefore = user.balance;
 
         vm.prank(user);
-        swapProxy.swapWithBackrun{value: ethSent}(
-            swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams
-        );
+        swapProxy.swapWithBackrun{value: ethSent}(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Since the swap function doesn't consume ETH, it should be returned
         assertEq(user.balance, userEthBefore);
@@ -542,8 +631,16 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
-        swapProxy.swapWithBackrun(swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams);
+        swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Verify the call succeeded (reentrancy guard didn't block legitimate call)
         assertEq(tokenIn.balanceOf(address(swapProxy)), 0);
@@ -559,15 +656,21 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         // Give user some ETH
         vm.deal(user, 10 ether);
 
         uint256 routerBalanceBefore = address(targetRouter).balance;
 
         vm.prank(user);
-        swapProxy.swapWithBackrun{value: ethToSend}(
-            swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams
-        );
+        swapProxy.swapWithBackrun{value: ethToSend}(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Verify ETH was forwarded to router
         assertEq(address(targetRouter).balance, routerBalanceBefore + ethToSend);
@@ -586,8 +689,16 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
-        swapProxy.swapWithBackrun(swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams);
+        swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Verify approval is reset to 0
         assertEq(tokenIn.allowance(address(swapProxy), address(targetRouter)), 0);
@@ -603,9 +714,17 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
         (bytes memory swapReturnData, uint256[] memory profits, address[] memory profitTokens) =
-            swapProxy.swapWithBackrun(swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams);
+            swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Verify empty arrays returned
         assertEq(profits.length, 0);
@@ -630,9 +749,17 @@ contract BackrunEnabledSwapProxyTest is Test {
             });
         }
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
         (bytes memory swapReturnData, uint256[] memory profits, address[] memory profitTokens) =
-            swapProxy.swapWithBackrun(swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams);
+            swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Verify all backruns executed
         assertEq(profits.length, 10);
@@ -665,8 +792,16 @@ contract BackrunEnabledSwapProxyTest is Test {
             configId: keccak256("config1")
         });
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
-        swapProxy.swapWithBackrun(swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams);
+        swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
     }
 
     // ============ Fuzz Tests ============
@@ -683,8 +818,16 @@ contract BackrunEnabledSwapProxyTest is Test {
 
         IReflexRouter.BackrunParams[] memory backrunParams = new IReflexRouter.BackrunParams[](0);
 
+        BackrunEnabledSwapProxy.SwapMetadata memory metadata = BackrunEnabledSwapProxy.SwapMetadata({
+            swapTxCallData: swapCallData,
+            tokenIn: address(tokenIn),
+            amountIn: amountIn,
+            tokenOut: address(tokenOut),
+            recipient: user
+        });
+
         vm.prank(user);
-        swapProxy.swapWithBackrun(swapCallData, address(tokenIn), amountIn, address(reflexRouter), backrunParams);
+        swapProxy.swapWithBackrun(swapCallData, metadata, address(reflexRouter), backrunParams);
 
         // Verify no leftover balances
         assertEq(tokenIn.balanceOf(address(swapProxy)), 0);
