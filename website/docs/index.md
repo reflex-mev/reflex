@@ -72,8 +72,9 @@ Ready to integrate Reflex into your protocol? Check out our comprehensive guides
 
 1. **[Start with Integration](./integration/overview)** - Learn how to integrate Reflex
 2. **[Read the Architecture](./architecture)** - Understand the system design
-3. **[Deploy Your First Integration](./integration/smart-contract)** - Start capturing MEV
-4. **[Use the SDK](./integration/sdk-integration)** - Build with the TypeScript SDK
+3. **[Plugin-Based Integration](./integration/plugin-based)** - For DEXes with hook support
+4. **[Universal DEX Integration](./integration/universal-dex)** - For any DEX or DApp
+5. **[Direct Contract Access](./integration/direct-access)** - For custom protocols
 
 ---
 

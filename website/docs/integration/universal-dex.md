@@ -12,7 +12,6 @@ The Universal DEX integration method enables MEV capture for:
 
 - **Legacy DEXes** that don't support hooks/plugins
 - **Frontend applications** and DApp interfaces
-- **MEV bots** and automated trading strategies
 - **Any DEX router** without requiring code changes
 
 This approach uses a proxy contract to wrap existing DEX routers, combined with a TypeScript SDK for easy client-side integration.
@@ -56,17 +55,17 @@ A smart contract that wraps any existing DEX router and adds MEV capture functio
 **Deployment:**
 One proxy contract per target DEX router you want to support.
 
-### 2. ReflexSDK (TypeScript)
+### 2. Reflex SDK with UniversalIntegration
 
 A client-side library that simplifies interaction with the SwapProxy and Reflex contracts.
 
 **Key Features:**
 
-- Type-safe interfaces
-- Event monitoring
-- Transaction simulation
+- Type-safe interfaces matching contract exactly
+- Automatic token approval helpers
+- Gas estimation
 - Multi-chain support
-- Error handling
+- Built on ethers.js v6
 
 ## Quick Start
 
@@ -105,10 +104,10 @@ npm install @reflex-mev/sdk ethers
 yarn add @reflex-mev/sdk ethers
 ```
 
-### Step 3: Initialize SDK
+### Step 3: Initialize UniversalIntegration
 
 ```typescript
-import { ReflexSDK } from "@reflex-mev/sdk";
+import { UniversalIntegration } from "@reflex-mev/sdk/integrations";
 import { ethers } from "ethers";
 
 // Initialize provider and signer
@@ -117,104 +116,134 @@ const provider = new ethers.JsonRpcProvider(
 );
 const signer = new ethers.Wallet("YOUR_PRIVATE_KEY", provider);
 
-// Create SDK instance with Reflex Router address
-const reflex = new ReflexSDK(
+// Create UniversalIntegration instance
+const integration = new UniversalIntegration(
   provider,
   signer,
-  "0xYourReflexRouterAddress" // Reflex Router (per chain)
+  "0xYourSwapProxyAddress", // SwapProxy contract address
+  "0xYourReflexRouterAddress" // Reflex Router address
 );
 ```
 
-## SwapProxy Integration
+## Using the UniversalIntegration API
 
 ### Basic Swap with MEV Capture
 
 ```typescript
-import { BackrunEnabledSwapProxy__factory } from "@reflex-mev/sdk";
+import { UniversalIntegration } from "@reflex-mev/sdk/integrations";
+import { ethers } from "ethers";
 
-// Connect to your deployed SwapProxy
-const swapProxy = BackrunEnabledSwapProxy__factory.connect(
-  "0xYourSwapProxyAddress",
-  signer
+// Initialize integration
+const integration = new UniversalIntegration(
+  provider,
+  signer,
+  swapProxyAddress,
+  reflexRouterAddress
+);
+
+// Encode swap calldata for target DEX router
+// Example: Uniswap V2 swapExactTokensForTokens
+const targetDexInterface = new ethers.Interface([
+  "function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline)",
+]);
+
+const swapCalldata = targetDexInterface.encodeFunctionData(
+  "swapExactTokensForTokens",
+  [
+    ethers.parseEther("1.0"), // amountIn
+    ethers.parseEther("0.95"), // amountOutMin (with slippage)
+    [tokenInAddress, tokenOutAddress], // path
+    userAddress, // to
+    Math.floor(Date.now() / 1000) + 60 * 20, // deadline (20 min)
+  ]
 );
 
 // Prepare swap metadata
 const swapMetadata = {
-  swapTxCallData: "0x...", // Encoded swap call for target DEX
-  tokenIn: "0xTokenInAddress",
+  swapTxCallData: swapCalldata,
+  tokenIn: tokenInAddress,
   amountIn: ethers.parseEther("1.0"),
-  tokenOut: "0xTokenOutAddress",
+  tokenOut: tokenOutAddress,
   recipient: userAddress,
 };
 
 // Prepare backrun parameters
 const backrunParams = [
   {
-    triggerPoolId: "0xPoolAddress",
-    swapAmountIn: ethers.parseEther("0.05"), // 5% of swap for backrun
-    token0In: true,
+    triggerPoolId: poolAddress, // Pool being traded on
+    swapAmountIn: ethers.parseEther("1.0"), // Full swap amount
+    token0In: true, // Swap direction
     recipient: userAddress,
-    configId: "0x...", // Your revenue config ID
+    configId: ethers.ZeroHash, // Use default config
   },
 ];
 
+// Approve tokens to SwapProxy first
+await integration.approveTokens([
+  {
+    tokenAddress: tokenInAddress,
+    amount: ethers.parseEther("1.0"),
+  },
+]);
+
 // Execute swap with automatic MEV capture
-const tx = await swapProxy.swapWithBackrun(
-  swapMetadata.swapTxCallData,
+const result = await integration.swapWithBackrun(
+  swapCalldata,
   swapMetadata,
-  "0xReflexRouterAddress",
   backrunParams,
-  { value: ethers.parseEther("0.1") } // If swap requires ETH
+  { gasLimit: 1500000n } // Optional: ethers Overrides
 );
 
-const receipt = await tx.wait();
-console.log("Swap + MEV capture complete:", receipt.hash);
+console.log("Transaction:", result.transactionHash);
+console.log("Gas used:", result.gasUsed.toString());
+console.log("Profits:", result.profits);
+console.log("Profit tokens:", result.profitTokens);
 ```
 
-## DApp Integration with SwapProxy
+## DApp Integration
 
-### Frontend Integration
+### React Hook for Universal Integration
 
 ```typescript
-// React hook for MEV-enabled swaps via SwapProxy
 import { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
-import { BackrunEnabledSwapProxy__factory } from "@reflex-mev/sdk";
+import { UniversalIntegration } from "@reflex-mev/sdk/integrations";
 
-export function useReflexSwapProxy(
+export function useReflexSwap(
   provider,
   signer,
   swapProxyAddress,
   reflexRouterAddress
 ) {
-  const [swapProxy, setSwapProxy] = useState(null);
+  const [integration, setIntegration] = useState(null);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (provider && signer && swapProxyAddress) {
-      const proxy = BackrunEnabledSwapProxy__factory.connect(
+    if (provider && signer && swapProxyAddress && reflexRouterAddress) {
+      const instance = new UniversalIntegration(
+        provider,
+        signer,
         swapProxyAddress,
-        signer
+        reflexRouterAddress
       );
-      setSwapProxy(proxy);
+      setIntegration(instance);
       setIsReady(true);
     }
-  }, [provider, signer, swapProxyAddress]);
+  }, [provider, signer, swapProxyAddress, reflexRouterAddress]);
 
   const executeSwapWithMEV = useCallback(
     async (swapParams) => {
-      if (!swapProxy || !isReady) {
-        throw new Error("SwapProxy not initialized");
+      if (!integration || !isReady) {
+        throw new Error("UniversalIntegration not initialized");
       }
 
       try {
         // Encode the swap call for the target DEX
-        // This example assumes Uniswap V2-like interface
         const targetDexInterface = new ethers.Interface([
           "function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline)",
         ]);
 
-        const swapCallData = targetDexInterface.encodeFunctionData(
+        const swapCalldata = targetDexInterface.encodeFunctionData(
           "swapExactTokensForTokens",
           [
             swapParams.amountIn,
@@ -227,7 +256,7 @@ export function useReflexSwapProxy(
 
         // Prepare swap metadata
         const swapMetadata = {
-          swapTxCallData: swapCallData,
+          swapTxCallData: swapCalldata,
           tokenIn: swapParams.tokenIn,
           amountIn: swapParams.amountIn,
           tokenOut: swapParams.tokenOut,
@@ -238,61 +267,54 @@ export function useReflexSwapProxy(
         const backrunParams = [
           {
             triggerPoolId: swapParams.poolAddress,
-            swapAmountIn: swapParams.amountIn / 20n, // 5% for backrun
+            swapAmountIn: swapParams.amountIn, // Full swap amount
             token0In: swapParams.tokenIn < swapParams.tokenOut,
             recipient: swapParams.recipient,
             configId: swapParams.configId || ethers.ZeroHash,
           },
         ];
 
-        // Approve tokens to SwapProxy
-        const tokenContract = new ethers.Contract(
+        // Check and handle token approval
+        const isApproved = await integration.isTokenApproved(
           swapParams.tokenIn,
-          ["function approve(address spender, uint256 amount) returns (bool)"],
-          signer
-        );
-
-        const approveTx = await tokenContract.approve(
-          swapProxyAddress,
           swapParams.amountIn
         );
-        await approveTx.wait();
+
+        if (!isApproved) {
+          await integration.approveTokens([
+            {
+              tokenAddress: swapParams.tokenIn,
+              amount: ethers.MaxUint256, // Approve unlimited for better UX
+            },
+          ]);
+        }
 
         // Execute swap with MEV capture
-        const tx = await swapProxy.swapWithBackrun(
-          swapMetadata.swapTxCallData,
+        const result = await integration.swapWithBackrun(
+          swapCalldata,
           swapMetadata,
-          reflexRouterAddress,
           backrunParams,
-          { value: swapParams.ethValue || 0 }
+          { value: swapParams.ethValue || 0n }
         );
 
-        const receipt = await tx.wait();
-
-        // Parse events to get profit information
-        // The SwapProxy doesn't emit events, but ReflexRouter does
-        const profits = [];
-        const profitTokens = [];
-
-        // You can parse BackrunExecuted events from ReflexRouter here
-        // or call a view function to check balances
-
         return {
-          success: receipt.status === 1,
-          transactionHash: receipt.hash,
-          profits,
-          profitTokens,
+          success: true,
+          transactionHash: result.transactionHash,
+          gasUsed: result.gasUsed,
+          profits: result.profits,
+          profitTokens: result.profitTokens,
+          swapReturnData: result.swapReturnData,
         };
       } catch (error) {
         console.error("Swap with MEV failed:", error);
         throw error;
       }
     },
-    [swapProxy, isReady, swapProxyAddress, reflexRouterAddress, signer]
+    [integration, isReady]
   );
 
   return {
-    swapProxy,
+    integration,
     executeSwapWithMEV,
     isReady,
   };
@@ -304,7 +326,6 @@ export function useReflexSwapProxy(
 ### Trading Interface Component
 
 ```typescript
-// MEV-enabled trading component using SwapProxy
 import React, { useState } from "react";
 import { ethers } from "ethers";
 
@@ -314,7 +335,7 @@ export function MEVTradingInterface({
   swapProxyAddress,
   reflexRouterAddress
 }) {
-  const { executeSwapWithMEV, isReady } = useReflexSwapProxy(
+  const { integration, executeSwapWithMEV, isReady } = useReflexSwap(
     provider,
     signer,
     swapProxyAddress,
@@ -339,21 +360,23 @@ export function MEVTradingInterface({
         tokenIn: selectedTokenIn.address,
         tokenOut: selectedTokenOut.address,
         amountIn: ethers.parseUnits(swapAmount, selectedTokenIn.decimals),
-        amountOutMin: 0n,  // Set appropriate slippage
+        amountOutMin: 0n, // Set appropriate slippage
         path: [selectedTokenIn.address, selectedTokenOut.address],
-        poolAddress: "0xPoolAddress",  // The pool being traded on
+        poolAddress: "0xPoolAddress", // The pool being traded on
         recipient: await signer.getAddress(),
-        configId: ethers.ZeroHash,  // Use default config or your custom config
-        ethValue: 0  // Set if swap involves ETH
+        configId: ethers.ZeroHash, // Use default config
+        ethValue: 0n // Set if swap involves ETH
       });
 
       if (result.success) {
         showNotification({
           type: "success",
           title: "Swap Completed!",
-          message: `Transaction: ${result.transactionHash.slice(0, 10)}...`
+          message: `Transaction: ${result.transactionHash.slice(0, 10)}...`,
+          details: `Gas used: ${result.gasUsed.toString()}`
         });
 
+        // Check if MEV was captured
         if (result.profits.length > 0 && result.profits[0] > 0n) {
           showNotification({
             type: "success",
@@ -410,46 +433,75 @@ export function MEVTradingInterface({
 }
 ````
 
-## Advanced: Direct SDK Usage (Without SwapProxy)
+## Helper Functions
 
-For advanced use cases where you want to use the SDK directly without the SwapProxy:
-
-### Using backrunedExecute
-
-The `backrunedExecute` function allows you to execute any transaction and trigger backruns atomically:
+### Check Token Approval
 
 ```typescript
-import { ReflexSDK } from "@reflex-mev/sdk";
+// Check if token is approved before swapping
+const isApproved = await integration.isTokenApproved(tokenAddress, amount);
 
-// Initialize SDK
-const reflex = new ReflexSDK(provider, signer, reflexRouterAddress);
+if (!isApproved) {
+  console.log("Approval needed");
+}
+```
 
-// Prepare your transaction as executeParams
-const executeParams = {
-  target: "0xTargetContractAddress", // Any contract
-  value: 0n, // ETH to send
-  callData: "0x...", // Encoded function call
-};
+### Approve Tokens
 
-// Prepare backrun parameters
-const backrunParams = [
+```typescript
+// Approve single token
+await integration.approveTokens([
   {
-    triggerPoolId: "0xPoolId",
-    swapAmountIn: ethers.parseEther("0.1"),
-    token0In: true,
-    recipient: userAddress,
-    configId: ethers.ZeroHash,
+    tokenAddress: USDC_ADDRESS,
+    amount: ethers.MaxUint256, // Unlimited approval
   },
-];
+]);
 
-// Execute + backrun atomically
-const result = await reflex.backrunedExecute(executeParams, backrunParams, {
-  gasLimit: 1500000n,
-});
+// Approve multiple tokens
+await integration.approveTokens([
+  {
+    tokenAddress: USDC_ADDRESS,
+    amount: ethers.parseUnits("100", 6),
+  },
+  {
+    tokenAddress: WETH_ADDRESS,
+    amount: ethers.parseEther("1.0"),
+  },
+]);
+```
 
-console.log("Transaction:", result.transactionHash);
-console.log("Profits:", result.profits);
-console.log("Profit tokens:", result.profitTokens);
+### Estimate Gas
+
+```typescript
+// Estimate gas before executing
+const estimatedGas = await integration.estimateGas(
+  swapCalldata,
+  swapMetadata,
+  backrunParams
+);
+
+console.log("Estimated gas:", estimatedGas.toString());
+
+// Use estimate with buffer
+const result = await integration.swapWithBackrun(
+  swapCalldata,
+  swapMetadata,
+  backrunParams,
+  { gasLimit: estimatedGas } // Estimate already includes 20% buffer
+);
+```
+
+### Get Addresses
+
+```typescript
+// Get SwapProxy address
+const swapProxyAddress = integration.getSwapProxyAddress();
+
+// Get ReflexRouter address
+const routerAddress = integration.getReflexRouterAddress();
+
+// Get target DEX router address
+const targetRouterAddress = await integration.getTargetRouterAddress();
 ```
 
 ## SwapProxy Deployment Guide
@@ -491,14 +543,12 @@ Simply deploy one SwapProxy per router and point your frontend to the appropriat
 ### Gas Management
 
 ```typescript
-// Transaction options for swapWithBackrun
-const tx = await swapProxy.swapWithBackrun(
-  swapCallData,
+// Use ethers Overrides for transaction options
+const result = await integration.swapWithBackrun(
+  swapCalldata,
   swapMetadata,
-  reflexRouterAddress,
   backrunParams,
   {
-    value: ethValue,
     gasLimit: 1500000n, // Recommended for MEV operations
     maxFeePerGas: ethers.parseUnits("100", "gwei"),
     maxPriorityFeePerGas: ethers.parseUnits("2", "gwei"),
@@ -542,59 +592,6 @@ provider.on(
 );
 ```
 
-## Multi-DEX Support
-
-Support multiple DEXes by deploying multiple SwapProxy instances:
-
-```typescript
-// Configuration for multiple DEXes
-const dexConfigs = {
-  uniswapV2: {
-    name: "Uniswap V2",
-    swapProxyAddress: "0xSwapProxy1...",
-    routerAddress: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
-  },
-  sushiswap: {
-    name: "SushiSwap",
-    swapProxyAddress: "0xSwapProxy2...",
-    routerAddress: "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F",
-  },
-  pancakeswap: {
-    name: "PancakeSwap",
-    swapProxyAddress: "0xSwapProxy3...",
-    routerAddress: "0x10ED43C718714eb63d5aA57B78B54704E256024E",
-  },
-};
-
-// Function to route through best DEX
-async function executeBestSwap(tokenIn, tokenOut, amountIn) {
-  // Get quotes from all DEXes
-  const quotes = await Promise.all(
-    Object.entries(dexConfigs).map(async ([key, config]) => {
-      const quote = await getQuote(
-        config.routerAddress,
-        tokenIn,
-        tokenOut,
-        amountIn
-      );
-      return { dex: key, config, quote };
-    })
-  );
-
-  // Select best quote
-  const best = quotes.reduce((a, b) => (a.quote > b.quote ? a : b));
-
-  // Execute via corresponding SwapProxy
-  return executeSwapWithMEV({
-    swapProxyAddress: best.config.swapProxyAddress,
-    tokenIn,
-    tokenOut,
-    amountIn,
-    // ... other params
-  });
-}
-```
-
 ## Best Practices
 
 ### Error Handling
@@ -624,56 +621,30 @@ async function safeSwapWithMEV(swapParams) {
 
 ### Token Approvals
 
-Always check and manage token approvals properly:
+Use the built-in approval helpers:
 
 ```typescript
-async function ensureApproval(tokenAddress, spenderAddress, amount, signer) {
-  const tokenContract = new ethers.Contract(
-    tokenAddress,
-    [
-      "function allowance(address,address) view returns (uint256)",
-      "function approve(address,uint256) returns (bool)",
-    ],
-    signer
-  );
+// Check approval first
+const isApproved = await integration.isTokenApproved(tokenAddress, amount);
 
-  const currentAllowance = await tokenContract.allowance(
-    await signer.getAddress(),
-    spenderAddress
-  );
-
-  if (currentAllowance < amount) {
-    const tx = await tokenContract.approve(spenderAddress, ethers.MaxUint256);
-    await tx.wait();
-    console.log("Approval granted");
-  }
+if (!isApproved) {
+  // Approve with unlimited amount for better UX
+  await integration.approveTokens([
+    {
+      tokenAddress,
+      amount: ethers.MaxUint256,
+    },
+  ]);
 }
 
-// Usage before swap
-await ensureApproval(tokenInAddress, swapProxyAddress, amountIn, signer);
+// Or approve exact amount for security
+await integration.approveTokens([
+  {
+    tokenAddress,
+    amount: exactAmount,
+  },
+]);
 ```
-
-### Performance Optimization
-
-1. **Cache SwapProxy instances**
-
-   ```typescript
-   const proxyCache = new Map();
-
-   function getSwapProxy(address, signer) {
-     if (!proxyCache.has(address)) {
-       proxyCache.set(
-         address,
-         BackrunEnabledSwapProxy__factory.connect(address, signer)
-       );
-     }
-     return proxyCache.get(address);
-   }
-   ```
-
-2. **Batch token approvals**
-3. **Use multicall for multiple reads**
-4. **Implement connection pooling**
 
 ### Security
 
@@ -684,91 +655,19 @@ await ensureApproval(tokenInAddress, swapProxyAddress, amountIn, signer);
 5. **Set reasonable slippage tolerances**
 6. **Check contract addresses** before interacting
 
-## Common Integration Patterns
-
-### Pattern 1: Simple Swap Widget
-
-For basic swap interfaces:
-
-```typescript
-// Minimal swap widget with MEV
-async function simpleSwap(tokenIn, tokenOut, amountIn) {
-  // 1. Approve tokens
-  await ensureApproval(tokenIn, swapProxyAddress, amountIn, signer);
-
-  // 2. Encode swap call
-  const swapCallData = encodeSwapCall(tokenIn, tokenOut, amountIn);
-
-  // 3. Execute with MEV
-  const tx = await swapProxy.swapWithBackrun(
-    swapCallData,
-    {
-      swapTxCallData: swapCallData,
-      tokenIn,
-      amountIn,
-      tokenOut,
-      recipient: userAddress,
-    },
-    reflexRouterAddress,
-    [defaultBackrunParams]
-  );
-
-  return tx.wait();
-}
-```
-
-### Pattern 2: Aggregator Integration
-
-For DEX aggregators routing through multiple sources:
-
-```typescript
-async function aggregatorSwap(route) {
-  // route = { dexes: [...], amounts: [...], tokens: [...] }
-
-  for (const hop of route.hops) {
-    const swapProxy = getSwapProxy(hop.dexProxyAddress, signer);
-
-    await swapProxy.swapWithBackrun(
-      hop.callData,
-      hop.metadata,
-      reflexRouterAddress,
-      hop.backrunParams
-    );
-  }
-}
-```
-
-### Pattern 3: MEV Bot
-
-For automated MEV capture:
-
-```typescript
-// Monitor mempool and execute profitable opportunities
-async function mevBot() {
-  provider.on("pending", async (txHash) => {
-    const tx = await provider.getTransaction(txHash);
-
-    // Analyze transaction for MEV opportunity
-    const opportunity = await analyzeTransaction(tx);
-
-    if (opportunity.profitable) {
-      // Execute backrun via SwapProxy
-      await executeBackrun(opportunity);
-    }
-  });
-}
-```
-
----
-
 ## Summary
 
 The Universal DEX integration provides:
 
 ✅ **Universal DEX Support** - Works with any DEX router without modifications  
-✅ **Client-Side Control** - Full integration via TypeScript SDK  
+✅ **Type-Safe SDK** - UniversalIntegration class with full TypeScript support  
+✅ **Simple API** - Clean interface matching contract exactly  
 ✅ **Atomic Execution** - Swap + MEV capture in single transaction  
-✅ **Easy Deployment** - One proxy per DEX router  
-✅ **Production Ready** - Tested and secure implementation  
+✅ **Built-in Helpers** - Token approvals, gas estimation, address getters  
+✅ **Production Ready** - Tested and secure implementation
 
-For smart contract integration, see the [Smart Contract Integration Guide](./smart-contract).
+**Next Steps:**
+
+- [View Direct Contract Access](./direct-access) - For custom protocol integration
+- [View Plugin-Based Integration](./plugin-based) - For DEXes with hook support
+- [Read Architecture Guide](../architecture) - Understand system design

@@ -22,14 +22,38 @@ const sidebars = {
       label: "Integrations",
       items: [
         "integration/overview",
-        "integration/smart-contract",
-        "integration/sdk-integration",
+        "integration/plugin-based",
+        "integration/universal-dex",
+        "integration/direct-access",
       ],
     },
     {
       type: "category",
       label: "API Reference",
-      items: ["api/smart-contracts", "api/sdk-reference"],
+      items: [
+        {
+          type: "category",
+          label: "Smart Contracts",
+          items: [
+            "api/reflex-router",
+            "api/reflex-after-swap",
+            "api/backrun-enabled-swap-proxy",
+          ],
+        },
+        {
+          type: "category",
+          label: "SDK Reference",
+          items: [
+            {
+              type: "category",
+              label: "Integrations",
+              items: [
+                "api/sdk/universal-integration",
+              ],
+            },
+          ],
+        },
+      ],
     },
     "security",
   ],
