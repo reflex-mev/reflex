@@ -37,32 +37,13 @@ Arbitrage is inevitable, but today it benefits external actors who have no align
 
 ### Integration Types
 
-#### 1. Protocol Hooks
+Reflex offers three primary integration methods to suit different protocol architectures and use cases:
 
-Reflex integrates natively with modern hook/plugin architectures:
+1. **[DEX Plugin-Based Integration](./integration/overview#1-dex-plugin-based-integration)** - For DEXes with hook/plugin support (Algebra, PancakeSwap Infinity, Uniswap v4)
 
-- PancakeSwap Infinity hooks
-- Algebra Integral plugins
-- Uniswap v4 hooks
+2. **[Universal DEX Integration](./integration/overview#2-universal-dex-integration)** - For any DEX and client-side applications using SwapProxy + SDK
 
-**_How it works:_**
-
-When a user executes a swap, Reflex's integrated `afterSwap` is triggered to capture arbitrage opportunities across pools and protocols, with profits routed back to the protocol treasury or designated addresses.
-
-#### 2. Router Integration
-
-For DEXs that don't use a hook system, Reflex can integrate directly into the router contract. This method enables the router to trigger Reflex opportunities whenever trades pass through it.
-
-#### 3. EIP-7702 (Account Abstraction Bundles)
-
-Reflex supports account abstraction environments where trades can be wrapped into bundles. This allows traders and protocols to:
-
-- Embed Reflex backruns into user-submitted bundles.
-- Ensure arbitrage profits are redirected back on-chain.
-
-#### 4. SDK Integration
-
-Use the TypeScript SDK for custom MEV strategies and manual triggers. This approach gives you full control over when and how backruns are executed, perfect for building sophisticated MEV bots, custom trading strategies, or integrating Reflex into existing applications with specific requirements.
+3. **[Direct Contract Access](./integration/overview#3-direct-contract-access)** - For custom smart contract integration with full control
 
 ### Supported Protocols
 

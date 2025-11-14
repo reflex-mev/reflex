@@ -58,43 +58,6 @@ function executeSwapWithMEV(
 }
 ```
 
-#### 3. Revenue Configuration
-
-Revenue sharing configurations are managed by the Reflex team. For detailed information on how to set up custom revenue sharing, see the [Revenue Configuration Guide](./revenue-configuration).
-
-#### Setting Up Custom Revenue Sharing
-1. **Contact Reflex** with your desired revenue sharing structure
-
-```solidity
-contract YourProtocol {
-    // ConfigId provided by Reflex team
-    bytes32 public immutable CONFIG_ID;
-
-    constructor(address _reflexRouter, bytes32 _configId) {
-        reflexRouter = IReflexRouter(_reflexRouter);
-        CONFIG_ID = _configId;
-    }
-
-    function executeSwapWithCustomConfig(
-        address tokenIn,
-        address tokenOut,
-        uint256 amountIn
-    ) external {
-        // Execute your core swap logic
-        uint256 amountOut = _executeSwap(tokenIn, tokenOut, amountIn);
-
-        // Use your custom configId
-        reflexRouter.triggerBackrun(
-            bytes32(uint256(uint160(address(this)))),
-            uint112(amountIn / 20),
-            tokenIn < tokenOut,
-            msg.sender,
-            CONFIG_ID // Your custom config provided by Reflex
-        );
-    }
-}
-```
-
 ## Plugin-Based Access
 
 ### Overview
@@ -308,6 +271,4 @@ contract YourPoolFactory {
 
 ---
 
-For revenue configuration details, see the [Revenue Configuration Guide](./revenue-configuration).
-For SDK integration, see the [SDK Integration Guide](./sdk-integration).
 For SDK integration details, see the [SDK Integration Guide](./sdk-integration).
