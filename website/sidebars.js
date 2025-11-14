@@ -22,7 +22,6 @@ const sidebars = {
       label: "Integrations",
       items: [
         "integration/overview",
-        "integration/revenue-configuration",
         "integration/smart-contract",
         "integration/sdk-integration",
       ],
@@ -30,10 +29,7 @@ const sidebars = {
     {
       type: "category",
       label: "API Reference",
-      items: [
-        "api/smart-contracts",
-        "api/sdk-reference",
-      ],
+      items: ["api/smart-contracts", "api/sdk-reference"],
     },
     "security",
   ],

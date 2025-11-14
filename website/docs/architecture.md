@@ -28,37 +28,40 @@ graph LR
 
     subgraph "Onchain Clients"
         PluginDEX[🔌 Plugin-based DEX<br/>Automatic MEV capture via hooks]
-        RegularDEX[🏪 Standard DEX<br/>Direct router integration]
+        DirectDEX[🏪 Custom Contracts<br/>Direct router integration]
+        SwapProxy[🔄 SwapProxy<br/>]
     end
 
     subgraph "Offchain Clients"
-        SDKApps[📱 SDK Applications<br/>DApps, MEV Bots]
+        SDKApps[📱 SDK Applications<br/>]
     end
 
     %% User transactions trigger MEV opportunities
-    UserGroup -->|Trade/Swap| PluginDEX
-    UserGroup -->|Trade/Swap| RegularDEX
+    UserGroup -->|Swap| PluginDEX
+    UserGroup -->|Swap| DirectDEX
     UserGroup -->|Interact| SDKApps
 
     %% Client connections to core contracts
     PluginDEX -->|triggerBackrun| Router
-    RegularDEX -->|triggerBackrun| Router
-    SDKApps -->|backrunedExecute| Router
+    DirectDEX -->|triggerBackrun| Router
+    SDKApps -->|Swap| SwapProxy
+    SwapProxy -->|triggerBackrun| Router
 ```
 
-**Reflex Router** - The central execution engine that coordinates all MEV capture activities. Handles both automatic MEV capture through `triggerBackrun()` and protected transaction execution through `backrunedExecute()`.
+**Reflex Router** - The central execution engine that coordinates all MEV capture activities. Handles MEV capture through `triggerBackrun()` for direct integrations and plugin-based systems.
 
 **Reflex Quoter** - The analysis engine that detects MEV opportunities by analyzing price differences across DEX pools, calculating optimal arbitrage routes, and estimating profitability.
 
 **Onchain Clients** - Smart contracts that integrate directly with Reflex:
 
 - Plugin-based DEXes use hooks to automatically capture MEV after user swaps
-- Standard DEXes integrate the router directly into their core contracts
+- Custom contracts integrate the router directly into their core logic
+- SwapProxy wraps any DEX router to add MEV capture capabilities
 
 **Offchain Clients** - Applications that use the Reflex SDK:
 
-- DApps protect users from MEV while capturing profits
-- MEV Bots implement custom strategies for professional MEV extraction
+- DApps and MEV bots use the SDK to interact with SwapProxy
+- Frontend applications for user-facing MEV protection
 
 ## 🧩 Core Components
 
@@ -99,27 +102,15 @@ graph LR
 
 ### 3. Integration Types
 
-Reflex supports three main integration patterns to accommodate different use cases:
+Reflex supports three main integration patterns:
 
-**Plugin-based Integration** - Lightweight contracts that use DEX hooks or callbacks to automatically trigger MEV capture after user swaps. Ideal for existing DEX protocols that want to add MEV capture without modifying core contracts.
+1. **[Plugin-Based Integration](../integration/overview#1-dex-plugin-based-integration)** - For DEXes with hook/plugin support. Lightweight contracts automatically trigger MEV capture after user swaps.
 
-**Direct Integration** - DEX protocols integrate Reflex router calls directly into their core smart contracts. Provides maximum control and customization for revenue sharing and MEV strategies.
+2. **[Universal DEX Integration](../integration/overview#2-universal-dex-integration)** - For any DEX and client-side applications. Uses SwapProxy + TypeScript SDK to wrap any DEX router with MEV capture.
 
-**SDK Integration** - Applications use the TypeScript SDK to interact with Reflex. Perfect for DApp frontends, MEV bots, trading tools, and any offchain application that wants to protect users or implement custom MEV strategies.
+3. **[Direct Contract Access](../integration/overview#3-direct-contract-access)** - For custom smart contracts. Direct calls to `ReflexRouter.triggerBackrun()` with full control over MEV capture timing.
 
-#### SDK Application Types:
-
-- **DApp Frontends**: Protect users from MEV while capturing profits
-- **MEV Bots**: Custom strategies for professional MEV extraction
-- **Protocol UIs**: Integrated MEV capture in protocol interfaces
-- **Trading Tools**: Enhanced trading with automatic MEV protection
-
-#### SDK Capabilities:
-
-- Event monitoring and opportunity detection
-- Transaction simulation and profit estimation
-- Automated MEV capture execution
-- Multi-chain deployment management
+[→ View Detailed Integration Guide](../integration/overview)
 
 ## 🔄 Transaction Flow
 
