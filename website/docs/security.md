@@ -59,18 +59,21 @@ function reflexAfterSwap(...) internal gracefulNonReentrant returns (uint256 pro
 #### Comprehensive User Protection Guarantees
 
 **Transaction Isolation**: MEV operations are completely isolated from user transactions:
+
 - **Try-catch wrappers** ensure MEV failures don't propagate to user transactions
 - **Graceful degradation** - if MEV extraction fails, user transaction continues normally
 - **No fund access** - Reflex has zero access to user funds or token approvals
 - **Independent execution** - MEV operations run independently of user swap logic
 
 **Failure Handling**:
+
 - **Silent failures** - MEV extraction failures are silently handled without reverting user transactions
 - **Atomic operations** - Either MEV succeeds completely or fails with zero impact
 - **No partial states** - No scenario where user transaction succeeds but leaves funds in limbo
 - **Guaranteed execution** - User transactions always complete regardless of MEV outcome
 
 **Fund Safety**:
+
 - **No token approvals required** - Users never approve tokens to Reflex contracts
 - **No direct fund access** - Reflex operates only on public arbitrage opportunities
 - **Flash loan isolation** - All MEV operations use flash loans with automatic reversion
@@ -94,7 +97,7 @@ contract YourProtocol {
     function performSwap(SwapParams memory params) external {
         // 1. Execute user swap first (guaranteed to complete)
         executeUserSwap(params);
-        
+
         // 2. Attempt MEV extraction with full isolation
         try reflexIntegration.extractMEV(params) {
             // MEV succeeded - additional value captured
@@ -169,6 +172,7 @@ contract ReflexRouter {
 **Absolute User Fund Protection** - Reflex provides mathematical guarantees that user funds cannot be accessed, locked, or affected:
 
 **Zero Fund Access Architecture**:
+
 - **No token approvals**: Users never approve tokens to Reflex contracts
 - **No direct fund access**: Reflex has zero access to user funds or protocol treasuries
 - **Flash loan isolation**: Only captures public arbitrage opportunities using flash loan-based swaps
@@ -176,6 +180,7 @@ contract ReflexRouter {
 - **Try-catch protection**: All MEV operations wrapped in try-catch to prevent user transaction impact
 
 **Mathematical Fund Safety**:
+
 - **Impossible fund loss**: No code path exists for Reflex to access user balances
 - **No approval requirement**: Users interact with protocols directly, never approving Reflex
 - **Atomic MEV operations**: Either MEV succeeds completely or fails with zero user impact
@@ -183,6 +188,7 @@ contract ReflexRouter {
 - **Gas-only cost**: Users only pay additional gas for MEV extraction attempts (if any)
 
 **Failure Isolation Guarantees**:
+
 - **Silent MEV failures**: MEV extraction failures never propagate to user transactions
 - **Transaction completion**: User swaps always complete regardless of MEV outcome
 - **No partial states**: Impossible to have user transaction succeed with locked funds
@@ -196,7 +202,7 @@ function userSwap(SwapParams memory params) external {
     // 1. User transaction executes normally
     token.transferFrom(user, pool, params.amountIn);
     uint256 amountOut = pool.swap(params.amountIn, params.recipient);
-    
+
     // 2. MEV extraction attempt (completely isolated)
     try reflexIntegration.extractMEV(params) {
         // MEV succeeded - user gets their swap + protocol gets MEV value
@@ -213,13 +219,10 @@ function userSwap(SwapParams memory params) external {
 **Atomic Operations** - All MEV operations are atomic:
 
 - Either fully successful with profit distribution, or completely reverted
-- No partial state changes that could leave funds locked  
+- No partial state changes that could leave funds locked
 - Built-in rollback mechanisms for failed operations
 - Try-catch isolation ensures user transactions complete regardless of MEV outcome
-
-### 4. Input Validation & Bounds Checking
-
-Comprehensive validation focuses on critical parameters and financial safety:
+  Comprehensive validation focuses on critical parameters and financial safety:
 
 ```solidity
 // Revenue configuration validation (ConfigurableRevenueDistributor)
@@ -267,17 +270,9 @@ require(success, "ETH transfer failed");
 
 We take security seriously and are working with a leading audit firm to ensure the highest level of security:
 
-| Auditor                                             | Scope         | Status         | Expected Completion |
-| --------------------------------------------------- | ------------- | -------------- | ------------------- |
-| **[Optimum Security](https://www.optimumsec.xyz/)** | Full Protocol | 🔄 In Progress | Q3 2025             |
-
-**Coming Soon** - Comprehensive audit reports will be published here once completed. Our security audits will cover:
-
-- Smart contract security analysis
-- Economic security and incentive alignment
-- Integration safety and best practices
-- Gas optimization and DoS resistance
-- Formal verification of critical functions
+| Auditor                                             | Scope         | Status | Report                                                                                                                   |
+| --------------------------------------------------- | ------------- | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| **[Optimum Security](https://www.optimumsec.xyz/)** | Full Protocol | Done   | [View Audit Report](https://github.com/reflex-mev/reflex/blob/main/audits/september-2025-reflex-security-assessment.pdf) |
 
 ### Internal Security Measures
 
@@ -287,19 +282,6 @@ While external audits are in progress, we maintain rigorous internal security pr
 - **Static Analysis**: Continuous monitoring with Slither, Mythril, and custom tools
 - **Peer Review**: Minimum 3 reviewer approval for all changes
 - **Formal Methods**: Critical functions verified with symbolic execution
-
-### Bug Bounty Program
-
-**Coming Soon** - We will launch a comprehensive bug bounty program to reward security researchers who help us identify vulnerabilities and improve the protocol's security.
-
-Our bug bounty program will cover:
-
-- **Smart Contract Vulnerabilities**: Issues in core protocol contracts
-- **Integration Security**: Problems with protocol integration patterns
-- **Economic Attacks**: MEV manipulation or profit extraction vulnerabilities
-- **Documentation Issues**: Security-related documentation gaps or errors
-
-Program details including reward structures and submission guidelines will be published once our security audit is complete.
 
 ## 🚨 Security Best Practices
 
@@ -314,7 +296,7 @@ contract SecureProtocolIntegration {
     function executeSwapWithMEV(SwapParams memory params) external {
         // Step 1: Execute user transaction first (guaranteed completion)
         uint256 amountOut = _executeUserSwap(params);
-        
+
         // Step 2: Attempt MEV extraction with full isolation
         try reflexRouter.triggerBackrun(
             params.poolId,
@@ -332,11 +314,11 @@ contract SecureProtocolIntegration {
             // MEV failed with low-level error - log but don't revert user transaction
             emit MEVFailedLowLevel(lowLevelData);
         }
-        
+
         // User transaction completed regardless of MEV outcome
         emit SwapCompleted(params.recipient, amountOut);
     }
-    
+
     function _executeUserSwap(SwapParams memory params) internal returns (uint256) {
         // User swap logic - completely independent of MEV
         // This must complete successfully regardless of MEV outcome
@@ -352,25 +334,6 @@ contract SecureProtocolIntegration {
 - **Never revert on MEV failure**: User transactions must complete regardless of MEV outcome
 - **Log MEV failures**: Track MEV performance without affecting user experience
 - **Validate user protection**: Test that MEV failures don't impact user transactions
-
-#### 2. Validate Integration Parameters
-
-```solidity
-// Always validate configuration before deployment - matches actual ConfigurableRevenueDistributor validation
-require(_recipients.length == _sharesBps.length, "Recipients and shares length mismatch");
-require(_recipients.length > 0, "No recipients provided");
-
-uint256 totalShares = _dustShareBps;
-for (uint256 i = 0; i < _recipients.length; i++) {
-    require(_recipients[i] != address(0), "Invalid recipient address");
-    require(_sharesBps[i] > 0, "Invalid share amount");
-    totalShares += _sharesBps[i];
-}
-require(totalShares == 10000, "Total shares must equal 100% (10000 basis points)");
-
-// Verify admin access before deployment
-require(msg.sender == owner, "Only admin can manage revenue configurations");
-```
 
 #### 2. Implement Owner-Based Access Control
 
@@ -467,9 +430,7 @@ contract EmergencyManagement {
 }
 ```
 
-### For End Users & DApp Developers
-
-#### 🛡️ User Fund Safety Guarantee
+### 🛡️ User Fund Safety Guarantee
 
 **Important**: Reflex provides absolute guarantees that your funds and transactions are completely safe:
 
@@ -480,88 +441,6 @@ contract EmergencyManagement {
 - **Guaranteed execution**: Your transactions always complete successfully regardless of MEV outcome
 
 **You can use Reflex-enabled protocols with complete confidence** - there is no scenario where Reflex can harm your funds or transactions.
-
-#### 1. Verify Contract Addresses
-
-Always verify you're interacting with official Reflex contracts by checking deployment records:
-
-```javascript
-// Example addresses from actual deployments (verify with latest deployment info)
-const CONTRACT_ADDRESSES = {
-  // These are example test network addresses - always verify on official docs
-  testnet: {
-    reflexRouter: "0xA505476963CB2414FE54e3a42fAE9587704C50D7",
-    reflexQuoter: "0x1575f85195DD30e784196fa64c7d67c20BD18941",
-  },
-  // Mainnet addresses will be published upon mainnet deployment
-};
-
-// Always verify before interaction
-function verifyRouterAddress(chainId, routerAddress) {
-  const officialAddresses = CONTRACT_ADDRESSES[getNetworkName(chainId)];
-
-  if (!officialAddresses || routerAddress !== officialAddresses.reflexRouter) {
-    throw new Error(`Invalid router address for chain ${chainId}`);
-  }
-}
-
-// Verify contract is actually ReflexRouter
-async function verifyContractInterface(address, provider) {
-  const contract = new ethers.Contract(
-    address,
-    ["function owner() view returns (address)"],
-    provider
-  );
-  try {
-    await contract.owner(); // Should not revert for ReflexRouter
-  } catch (error) {
-    throw new Error("Contract does not implement ReflexRouter interface");
-  }
-}
-```
-
-#### 2. Implement Slippage Protection
-
-```javascript
-// Always set reasonable slippage limits
-const slippageTolerance = 0.005; // 0.5%
-const minAmountOut = expectedAmount * (1 - slippageTolerance);
-
-// For high-value transactions, use tighter slippage
-const highValueThreshold = ethers.utils.parseEther("10");
-const tightSlippage = amount.gt(highValueThreshold) ? 0.003 : 0.005;
-```
-
-#### 3. Transaction Safety Checks
-
-```javascript
-// Pre-transaction validation
-function validateTransaction(params) {
-  // Check recipient addresses
-  if (!ethers.utils.isAddress(params.recipient)) {
-    throw new Error("Invalid recipient address");
-  }
-
-  // Verify amounts
-  if (params.amountIn.lte(0) || params.minAmountOut.lte(0)) {
-    throw new Error("Invalid amounts");
-  }
-
-  // Check gas limits
-  if (params.gasLimit < 200000 || params.gasLimit > 2000000) {
-    throw new Error("Gas limit out of safe range");
-  }
-
-  // Verify deadline
-  const deadline = Math.floor(Date.now() / 1000) + 1200; // 20 minutes
-  if (params.deadline < deadline - 300) {
-    // Less than 5 minutes
-    throw new Error("Deadline too short");
-  }
-}
-```
-
-#### 4. Integration Testing
 
 ```javascript
 // Test suite for Reflex integration based on actual contract behavior
@@ -676,56 +555,6 @@ graph LR
 5. **Resolution**: Fix deployment and comprehensive verification
 6. **Communication**: Public disclosure and ecosystem updates
 
-## 📋 Security Checklist
-
-### Pre-Integration Security Checklist
-
-Before integrating Reflex, ensure your protocol meets these security requirements:
-
-**Contract Verification:**
-
-- [ ] Official Reflex contract addresses verified on block explorer
-- [ ] Router and Quoter contract source code reviewed
-- [ ] Integration parameters validated against documentation
-- [ ] Test deployments completed on testnets
-
-**Configuration Security:**
-
-- [ ] Revenue distribution shares sum to 100%
-- [ ] Minimum profit thresholds set appropriately
-- [ ] Gas limits within recommended ranges
-- [ ] Slippage tolerances configured safely
-
-**Monitoring & Alerting:**
-
-- [ ] Real-time monitoring systems deployed
-- [ ] Alert thresholds configured for key metrics
-- [ ] Emergency contact procedures documented
-- [ ] Incident response playbook prepared
-
-**Team Preparation:**
-
-- [ ] Development team trained on Reflex security practices
-- [ ] Security documentation reviewed and understood
-- [ ] Emergency procedures tested and validated
-- [ ] Contact information for Reflex security team available
-
-**Infrastructure Security:**
-
-- [ ] Multi-signature wallets configured for admin functions
-- [ ] Backup systems and fallback procedures ready
-- [ ] Access controls implemented and tested
-- [ ] Upgrade mechanisms secured with timelocks
-
-### Post-Integration Monitoring
-
-**Continuous Security Validation:**
-
-- [ ] Daily monitoring of profit distribution patterns
-- [ ] Weekly review of failed transaction patterns
-- [ ] Monthly security configuration audits
-- [ ] Quarterly integration security assessments
-
 ## 🚨 Emergency Response
 
 ### Automated Circuit Breakers
@@ -759,52 +588,3 @@ Reflex includes built-in protection mechanisms that automatically pause operatio
 - **Security Team**: security@reflexmev.io
 - **Emergency Response**: emergency@reflexmev.io
 - **Twitter/X**: [@ReflexMEV](https://x.com/ReflexMEV)
-
-**Response Time Commitments:**
-
-- **Critical Issues**: 15 minutes initial response
-- **High Severity**: 1 hour initial response
-- **Medium/Low**: 24 hours initial response
-
-## 📞 Responsible Disclosure
-
-### Report Security Vulnerabilities
-
-Found a potential security issue? We appreciate responsible disclosure and offer rewards for valid findings:
-
-**Secure Reporting Channels:**
-
-- **Email**: security@reflexmev.io
-- **PGP Key**: [Download Public Key](https://keyserver.ubuntu.com/pks/lookup?op=get&search=security@reflexmev.io)
-- **Anonymous**: Use [SecureDrop](https://securedrop.reflexmev.io) for anonymous reporting
-
-### Responsible Disclosure Process
-
-1. **Initial Report**: Submit detailed vulnerability information
-2. **Acknowledgment**: We confirm receipt within 24 hours
-3. **Investigation**: Our team investigates and assesses impact
-4. **Coordination**: We work with you on disclosure timeline
-5. **Resolution**: Fix is developed, tested, and deployed
-6. **Publication**: Joint disclosure with credit to researcher
-
-### Bug Bounty Rewards (Coming Soon)
-
-Once our audit process is complete, we will launch a comprehensive bug bounty program with competitive rewards based on vulnerability severity and impact.
-
-**Reward Categories:**
-
-- **Critical**: Complete system compromise, unlimited MEV extraction
-- **High**: Significant fund risk, major MEV manipulation
-- **Medium**: Limited fund risk, MEV calculation errors
-- **Low**: Minor issues, documentation problems
-
-**Program Features:**
-
-- Competitive rewards commensurate with vulnerability impact
-- Recognition and credit for security researchers
-- Clear submission guidelines and evaluation criteria
-- Fast response times and transparent communication
-
----
-
-_Security is fundamental to Reflex's mission. We continuously evolve our security posture and welcome community collaboration in keeping the ecosystem safe._

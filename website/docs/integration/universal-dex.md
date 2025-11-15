@@ -125,7 +125,7 @@ const integration = new UniversalIntegration(
 );
 ```
 
-## Using the UniversalIntegration API
+## Using the Universal Integration API
 
 ### Basic Swap with MEV Capture
 
@@ -525,18 +525,6 @@ forge script script/deploy-swap-proxy/DeployBackrunEnabledSwapProxy.s.sol \
     --broadcast \
     --verify
 ```
-
-### Supported DEX Routers
-
-The SwapProxy works with any DEX router that follows standard patterns:
-
-- **Uniswap V2** and forks (SushiSwap, PancakeSwap V2, etc.)
-- **Uniswap V3** routers
-- **Curve** routers
-- **Balancer** vaults
-- **Custom DEX routers**
-
-Simply deploy one SwapProxy per router and point your frontend to the appropriate proxy.
 
 ## Configuration and Optimization
 
