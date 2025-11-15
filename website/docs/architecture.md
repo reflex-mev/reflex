@@ -4,7 +4,33 @@ sidebar_position: 1
 
 # Architecture
 
-Understanding Reflex's architecture is key to building effective MEV capture strategies. This document provides a comprehensive overview of the system design, components, and data flow.
+Understanding Reflex's architecture is key to building effective MEV capture strategies. This document provides a comprehensive overvieThis convertsThis converts natural slippage into captured value: reducing user cost, rewarding LPs, and preventing external arbitrageurs from extracting profit.
+
+**Execution Flow:**
+
+```mermaid
+graph TD
+    A[👤 User Swap] --> B[📉 Price Impact Created<br/>real AMM state]
+    B --> C[🧠 Onchain Mispricing Detection]
+    C --> D[⚡ Deterministic Arbitrage Execution<br/>in-transaction]
+    D --> E[💰 Profit Captured Onchain]
+    E --> F[🎁 Value Shared With<br/>User / LPs / Treasury]
+```
+
+### 2. Sandwich Attack Prevention — Structural Immunity into captured value: reducing user cost, rewarding LPs, and preventing external arbitrageurs from extracting profit.
+
+**Execution Flow:**
+
+```mermaid
+graph TD
+    A[👤 User Swap] --> B[📉 Price Impact Created<br/>real AMM state]
+    B --> C[🧠 Onchain Mispricing Detection]
+    C --> D[⚡ Deterministic Arbitrage Execution<br/>in-transaction]
+    D --> E[💰 Profit Captured Onchain]
+    E --> F[🎁 Value Shared With<br/>User / LPs / Treasury]
+```
+
+### 2. Sandwich Attack Prevention — Structural Immunityesign, components, and data flow.
 
 ## 🏗️ High-Level Architecture
 
@@ -52,16 +78,48 @@ graph LR
 
 **Reflex Quoter** - The analysis engine that detects MEV opportunities by analyzing price differences across DEX pools, calculating optimal arbitrage routes, and estimating profitability.
 
-**Onchain Clients** - Smart contracts that integrate directly with Reflex:
+### On-chain Clients
 
-- Plugin-based DEXes use hooks to automatically capture MEV after user swaps
-- Custom contracts integrate the router directly into their core logic
-- SwapProxy wraps any DEX router to add MEV capture capabilities
+Smart contracts that integrate directly with Reflex — with all logic executed fully on-chain, no external APIs, no latency, no trust assumptions.
 
-**Offchain Clients** - Applications that use the Reflex SDK:
+**Plugin-based DEXes**
 
-- DApps and MEV bots use the SDK to interact with SwapProxy
-- Frontend applications for user-facing MEV protection
+- Use hooks to automatically capture MEV immediately after user swaps
+- Execution is fully on-chain, deterministic, and atomic
+
+**Custom execution contracts**
+
+- Integrate the Reflex router directly inside their core logic
+- All calculations, routing, and profit distribution are done in-contract
+
+**SwapProxy**
+
+- Wraps any DEX router to add native MEV capture capabilities
+- Zero external calls, zero off-chain dependencies
+
+### Off-chain Clients
+
+Backend and frontend systems that interact with Reflex — without ever relying on off-chain quoting, APIs, solvers, or trust assumptions. The SDK simply submits on-chain calls where all logic actually happens.
+
+**Backend trading systems**
+
+- Automated trading engines and MEV bots call the Reflex contracts directly through the SDK
+- All MEV extraction, backrun logic, and settlement occur on-chain with no latency
+- No need for off-chain quotes, no solvers, no probabilistic execution
+
+**Frontend applications**
+
+- DApps and interfaces provide MEV protection and aligned execution using SwapProxy
+- No external services, no relayers, no private RPC requirements
+- User flows trigger Reflex logic that executes 100% on-chain, inside the same transaction
+
+### Key principle across the stack:
+
+- **No external APIs** — No off-chain quoting or risk of stale prices
+- **No trust in external solvers or builders**
+- **No latency** — everything is synchronous and atomic on-chain
+
+Reflex guarantees that MEV protection and MEV extraction both happen under the same rules, in the same transaction, with no external dependencies.
 
 ## 🧩 Core Components
 
@@ -137,29 +195,49 @@ sequenceDiagram
 
 ## 💡 Capabilities
 
-### 1. Sandwich Attack Prevention
+### 1. Slippage Correction — Deterministic Arbitrage Execution
 
-Transform harmful sandwich attacks into beneficial backruns:
+Reflex turns every swap-induced price impact into an internal arbitrage opportunity.
+
+After the user swap executes, Reflex analyzes the updated pool state, detects mispricing, and performs an optimal arbitrage backrun inside the same transaction.
+
+**No solvers, no offchain quotes, no latency.**  
+All logic is fully onchain.
+
+This converts natural slippage into captured value: reducing user cost, rewarding LPs, and preventing external arbitrageurs from extracting profit.
+
+**Execution Flow:**
+
+👤 User Swap  
+⬇️  
+📉 Price Impact Created (real AMM state)  
+⬇️  
+🧠 Onchain Mispricing Detection  
+⬇️  
+⚡ Deterministic Arbitrage Execution (in-transaction)  
+⬇️  
+� Profit Captured Onchain  
+⬇️  
+🎁 Value Shared With User / LPs / Treasury
+
+### 2. Sandwich Attack Prevention — Structural Immunity
+
+Reflex makes sandwich attacks economically impossible.
+
+A sandwich only works if the attacker can close their position after the user swap. Reflex removes this closing leg entirely by executing its own backrun inside the user's transaction, leaving no opening for attackers.
+
+If someone front-runs the user, Reflex immediately captures the artificial imbalance they created.  
+The attacker is stuck in a toxic position with no exit, and the profit flows back to the protocol.
+
+**Execution Flow:**
 
 ```mermaid
 graph LR
-    BadMEV[😈 Sandwich Attack] --> Detection[🔍 Detection]
-    Detection --> Mitigation[🛡️ Mitigation]
-    Mitigation --> GoodMEV[😇 User Backrun]
-    GoodMEV --> Reward[🎁 User Rewards]
-```
-
-### 2. Slippage Correction
-
-Detect and correct price slippage by capturing arbitrage opportunities:
-
-```mermaid
-graph LR
-    UserSwap[User Swap] --> PriceImpact[Price Impact Created]
-    PriceImpact --> Detection[Slippage Detection]
-    Detection --> Correction[Arbitrage Execution]
-    Correction --> Profit[Captured Profit]
-    Profit --> UserShare[Shared with User]
+    A[😈 Attacker Front-run] --> B[📊 Artificial Price Distortion]
+    B --> C[🧠 Reflex Reads Updated Pool State]
+    C --> D[⚔️ Reflex Executes Backrun<br/>Inside Transaction]
+    D --> E[💥 Attacker Cannot Close<br/>Holds Loss]
+    E --> F[🎁 Protocol Captures the Profit]
 ```
 
 ## 🛡️ Security Architecture
