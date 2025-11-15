@@ -112,7 +112,7 @@ backrunParams[0] = BackrunParams({
 });
 
 // Execute
-(bytes memory returnData, uint256[] memory profits, address[] memory profitTokens) = 
+(bytes memory returnData, uint256[] memory profits, address[] memory profitTokens) =
     swapProxy.swapWithBackrun(swapCalldata, metadata, backrunParams);
 ```
 
@@ -124,16 +124,6 @@ backrunParams[0] = BackrunParams({
 - ✅ **Token Recovery** - Returns leftover tokens and ETH to recipient
 - ✅ **Reentrancy Protection** - Secured against reentrancy attacks
 - ✅ **ETH Support** - Handles native ETH swaps
-
-## Supported DEX Routers
-
-The BackrunEnabledSwapProxy is compatible with:
-
-- **Uniswap V2** and forks (SushiSwap, PancakeSwap V2)
-- **Uniswap V3** routers
-- **Curve** exchange routers
-- **Balancer** vault interfaces
-- **Any custom DEX router** following standard patterns
 
 ## Deployment
 
@@ -170,15 +160,11 @@ import { UniversalIntegration } from "@reflex-mev/sdk/integrations";
 const integration = new UniversalIntegration(
   provider,
   signer,
-  swapProxyAddress,  // BackrunEnabledSwapProxy address
+  swapProxyAddress, // BackrunEnabledSwapProxy address
   reflexRouterAddress
 );
 
-await integration.swapWithBackrun(
-  swapCalldata,
-  swapMetadata,
-  backrunParams
-);
+await integration.swapWithBackrun(swapCalldata, swapMetadata, backrunParams);
 ```
 
 See [Universal DEX Integration](../integration/universal-dex) for complete SDK documentation.

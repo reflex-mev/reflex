@@ -69,7 +69,7 @@ contract MyDeFiProtocol {
 
         // Trigger MEV capture after swap
         bytes32 poolId = _getPoolId(tokenIn, tokenOut);
-        uint112 backrunAmount = uint112(amountIn / 20); // 5% backrun
+        uint112 backrunAmount = uint112(amountIn);
 
         try reflexRouter.triggerBackrun(
             poolId,
