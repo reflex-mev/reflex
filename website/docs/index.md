@@ -7,35 +7,70 @@ slug: /
 
 ## Introduction
 
-Reflex is an on-chain MEV capture engine designed to reclaim backrun profits for protocols, users, and ecosystems. Instead of letting external actors extract value, Reflex routes that value back into the protocol environment.
+Reflex is an on-chain MEV capture engine built for any product or protocol that controls trading flow.
 
-### Key features:
+If you operate a DEX, an aggregator, an RFQ system, or a smart order router — your flow creates arbitrage opportunities. Today, that arbitrage is captured by external bots and leaves your ecosystem.
 
-- **100% on-chain**: no backend dependencies, no private servers.
-- **Plug and play**: integration requires no changes to existing smart contracts.
-- **Secure by design**: Reflex is fully non-custodial, operating independently of user funds and requiring no approval access.
-- **Cross-ecosystem**: works across EVM protocols, and L1,L2 environments.
+**Reflex changes the economics:**
 
-## Protocol Integrations
+It captures the same arbitrage inside the user transaction itself and routes the profits back to the flow owner — or to LPs, users, or your treasury, based on your configuration.
 
-### Overview
+Reflex also neutralizes toxic MEV such as sandwich attacks, converting harmful extraction into aligned, value-creating execution.
 
-Protocols can integrate Reflex at different levels of depth. From pool-level hooks to router-level integration, Reflex adapts to the architecture you already use.
+## Why Reflex is built for flow owners
 
-### Reflex vs External Arbitrage
+- **Fully on-chain** — all computation and backrun execution happen directly on-chain, with no backend, no relayers, no off-chain solvers.
 
-|                       | External Arbitrage (current state)                    | Reflex (integrated)                                     |
-| --------------------- | ----------------------------------------------------- | ------------------------------------------------------- |
-| **MEV profits**       | Captured by third-party searchers, exit the ecosystem | Redirected on-chain to users or the protocol treasury   |
-| **Protocol revenue**  | None — profits leak to external actors                | Configurable share of profits accrue to the protocol    |
-| **Execution control** | Uncoordinated, opaque, dependent on external bots     | Native, deterministic, fully on-chain                   |
-| **Security**          | No alignment between arbitrageur and protocol         | Protocol retains control of how profits are distributed |
+- **Plug-and-play integration** — works with leading DEXes and aggregators without requiring changes to your architecture.
 
-### Why this matters:
+- **Non-custodial** — Reflex never takes custody, never requires approvals, and cannot touch user funds.
 
-Arbitrage is inevitable, but today it benefits external actors who have no alignment with your protocol. Reflex ensures the same arbitrage happens within your ecosystem and its profits are redistributed according to your rules.
+- **Universal compatibility** — supports any trading flow that creates price impact and arbitrage.
 
-### Integration Types
+- **Deterministic execution** — MEV capture occurs atomically inside the same transaction.
+
+- **MEV protection** — Reflex absorbs sandwich attempts by converting the attacker's opportunity into internal arbitrage that benefits your ecosystem.
+
+## Who can integrate Reflex?
+
+Reflex is built for any execution layer that creates or routes swaps, including:
+
+- **DEX protocols** — supporting all major AMM models and their routing layers
+
+- **Aggregators and Smart Order Routers**
+
+- **RFQ engines** that settle on-chain
+
+- **Cross-chain routers** and bridge-based swap flows
+
+- **L1/L2 native AMM modules**
+
+If your system creates token price movement, Reflex allows you to reclaim the value that movement generates.
+
+## Reflex vs External Arbitrage
+
+|                      | External Arbitrage (today)                | Reflex (integrated)                                       |
+| -------------------- | ----------------------------------------- | --------------------------------------------------------- |
+| **MEV profits**      | Taken by searchers, leaving the ecosystem | Captured and redistributed to the flow owner              |
+| **Ecosystem value**  | Lost                                      | Routed to LPs, users, or the treasury                     |
+| **Execution path**   | Off-chain, opaque, unpredictable          | Native, deterministic, within the same transaction        |
+| **Control**          | None                                      | Full control over profit routing                          |
+| **Alignment**        | Zero alignment                            | 100% aligned with protocol incentives                     |
+| **Sandwich attacks** | Harmful, extractive, user-hostile         | Neutralized — Reflex converts toxic MEV into positive MEV |
+
+## Why this matters — for DEXes, aggregators, RFQ engines, and execution layers
+
+Every swap you route creates price shifts.  
+Price shifts create arbitrage.  
+Arbitrage creates profit.
+
+**If you do nothing, that profit is taken by outsiders.**
+
+With Reflex, you internalize that value and turn it into a native revenue engine that strengthens your product, your users, and your ecosystem — while eliminating toxic MEV.
+
+Reflex ensures you keep the value your flow creates.
+
+## Integration Types
 
 Reflex offers three primary integration methods to suit different protocol architectures and use cases:
 
