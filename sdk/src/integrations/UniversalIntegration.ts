@@ -130,6 +130,7 @@ export class UniversalIntegration {
         await this.swapProxyContract.swapWithBackrun(
           swapTxCallData,
           swapMetadata,
+          this.reflexRouterAddress,
           backrunParams,
           txOptions
         );
@@ -157,9 +158,10 @@ export class UniversalIntegration {
 
   /**
    * Approve tokens for spending by the SwapProxy contract
+   * Checks current allowance and only approves if insufficient
    *
    * @param approvals - Array of token approvals to execute
-   * @returns Array of approval transaction receipts
+   * @returns Array of approval transaction receipts (only for tokens that needed approval)
    *
    * @example
    * ```typescript
@@ -182,6 +184,7 @@ export class UniversalIntegration {
     approvals: TokenApproval[]
   ): Promise<TransactionReceipt[]> {
     const receipts: TransactionReceipt[] = [];
+    const signerAddress = await this.signer.getAddress();
 
     for (const approval of approvals) {
       const tokenContract = new Contract(
@@ -190,16 +193,34 @@ export class UniversalIntegration {
         this.signer
       );
 
-      const tx: ContractTransactionResponse = await tokenContract.approve(
-        this.swapProxyAddress,
-        approval.amount
+      // Check current allowance
+      const currentAllowance: bigint = await tokenContract.allowance(
+        signerAddress,
+        this.swapProxyAddress
       );
 
-      const receipt = await tx.wait();
-      if (!receipt) {
-        throw new Error(`Token approval failed for ${approval.tokenAddress}`);
+      // Only approve if current allowance is insufficient
+      if (currentAllowance < approval.amount) {
+        console.log(
+          `Approving ${approval.tokenAddress} for ${approval.amount.toString()}...`
+        );
+
+        const tx: ContractTransactionResponse = await tokenContract.approve(
+          this.swapProxyAddress,
+          approval.amount
+        );
+
+        const receipt = await tx.wait();
+        if (!receipt) {
+          throw new Error(`Token approval failed for ${approval.tokenAddress}`);
+        }
+        receipts.push(receipt);
+        console.log(`✅ Approval confirmed for ${approval.tokenAddress}`);
+      } else {
+        console.log(
+          `✅ ${approval.tokenAddress} already has sufficient allowance (${currentAllowance.toString()})`
+        );
       }
-      receipts.push(receipt);
     }
 
     return receipts;
@@ -270,11 +291,12 @@ export class UniversalIntegration {
         await this.swapProxyContract.swapWithBackrun.estimateGas(
           swapTxCallData,
           swapMetadata,
+          this.reflexRouterAddress,
           backrunParams
         );
 
-      // Add 20% buffer for safety
-      return (gasEstimate * 120n) / 100n;
+      // Add 50% buffer for safety
+      return (gasEstimate * 200n) / 100n;
     } catch (error) {
       console.error('Gas estimation failed:', error);
       // Return a safe default if estimation fails
