@@ -396,56 +396,12 @@ async function main() {
     console.log(`   Gas Used: ${result.gasUsed.toString()}`);
 
     // Display results
-    console.log(`\n📊 Backrun Results:`);
-    console.log(`   Profits: ${result.profits.length}`);
-    result.profits.forEach((profit, i) => {
-      const token = result.profitTokens[i];
-      console.log(`   [${i}] ${ethers.formatEther(profit)} (${token})`);
-    });
-
-    // Get balances after
-    const [tokenInBalanceAfter, tokenOutBalanceAfter] = await Promise.all([
-      tokenInContract.balanceOf(signerAddress),
-      tokenOutContract.balanceOf(signerAddress),
-    ]);
-
-    const tokenInDelta = tokenInBalanceAfter - tokenInBalanceBefore;
-    const tokenOutDelta = tokenOutBalanceAfter - tokenOutBalanceBefore;
-
-    console.log(`\n💱 Token Balance Changes:`);
-    console.log(
-      `   ${tokenInSymbol}: ${tokenInDelta >= 0n ? '+' : ''}${ethers.formatUnits(tokenInDelta, tokenInDecimals)}`
-    );
-    console.log(
-      `   ${tokenOutSymbol}: ${tokenOutDelta >= 0n ? '+' : ''}${ethers.formatUnits(tokenOutDelta, tokenOutDecimals)}`
-    );
-
-    // Verify no leftover balances in proxy
-    const [proxyTokenInBalance, proxyTokenOutBalance, proxyETHBalance] =
-      await Promise.all([
-        tokenInContract.balanceOf(config.swapProxyAddress),
-        tokenOutContract.balanceOf(config.swapProxyAddress),
-        provider.getBalance(config.swapProxyAddress as any),
-      ]);
-
-    console.log(`\n🔍 Proxy Balance Verification:`);
-    console.log(
-      `   ${tokenInSymbol} in proxy: ${ethers.formatUnits(proxyTokenInBalance, tokenInDecimals)}`
-    );
-    console.log(
-      `   ${tokenOutSymbol} in proxy: ${ethers.formatUnits(proxyTokenOutBalance, tokenOutDecimals)}`
-    );
-    console.log(`   ETH in proxy: ${ethers.formatEther(proxyETHBalance)}`);
-
-    if (
-      proxyTokenInBalance > 0n ||
-      proxyTokenOutBalance > 0n ||
-      proxyETHBalance > 0n
-    ) {
-      console.log(`   ⚠️  WARNING: Proxy has leftover balances!`);
-    } else {
-      console.log(`   ✅ No leftover balances (as expected)`);
-    }
+    // console.log(`\n📊 Backrun Results:`);
+    // console.log(`   Profits: ${result.profits.length}`);
+    // result.profits.forEach((profit, i) => {
+    //   const token = result.profitTokens[i];
+    //   console.log(`   [${i}] ${ethers.formatEther(profit)} (${token})`);
+    // });
 
     console.log(`\n✨ Test completed successfully!\n`);
   } catch (error: any) {
