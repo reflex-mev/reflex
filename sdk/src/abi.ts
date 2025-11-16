@@ -192,6 +192,7 @@ export const SWAP_PROXY_ABI = [
           { name: 'recipient', type: 'address' },
         ],
       },
+      { name: 'reflexRouter', type: 'address' },
       {
         name: 'backrunParams',
         type: 'tuple[]',

@@ -79,7 +79,11 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
         public
         payable
         nonReentrant
-        returns (bytes memory swapReturnData, uint256[] memory profits, address[] memory profitTokens)
+        returns (
+            bytes memory swapReturnData,
+            uint256[] memory profits,
+            address[] memory profitTokens
+        )
     {
         // ============ Input Validation ============
 
@@ -95,16 +99,25 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
         // ============ Token Transfer ============
 
         // Transfer the input tokens from the caller to this contract
-        IERC20(swapMetadata.tokenIn).safeTransferFrom(msg.sender, address(this), swapMetadata.amountIn);
+        IERC20(swapMetadata.tokenIn).safeTransferFrom(
+            msg.sender,
+            address(this),
+            swapMetadata.amountIn
+        );
 
         // ============ Swap Execution ============
 
         // Approve the target router to spend the exact amount needed for the swap
-        IERC20(swapMetadata.tokenIn).forceApprove(targetRouter, swapMetadata.amountIn);
+        IERC20(swapMetadata.tokenIn).forceApprove(
+            targetRouter,
+            swapMetadata.amountIn
+        );
 
         // Execute the swap transaction on the target router
         // Forward any ETH sent with the transaction
-        (bool success, bytes memory returnData) = targetRouter.call{value: msg.value}(swapTxCallData);
+        (bool success, bytes memory returnData) = targetRouter.call{
+            value: msg.value
+        }(swapTxCallData);
         if (!success) revert SwapCallFailed(returnData);
         swapReturnData = returnData;
 
@@ -116,18 +129,26 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
         // ============ Return Leftover Funds ============
         {
             // Check for leftover input tokens after swap
-            uint256 tokenInBalanceAfter = IERC20(swapMetadata.tokenIn).balanceOf(address(this));
+            uint256 tokenInBalanceAfter = IERC20(swapMetadata.tokenIn)
+                .balanceOf(address(this));
             if (tokenInBalanceAfter > 0) {
                 // Return any remaining input tokens to the caller
                 // This can happen if the swap didn't use the full amount
-                IERC20(swapMetadata.tokenIn).safeTransfer(swapMetadata.recipient, tokenInBalanceAfter);
+                IERC20(swapMetadata.tokenIn).safeTransfer(
+                    swapMetadata.recipient,
+                    tokenInBalanceAfter
+                );
             }
 
             // Check for leftover output tokens after swap
-            uint256 tokenOutBalanceAfter = IERC20(swapMetadata.tokenOut).balanceOf(address(this));
+            uint256 tokenOutBalanceAfter = IERC20(swapMetadata.tokenOut)
+                .balanceOf(address(this));
             if (tokenOutBalanceAfter > 0) {
                 // Return any remaining output tokens to the caller
-                IERC20(swapMetadata.tokenOut).safeTransfer(swapMetadata.recipient, tokenOutBalanceAfter);
+                IERC20(swapMetadata.tokenOut).safeTransfer(
+                    swapMetadata.recipient,
+                    tokenOutBalanceAfter
+                );
             }
 
             // Check for leftover ETH after swap
@@ -135,7 +156,9 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
             if (ethBalanceAfter > 0) {
                 // Return any remaining ETH to the caller
                 // Using call instead of transfer to support contracts with custom receive functions
-                (bool ethSuccess,) = payable(swapMetadata.recipient).call{value: ethBalanceAfter}("");
+                (bool ethSuccess, ) = payable(swapMetadata.recipient).call{
+                    value: ethBalanceAfter
+                }("");
                 if (!ethSuccess) revert ETHTransferFailed();
             }
         }
@@ -149,16 +172,15 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
 
         // Iterate through all backrun parameters and execute each one
         for (uint256 i = 0; i < backrunParams.length; i++) {
-            try IReflexRouter(reflexRouter)
-                .triggerBackrun(
+            try
+                IReflexRouter(reflexRouter).triggerBackrun(
                     backrunParams[i].triggerPoolId,
                     backrunParams[i].swapAmountIn,
                     backrunParams[i].token0In,
                     backrunParams[i].recipient,
                     backrunParams[i].configId
-                ) returns (
-                uint256 profit, address profitToken
-            ) {
+                )
+            returns (uint256 profit, address profitToken) {
                 // Store successful backrun results
                 profits[i] = profit;
                 profitTokens[i] = profitToken;
