@@ -67,4 +67,4 @@ Call the ReflexRouter directly from your smart contracts. Maximum flexibility fo
 
 Need help deciding? Check our [Architecture Guide](../architecture) to understand how Reflex components work together.
 
-For detailed API documentation, see our [Smart Contract API Reference](../api/smart-contracts).
+For detailed API documentation, see our [Smart Contract API Reference](../api/reflex-router).

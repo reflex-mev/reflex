@@ -153,13 +153,13 @@ Its sole purpose is observability, ensuring Reflex runs reliably and consistentl
 
 Reflex supports three main integration patterns:
 
-1. **[Plugin-Based Integration](../integration/overview#1-dex-plugin-based-integration)** - For DEXes with hook/plugin support. Lightweight contracts automatically trigger MEV capture after user swaps.
+1. **[Plugin-Based Integration](./integration/plugin-based)** - For DEXes with hook/plugin support. Lightweight contracts automatically trigger MEV capture after user swaps.
 
-2. **[Universal DEX Integration](../integration/overview#2-universal-dex-integration)** - For any DEX and client-side applications. Uses SwapProxy + TypeScript SDK to wrap any DEX router with MEV capture.
+2. **[Universal DEX Integration](./integration/universal-dex)** - For any DEX and client-side applications. Uses SwapProxy + TypeScript SDK to wrap any DEX router with MEV capture.
 
-3. **[Direct Contract Access](../integration/overview#3-direct-contract-access)** - For custom smart contracts. Direct calls to `ReflexRouter.triggerBackrun()` with full control over MEV capture timing.
+3. **[Direct Contract Access](./integration/direct-access)** - For custom smart contracts. Direct calls to `ReflexRouter.triggerBackrun()` with full control over MEV capture timing.
 
-[→ View Detailed Integration Guide](../integration/overview)
+[→ View Detailed Integration Guide](./integration/overview)
 
 ## 🔄 Transaction Flow
 
@@ -277,4 +277,4 @@ Reflex is designed to work across multiple blockchain networks and supported by 
 
 This architecture enables Reflex to provide efficient, secure, and fair MEV capture that benefits all participants in the DeFi ecosystem. The modular design allows for easy integration with existing protocols while maintaining the flexibility to adapt to future innovations.
 
-For implementation details, see our [Integration Guide](./integration/overview) and [API Reference](./api/smart-contracts).
+For implementation details, see our [Integration Guide](./integration/overview) and [API Reference](./api/reflex-router).

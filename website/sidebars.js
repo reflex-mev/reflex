@@ -31,15 +31,9 @@ const sidebars = {
       type: "category",
       label: "API Reference",
       items: [
-        {
-          type: "category",
-          label: "Smart Contracts",
-          items: [
-            "api/reflex-router",
-            "api/reflex-after-swap",
-            "api/backrun-enabled-swap-proxy",
-          ],
-        },
+        "api/reflex-router",
+        "api/reflex-after-swap",
+        "api/backrun-enabled-swap-proxy",
         {
           type: "category",
           label: "SDK Reference",

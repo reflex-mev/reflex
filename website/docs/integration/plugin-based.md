@@ -277,6 +277,6 @@ Always test your plugin integration thoroughly:
 
 **Next Steps:**
 
-- [View API Reference](../api/smart-contracts) - Complete contract documentation
+- [View API Reference](../api/reflex-router) - Complete contract documentation
 - [Read Architecture Guide](../architecture) - Understand the system design
 - [Explore Other Integration Methods](./overview) - Compare integration options

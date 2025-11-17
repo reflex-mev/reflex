@@ -74,11 +74,11 @@ Reflex ensures you keep the value your flow creates.
 
 Reflex offers three primary integration methods to suit different protocol architectures and use cases:
 
-1. **[DEX Plugin-Based Integration](./integration/overview#1-dex-plugin-based-integration)** - For DEXes with hook/plugin support (Algebra, PancakeSwap Infinity, Uniswap v4)
+1. **[DEX Plugin-Based Integration](./integration/plugin-based)** - For DEXes with hook/plugin support (Algebra, PancakeSwap Infinity, Uniswap v4)
 
-2. **[Universal DEX Integration](./integration/overview#2-universal-dex-integration)** - For any DEX and client-side applications using SwapProxy + SDK
+2. **[Universal DEX Integration](./integration/universal-dex)** - For any DEX and client-side applications using SwapProxy + SDK
 
-3. **[Direct Contract Access](./integration/overview#3-direct-contract-access)** - For custom smart contract integration with full control
+3. **[Direct Contract Access](./integration/direct-access)** - For custom smart contract integration with full control
 
 ### Supported Protocols
 
@@ -99,7 +99,7 @@ Reflex is protocol-agnostic and already runs with leading DEXs and aggregators a
 Ready to integrate Reflex into your protocol? Check out our comprehensive guides:
 
 - � [**Integration Guide**](./integration/overview) - Step-by-step integration instructions
-- � [**API Reference**](./api/smart-contracts) - Complete contract documentation
+- � [**API Reference**](./api/reflex-router) - Complete contract documentation
 - 🏗️ [**Architecture**](./architecture) - Understand the system design
 - � [**Security**](./security) - Security considerations and best practices
 
