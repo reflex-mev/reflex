@@ -209,6 +209,6 @@ If MEV capture fails silently:
 
 **Next Steps:**
 
-- [View API Reference](../api/smart-contracts) - Complete Router documentation
+- [View API Reference](../api/reflex-router) - Complete Router documentation
 - [Read Architecture Guide](../architecture) - Understand system design
 - [Explore Other Integration Methods](./overview) - Compare integration options
