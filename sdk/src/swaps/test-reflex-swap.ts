@@ -395,14 +395,6 @@ async function main() {
     console.log(`   Block: ${result.blockNumber}`);
     console.log(`   Gas Used: ${result.gasUsed.toString()}`);
 
-    // Display results
-    // console.log(`\n📊 Backrun Results:`);
-    // console.log(`   Profits: ${result.profits.length}`);
-    // result.profits.forEach((profit, i) => {
-    //   const token = result.profitTokens[i];
-    //   console.log(`   [${i}] ${ethers.formatEther(profit)} (${token})`);
-    // });
-
     console.log(`\n✨ Test completed successfully!\n`);
   } catch (error: any) {
     console.error(`\n❌ Test failed: ${error.message}`);
