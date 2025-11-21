@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import {AlgebraBasePluginV1} from "@reflex/integrations/algebra/v1/AlgebraBasePluginV1.sol";
+import {AlgebraBasePluginV1} from "@reflex/integrations/plugin/algebra/v1/AlgebraBasePluginV1.sol";
 import {IReflexRouter} from "@reflex/interfaces/IReflexRouter.sol";
 import {AlgebraFeeConfiguration} from "@cryptoalgebra/plugin/base/AlgebraFeeConfiguration.sol";
 import "../../../utils/TestUtils.sol";

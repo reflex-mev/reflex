@@ -2,8 +2,8 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "@reflex/integrations/FundsSplitter/FundsSplitter.sol";
-import "@reflex/integrations/FundsSplitter/IFundsSplitter.sol";
+import "@reflex/base/FundsSplitter/FundsSplitter.sol";
+import "@reflex/base/FundsSplitter/IFundsSplitter.sol";
 import "../../utils/TestUtils.sol";
 
 contract TestableSplitter is FundsSplitter {

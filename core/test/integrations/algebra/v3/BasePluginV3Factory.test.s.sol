@@ -2,9 +2,9 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "@reflex/integrations/algebra/full/BasePluginV3Factory.sol";
-import "@reflex/integrations/algebra/full/AlgebraBasePluginV3.sol";
-import "@reflex/integrations/algebra/interfaces/IBasePluginV3Factory.sol";
+import "@reflex/integrations/plugin/algebra/full/BasePluginV3Factory.sol";
+import "@reflex/integrations/plugin/algebra/full/AlgebraBasePluginV3.sol";
+import "@reflex/integrations/plugin/algebra/interfaces/IBasePluginV3Factory.sol";
 import "@reflex/interfaces/IReflexRouter.sol";
 import "../../../utils/TestUtils.sol";
 import "../../../mocks/MockToken.sol";
