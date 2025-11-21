@@ -49,7 +49,14 @@ const sidebars = {
         },
       ],
     },
-    "security",
+    {
+      type: "category",
+      label: "Security",
+      items: [
+        "security/overview",
+        "security/audits",
+      ],
+    },
   ],
 };
 
