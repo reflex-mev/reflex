@@ -32,8 +32,8 @@ address public immutable targetRouter;  // The wrapped DEX router address
 
 ```solidity
 function swapWithBackrun(
-    bytes calldata swapTxCallData,
     SwapMetadata calldata swapMetadata,
+    address reflexRouter,
     BackrunParams[] calldata backrunParams
 ) external payable returns (
     bytes memory swapReturnData,
@@ -113,7 +113,7 @@ backrunParams[0] = BackrunParams({
 
 // Execute
 (bytes memory returnData, uint256[] memory profits, address[] memory profitTokens) =
-    swapProxy.swapWithBackrun(swapCalldata, metadata, backrunParams);
+    swapProxy.swapWithBackrun(metadata, reflexRouterAddress, backrunParams);
 ```
 
 ## Features
@@ -164,7 +164,7 @@ const integration = new UniversalIntegration(
   reflexRouterAddress
 );
 
-await integration.swapWithBackrun(swapCalldata, swapMetadata, backrunParams);
+await integration.swapWithBackrun(swapMetadata, backrunParams);
 ```
 
 See [Universal DEX Integration](../integration/universal-dex) for complete SDK documentation.

@@ -59,7 +59,6 @@ Execute a swap through the target DEX with automatic MEV backrun capture.
 
 ```typescript
 async swapWithBackrun(
-  swapTxCallData: string,
   swapMetadata: SwapMetadata,
   backrunParams: BackrunParams[],
   overrides?: ethers.Overrides
@@ -70,8 +69,7 @@ async swapWithBackrun(
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `swapTxCallData` | `string` | Hex-encoded calldata for the target DEX router call |
-| `swapMetadata` | `SwapMetadata` | Metadata about the swap transaction |
+| `swapMetadata` | `SwapMetadata` | Metadata about the swap transaction (including swapTxCallData) |
 | `backrunParams` | `BackrunParams[]` | Array of backrun configurations (supports multi-pool backruns) |
 | `overrides` | `ethers.Overrides` | Optional transaction overrides (gasLimit, maxFeePerGas, etc.) |
 
@@ -81,7 +79,6 @@ async swapWithBackrun(
 
 ```typescript
 const result = await integration.swapWithBackrun(
-  swapCalldata,
   {
     swapTxCallData: swapCalldata,
     tokenIn: "0xTokenInAddress",
@@ -179,7 +176,6 @@ Estimate gas required for a swap with backrun operation.
 
 ```typescript
 async estimateGas(
-  swapTxCallData: string,
   swapMetadata: SwapMetadata,
   backrunParams: BackrunParams[]
 ): Promise<bigint>
@@ -187,13 +183,12 @@ async estimateGas(
 
 **Parameters:** Same as `swapWithBackrun()` (minus overrides)
 
-**Returns:** `Promise<bigint>` - Estimated gas with 20% buffer included
+**Returns:** `Promise<bigint>` - Estimated gas with 50% buffer included
 
 **Example:**
 
 ```typescript
 const estimatedGas = await integration.estimateGas(
-  swapCalldata,
   swapMetadata,
   backrunParams
 );
@@ -202,7 +197,6 @@ console.log("Estimated gas:", estimatedGas.toString());
 
 // Use estimate in transaction
 await integration.swapWithBackrun(
-  swapCalldata,
   swapMetadata,
   backrunParams,
   { gasLimit: estimatedGas }
@@ -391,7 +385,6 @@ if (!isApproved) {
 
 // Execute swap with MEV capture
 const result = await integration.swapWithBackrun(
-  swapCalldata,
   swapMetadata,
   backrunParams,
   { gasLimit: 1500000n }
