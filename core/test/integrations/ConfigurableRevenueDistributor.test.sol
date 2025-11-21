@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../src/integrations/ConfigurableRevenueDistributor/ConfigurableRevenueDistributor.sol";
-import "../../src/integrations/ConfigurableRevenueDistributor/IConfigurableRevenueDistributor.sol";
+import "../../src/base/ConfigurableRevenueDistributor/ConfigurableRevenueDistributor.sol";
+import "../../src/base/ConfigurableRevenueDistributor/IConfigurableRevenueDistributor.sol";
 import "../mocks/MockToken.sol";
 
 /// @title TestableConfigurableRevenueDistributor

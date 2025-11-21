@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "@reflex/integrations/algebra/v1/BasePluginV1Factory.sol";
-import "@reflex/integrations/algebra/v1/AlgebraBasePluginV1.sol";
+import "@reflex/integrations/plugin/algebra/v1/BasePluginV1Factory.sol";
+import "@reflex/integrations/plugin/algebra/v1/AlgebraBasePluginV1.sol";
 import "@cryptoalgebra/plugin/interfaces/IBasePluginV1Factory.sol";
 import "@cryptoalgebra/plugin/base/AlgebraFeeConfiguration.sol";
 import "@reflex/interfaces/IReflexRouter.sol";

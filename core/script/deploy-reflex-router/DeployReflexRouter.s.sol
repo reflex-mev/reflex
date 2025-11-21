@@ -3,7 +3,7 @@ pragma solidity =0.8.20;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {ReflexRouter} from "../../src/ReflexRouter.sol";
+import {ReflexRouter} from "../../src/base/ReflexRouter.sol";
 
 /**
  * @title DeployReflexRouter
@@ -56,8 +56,8 @@ contract DeployReflexRouter is Script {
     }
 
     function run() public {
-        // For simulation, we can use a default deployer or get from environment
-        address deployer;
+        // Get deployer from msg.sender or environment
+        address deployer = msg.sender;
 
         console.log("=== ReflexRouter Deployment ===");
         console.log("Deployer address:", deployer);

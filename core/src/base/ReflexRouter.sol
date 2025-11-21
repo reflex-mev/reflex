@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity >=0.7.6;
 pragma abicoder v2;
 
@@ -462,7 +462,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @return data Additional data passed in the callback
      */
     function _decodeUniswapV2LikeCallbackParams() internal pure returns (uint256 tt0, uint256 tt1, bytes memory data) {
-        (tt0, tt1, data) = abi.decode(msg.data[4:], (uint256, uint256, bytes));
+        (, tt0, tt1, data) = abi.decode(msg.data[4:], (address, uint256, uint256, bytes));
     }
 
     /**

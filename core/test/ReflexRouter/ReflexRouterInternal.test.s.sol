@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../src/ReflexRouter.sol";
+import "../../src/base/ReflexRouter.sol";
 import "../../src/interfaces/IReflexQuoter.sol";
 import "../../src/libraries/DexTypes.sol";
 import "../utils/TestUtils.sol";
@@ -90,10 +90,14 @@ contract CallbackTestV2Pool {
         if (amount1Out > 0) MockToken(token1).mint(to, amount1Out);
 
         // Call the fallback function directly by calling with the expected signature
-        // The ReflexRouter expects V2 callback to match the signature: swap(uint256,uint256,bytes)
+        // The ReflexRouter expects V2 callback to match the signature: swap(address,uint256,uint256,bytes)
         if (data.length > 0) {
-            (bool success,) =
-                msg.sender.call(abi.encodeWithSignature("swap(uint256,uint256,bytes)", amount0Out, amount1Out, data));
+            (bool success,) = msg.sender
+                .call(
+                    abi.encodeWithSignature(
+                        "swap(address,uint256,uint256,bytes)", address(this), amount0Out, amount1Out, data
+                    )
+                );
             require(success, "Callback failed");
         }
     }
