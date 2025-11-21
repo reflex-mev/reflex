@@ -375,7 +375,6 @@ async function main() {
     ]);
 
     // const gasEstimate = await integration.estimateGas(
-    //   swapCalldata,
     //   swapMetadata,
     //   backrunParams
     // );
@@ -384,7 +383,6 @@ async function main() {
 
     // Execute transaction using SDK
     const result = await integration.swapWithBackrun(
-      swapCalldata,
       swapMetadata,
       backrunParams,
       swapValue > 0n ? { value: swapValue } : undefined

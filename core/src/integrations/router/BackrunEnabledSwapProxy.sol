@@ -63,15 +63,13 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
 
     /// @notice Executes a swap on the target router and then triggers backrun operations
     /// @dev This function is protected by the nonReentrant modifier to prevent reentrancy attacks
-    /// @param swapTxCallData The calldata to execute on the target router for the swap
-    /// @param swapMetadata Struct containing swap metadata (swapMetadata.tokenIn, swapMetadata.amountIn, swapMetadata.tokenOut, swapMetadata.recipient)
+    /// @param swapMetadata Struct containing swap metadata (swapMetadata.swapTxCallData, swapMetadata.tokenIn, swapMetadata.amountIn, swapMetadata.tokenOut, swapMetadata.recipient)
     /// @param reflexRouter The address of the Reflex Router contract for backrun execution
     /// @param backrunParams Array of parameters for each backrun operation to execute
     /// @return swapReturnData The raw return data from the swap execution
     /// @return profits Array of profit amounts from each backrun operation (0 if failed)
     /// @return profitTokens Array of profit token addresses from each backrun (zero address if failed)
     function swapWithBackrun(
-        bytes calldata swapTxCallData,
         SwapMetadata memory swapMetadata,
         address reflexRouter,
         IReflexRouter.BackrunParams[] calldata backrunParams
@@ -117,7 +115,7 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
         // Forward any ETH sent with the transaction
         (bool success, bytes memory returnData) = targetRouter.call{
             value: msg.value
-        }(swapTxCallData);
+        }(swapMetadata.swapTxCallData);
         if (!success) revert SwapCallFailed(returnData);
         swapReturnData = returnData;
 

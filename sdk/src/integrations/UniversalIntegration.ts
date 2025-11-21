@@ -80,8 +80,7 @@ export class UniversalIntegration {
   /**
    * Execute a swap through the target DEX with automatic MEV backrun capture
    *
-   * @param swapTxCallData - Hex-encoded calldata for the target DEX router call
-   * @param swapMetadata - Metadata about the swap transaction
+   * @param swapMetadata - Metadata about the swap transaction (including swapTxCallData)
    * @param backrunParams - Array of backrun configurations (supports multi-pool backruns)
    * @param overrides - Optional transaction overrides (gasLimit, maxFeePerGas, etc.)
    * @returns Promise with swap results and MEV profit information
@@ -89,7 +88,6 @@ export class UniversalIntegration {
    * @example
    * ```typescript
    * const result = await integration.swapWithBackrun(
-   *   swapCalldata,
    *   {
    *     swapTxCallData: swapCalldata,
    *     tokenIn: "0xTokenIn",
@@ -109,7 +107,6 @@ export class UniversalIntegration {
    * ```
    */
   async swapWithBackrun(
-    swapTxCallData: string,
     swapMetadata: SwapMetadata,
     backrunParams: BackrunParams[],
     overrides?: Overrides
@@ -119,7 +116,6 @@ export class UniversalIntegration {
       const txOptions: Overrides = overrides || {};
       if (!txOptions.gasLimit) {
         txOptions.gasLimit = await this.estimateGas(
-          swapTxCallData,
           swapMetadata,
           backrunParams
         );
@@ -128,7 +124,6 @@ export class UniversalIntegration {
       // Execute the swap with backrun transaction
       const tx: ContractTransactionResponse =
         await this.swapProxyContract.swapWithBackrun(
-          swapTxCallData,
           swapMetadata,
           this.reflexRouterAddress,
           backrunParams,
@@ -265,15 +260,13 @@ export class UniversalIntegration {
   /**
    * Estimate gas required for a swap with backrun operation
    *
-   * @param swapTxCallData - Hex-encoded calldata for the swap
-   * @param swapMetadata - Swap metadata
+   * @param swapMetadata - Swap metadata (including swapTxCallData)
    * @param backrunParams - Backrun parameters
    * @returns Estimated gas with 20% buffer included
    *
    * @example
    * ```typescript
    * const estimatedGas = await integration.estimateGas(
-   *   swapCalldata,
    *   swapMetadata,
    *   backrunParams
    * );
@@ -282,21 +275,19 @@ export class UniversalIntegration {
    * ```
    */
   async estimateGas(
-    swapTxCallData: string,
     swapMetadata: SwapMetadata,
     backrunParams: BackrunParams[]
   ): Promise<bigint> {
     try {
       const gasEstimate =
         await this.swapProxyContract.swapWithBackrun.estimateGas(
-          swapTxCallData,
           swapMetadata,
           this.reflexRouterAddress,
           backrunParams
         );
 
-      // Add 50% buffer for safety
-      return (gasEstimate * 200n) / 100n;
+      // Add 30% buffer for safety
+      return (gasEstimate * 130n) / 100n;
     } catch (error) {
       console.error('Gas estimation failed:', error);
       // Return a safe default if estimation fails
