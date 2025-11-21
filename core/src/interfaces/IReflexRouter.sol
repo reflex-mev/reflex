@@ -48,18 +48,10 @@ interface IReflexRouter {
     /// @return returnData The return data from the initial call.
     /// @return profits Array of profits made from each backrun swap.
     /// @return profitTokens Array of tokens in which profits were made.
-    function backrunedExecute(
-        ExecuteParams calldata executeParams,
-        BackrunParams[] calldata backrunParams
-    )
+    function backrunedExecute(ExecuteParams calldata executeParams, BackrunParams[] calldata backrunParams)
         external
         payable
-        returns (
-            bool success,
-            bytes memory returnData,
-            uint256[] memory profits,
-            address[] memory profitTokens
-        );
+        returns (bool success, bytes memory returnData, uint256[] memory profits, address[] memory profitTokens);
 
     /// @notice Returns the admin/owner address of the Reflex router.
     /// @return The address of the admin/owner.

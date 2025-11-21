@@ -98,7 +98,7 @@ const config = {
               },
               {
                 label: "Security",
-                to: "/security",
+                to: "/security/overview",
               },
             ],
           },
