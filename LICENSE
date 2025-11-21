@@ -1,21 +1,47 @@
-MIT License
+Business Source License 1.1
 
-Copyright (c) 2025 Reflex Mev
+TERMS
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+The Licensor hereby grants you the right to copy, modify, create derivative works, redistribute, and make non-production use of the Licensed Work. The Licensor may grant you additional rights in the Additional Use Grant, if any.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+The grants set forth above are effective on the date you first access the Licensed Work. These grants will automatically terminate if you fail to comply with any of the terms of this license.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+You may not make any production use of the Licensed Work.
+
+If your use of the Licensed Work does not comply with the requirements of this license, you must obtain a separate commercial license from the Licensor.
+
+The Licensor makes the Licensed Work available to you on an “AS IS” basis, without warranties or conditions of any kind, either express or implied, including, without limitation, any warranties or conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A PARTICULAR PURPOSE. You are solely responsible for determining the appropriateness of using or redistributing the Licensed Work and assume any risks associated with your exercise of permissions under this license.
+
+The Licensor is not liable for any damages arising in any way out of the use of the Licensed Work, even if advised of the possibility of such damage.
+
+This license does not grant you any right in the trademarks, service marks, brand names, or logos of the Licensor.
+
+This license is not a license of any patent.
+
+The Licensed Work is provided under this license until the Change Date, after which it is provided under the terms of the Change License.
+
+DEFINITIONS
+
+“Licensor” means the copyright owner of the Licensed Work.
+
+“Licensed Work” means the software specified in Exhibit A.
+
+“Production Use” means use of the Licensed Work in a production environment. This includes use for internal business purposes and use to provide services to third parties.
+
+“Change Date” means the date after which the Licensed Work is provided under the Change License. The Change Date is specified in Exhibit A.
+
+“Change License” means the license under which the Licensed Work is provided after the Change Date. The Change License is specified in Exhibit A.
+
+“Additional Use Grant” means any additional rights granted by the Licensor, as specified in Exhibit A.
+
+EXHIBIT A
+
+The Licensed Work is the Reflex Protocol.
+
+The Licensor is Reflex Mev.
+
+The Change Date is November 21, 2029.
+
+The Change License is the Apache License, Version 2.0 (or any later version).
+
+There is no Additional Use Grant.
