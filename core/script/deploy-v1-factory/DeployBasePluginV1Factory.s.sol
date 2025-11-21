@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity =0.8.20;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import {BasePluginV1Factory} from "../../src/integrations/algebra/v1/BasePluginV1Factory.sol";
+import {BasePluginV1Factory} from "../../src/integrations/plugin/algebra/v1/BasePluginV1Factory.sol";
 import {AlgebraFeeConfiguration} from "@cryptoalgebra/plugin/base/AlgebraFeeConfiguration.sol";
 
 /**
