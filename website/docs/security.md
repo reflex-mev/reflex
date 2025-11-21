@@ -273,6 +273,7 @@ We take security seriously and are working with a leading audit firm to ensure t
 | Auditor                                             | Scope         | Status | Report                                                                                                                   |
 | --------------------------------------------------- | ------------- | ------ | ------------------------------------------------------------------------------------------------------------------------ |
 | **[Optimum Security](https://www.optimumsec.xyz/)** | Full Protocol | Done   | [View Audit Report](https://github.com/reflex-mev/reflex/blob/main/audits/september-2025-reflex-security-assessment.pdf) |
+| **[Optimum Security](https://www.optimumsec.xyz/)** | Full Protocol | Done   | [View Audit Report](https://github.com/reflex-mev/reflex/blob/main/audits/november-2025-reflex-security-assessment.pdf) |
 
 ### Internal Security Measures
 

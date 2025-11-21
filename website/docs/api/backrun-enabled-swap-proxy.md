@@ -116,15 +116,6 @@ backrunParams[0] = BackrunParams({
     swapProxy.swapWithBackrun(metadata, reflexRouterAddress, backrunParams);
 ```
 
-## Features
-
-- ✅ **Universal Compatibility** - Works with any DEX router
-- ✅ **Atomic Execution** - Swap and backrun in single transaction
-- ✅ **Multi-Pool Support** - Execute backruns on multiple pools
-- ✅ **Token Recovery** - Returns leftover tokens and ETH to recipient
-- ✅ **Reentrancy Protection** - Secured against reentrancy attacks
-- ✅ **ETH Support** - Handles native ETH swaps
-
 ## Deployment
 
 Deploy one proxy per target DEX router:
@@ -168,14 +159,6 @@ await integration.swapWithBackrun(swapMetadata, backrunParams);
 ```
 
 See [Universal DEX Integration](../integration/universal-dex) for complete SDK documentation.
-
-## Security Considerations
-
-- **Token Approvals** - Users must approve tokens to the SwapProxy contract
-- **Slippage Protection** - Set appropriate slippage in the swap calldata
-- **Valid Calldata** - Ensure `swapTxCallData` is valid for the target router
-- **Recipient Address** - Verify recipient addresses to prevent fund loss
-- **Gas Limits** - Allow sufficient gas for swap + backrun execution
 
 ## Error Messages
 
