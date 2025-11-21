@@ -180,7 +180,6 @@ export const SWAP_PROXY_ABI = [
     type: 'function',
     name: 'swapWithBackrun',
     inputs: [
-      { name: 'swapTxCallData', type: 'bytes' },
       {
         name: 'swapMetadata',
         type: 'tuple',
