@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "@reflex/integrations/ReflexAfterSwap.sol";
+import "@reflex/integrations/plugin/ReflexAfterSwap.sol";
 import "@reflex/interfaces/IReflexRouter.sol";
 import "../utils/TestUtils.sol";
 
