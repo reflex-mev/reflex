@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
-    "start": "docusaurus start",
+    "start": "docusaurus start --host 0.0.0.0",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "GIT_USER_NAME='Reflex Core Maintainer' GIT_USER_EMAIL='core.maintainer@reflexmev.com' GITHUB_HOST='github.com-reflex' docusaurus deploy",
