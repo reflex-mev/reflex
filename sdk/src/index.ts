@@ -2,6 +2,7 @@
 export * from './types';
 export * from './constants';
 export * from './utils';
+export * from './integrations';
 
-// Default export
+// Legacy export (deprecated)
 export { ReflexSDK as default } from './ReflexSDK';

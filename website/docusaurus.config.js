@@ -94,11 +94,11 @@ const config = {
               },
               {
                 label: "API Reference",
-                to: "/api/smart-contracts",
+                to: "/api/reflex-router",
               },
               {
                 label: "Security",
-                to: "/security",
+                to: "/security/overview",
               },
             ],
           },

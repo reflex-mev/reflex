@@ -7,62 +7,81 @@ slug: /
 
 ## Introduction
 
-Reflex is an on-chain MEV capture engine designed to reclaim backrun profits for protocols, users, and ecosystems. Instead of letting external actors extract value, Reflex routes that value back into the protocol environment.
+Reflex is an on-chain MEV capture - 📖 [**Integration Guide**](./integration/overview) - Step-by-step integration instructions
+- 📚 [**API Reference**](./api/reflex-router) - Complete contract documentation
+- 🏗️ [**Architecture**](./architecture) - Understand the system design
+- 🔒 [**Security**](./security/overview) - Security considerations and best practicesne built for any product or protocol that controls trading flow.
 
-### Key features:
+If you operate a DEX, an aggregator, an RFQ system, or a smart order router — your flow creates arbitrage opportunities. Today, that arbitrage is captured by external bots and leaves your ecosystem.
 
-- **100% on-chain**: no backend dependencies, no private servers.
-- **Plug and play**: integration requires no changes to existing smart contracts.
-- **Secure by design**: Reflex is fully non-custodial, operating independently of user funds and requiring no approval access.
-- **Cross-ecosystem**: works across EVM protocols, and L1,L2 environments.
+**Reflex changes the economics:**
 
-## Protocol Integrations
+It captures the same arbitrage inside the user transaction itself and routes the profits back to the flow owner — or to LPs, users, or your treasury, based on your configuration.
 
-### Overview
+Reflex also neutralizes toxic MEV such as sandwich attacks, converting harmful extraction into aligned, value-creating execution.
 
-Protocols can integrate Reflex at different levels of depth. From pool-level hooks to router-level integration, Reflex adapts to the architecture you already use.
+## Why Reflex is built for flow owners
 
-### Reflex vs External Arbitrage
+- **Fully on-chain** — all computation and backrun execution happen directly on-chain, with no backend, no relayers, no off-chain solvers.
 
-|                       | External Arbitrage (current state)                    | Reflex (integrated)                                     |
-| --------------------- | ----------------------------------------------------- | ------------------------------------------------------- |
-| **MEV profits**       | Captured by third-party searchers, exit the ecosystem | Redirected on-chain to users or the protocol treasury   |
-| **Protocol revenue**  | None — profits leak to external actors                | Configurable share of profits accrue to the protocol    |
-| **Execution control** | Uncoordinated, opaque, dependent on external bots     | Native, deterministic, fully on-chain                   |
-| **Security**          | No alignment between arbitrageur and protocol         | Protocol retains control of how profits are distributed |
+- **Plug-and-play integration** — works with leading DEXes and aggregators without requiring changes to your architecture.
 
-### Why this matters:
+- **Non-custodial** — Reflex never takes custody, never requires approvals, and cannot touch user funds.
 
-Arbitrage is inevitable, but today it benefits external actors who have no alignment with your protocol. Reflex ensures the same arbitrage happens within your ecosystem and its profits are redistributed according to your rules.
+- **Universal compatibility** — supports any trading flow that creates price impact and arbitrage.
 
-### Integration Types
+- **Deterministic execution** — MEV capture occurs atomically inside the same transaction.
 
-#### 1. Protocol Hooks
+- **MEV protection** — Reflex absorbs sandwich attempts by converting the attacker's opportunity into internal arbitrage that benefits your ecosystem.
 
-Reflex integrates natively with modern hook/plugin architectures:
+## Who can integrate Reflex?
 
-- PancakeSwap Infinity hooks
-- Algebra Integral plugins
-- Uniswap v4 hooks
+Reflex is built for any execution layer that creates or routes swaps, including:
 
-**_How it works:_**
+- **DEX protocols** — supporting all major AMM models and their routing layers
 
-When a user executes a swap, Reflex's integrated `afterSwap` is triggered to capture arbitrage opportunities across pools and protocols, with profits routed back to the protocol treasury or designated addresses.
+- **Aggregators and Smart Order Routers**
 
-#### 2. Router Integration
+- **RFQ engines** that settle on-chain
 
-For DEXs that don't use a hook system, Reflex can integrate directly into the router contract. This method enables the router to trigger Reflex opportunities whenever trades pass through it.
+- **Cross-chain routers** and bridge-based swap flows
 
-#### 3. EIP-7702 (Account Abstraction Bundles)
+- **L1/L2 native AMM modules**
 
-Reflex supports account abstraction environments where trades can be wrapped into bundles. This allows traders and protocols to:
+If your system creates token price movement, Reflex allows you to reclaim the value that movement generates.
 
-- Embed Reflex backruns into user-submitted bundles.
-- Ensure arbitrage profits are redirected back on-chain.
+## Reflex vs External Arbitrage
 
-#### 4. SDK Integration
+|                      | External Arbitrage (today)                | Reflex (integrated)                                       |
+| -------------------- | ----------------------------------------- | --------------------------------------------------------- |
+| **MEV profits**      | Taken by searchers, leaving the ecosystem | Captured and redistributed to the flow owner              |
+| **Ecosystem value**  | Lost                                      | Routed to LPs, users, or the treasury                     |
+| **Execution path**   | Off-chain, opaque, unpredictable          | Native, deterministic, within the same transaction        |
+| **Control**          | None                                      | Full control over profit routing                          |
+| **Alignment**        | Zero alignment                            | 100% aligned with protocol incentives                     |
+| **Sandwich attacks** | Harmful, extractive, user-hostile         | Neutralized — Reflex converts toxic MEV into positive MEV |
 
-Use the TypeScript SDK for custom MEV strategies and manual triggers. This approach gives you full control over when and how backruns are executed, perfect for building sophisticated MEV bots, custom trading strategies, or integrating Reflex into existing applications with specific requirements.
+## Why this matters — for DEXes, aggregators, RFQ engines, and execution layers
+
+Every swap you route creates price shifts.  
+Price shifts create arbitrage.  
+Arbitrage creates profit.
+
+**If you do nothing, that profit is taken by outsiders.**
+
+With Reflex, you internalize that value and turn it into a native revenue engine that strengthens your product, your users, and your ecosystem — while eliminating toxic MEV.
+
+Reflex ensures you keep the value your flow creates.
+
+## Integration Types
+
+Reflex offers three primary integration methods to suit different protocol architectures and use cases:
+
+1. **[DEX Plugin-Based Integration](./integration/plugin-based)** - For DEXes with hook/plugin support (Algebra, PancakeSwap Infinity, Uniswap v4)
+
+2. **[Universal DEX Integration](./integration/universal-dex)** - For any DEX and client-side applications using SwapProxy + SDK
+
+3. **[Direct Contract Access](./integration/direct-access)** - For custom smart contract integration with full control
 
 ### Supported Protocols
 
@@ -83,7 +102,7 @@ Reflex is protocol-agnostic and already runs with leading DEXs and aggregators a
 Ready to integrate Reflex into your protocol? Check out our comprehensive guides:
 
 - � [**Integration Guide**](./integration/overview) - Step-by-step integration instructions
-- � [**API Reference**](./api/smart-contracts) - Complete contract documentation
+- � [**API Reference**](./api/reflex-router) - Complete contract documentation
 - 🏗️ [**Architecture**](./architecture) - Understand the system design
 - � [**Security**](./security) - Security considerations and best practices
 
@@ -91,8 +110,9 @@ Ready to integrate Reflex into your protocol? Check out our comprehensive guides
 
 1. **[Start with Integration](./integration/overview)** - Learn how to integrate Reflex
 2. **[Read the Architecture](./architecture)** - Understand the system design
-3. **[Deploy Your First Integration](./integration/smart-contract)** - Start capturing MEV
-4. **[Use the SDK](./integration/sdk-integration)** - Build with the TypeScript SDK
+3. **[Plugin-Based Integration](./integration/plugin-based)** - For DEXes with hook support
+4. **[Universal DEX Integration](./integration/universal-dex)** - For any DEX or DApp
+5. **[Direct Contract Access](./integration/direct-access)** - For custom protocols
 
 ---
 
