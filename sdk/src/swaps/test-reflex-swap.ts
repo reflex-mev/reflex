@@ -243,13 +243,12 @@ async function main() {
       signer
     );
 
-    const [tokenInSymbol, tokenInDecimals, tokenOutSymbol, tokenOutDecimals] =
-      await Promise.all([
-        tokenInContract.symbol().catch(() => 'TOKEN'),
-        tokenInContract.decimals().catch(() => 18),
-        tokenOutContract.symbol().catch(() => 'TOKEN'),
-        tokenOutContract.decimals().catch(() => 18),
-      ]);
+    const [tokenInSymbol, tokenInDecimals, tokenOutSymbol] = await Promise.all([
+      tokenInContract.symbol().catch(() => 'TOKEN'),
+      tokenInContract.decimals().catch(() => 18),
+      tokenOutContract.symbol().catch(() => 'TOKEN'),
+      tokenOutContract.decimals().catch(() => 18),
+    ]);
 
     console.log(`   Token In: ${config.tokenIn} (${tokenInSymbol})`);
     console.log(`   Token Out: ${config.tokenOut} (${tokenOutSymbol})`);
@@ -367,12 +366,6 @@ async function main() {
     console.log(`   3. Execute backrun operations on ReflexRouter`);
     console.log(`   4. Distribute profits to you`);
     console.log(`   5. Return any leftover tokens/ETH to you\n`);
-
-    // Get balances before
-    const [tokenInBalanceBefore, tokenOutBalanceBefore] = await Promise.all([
-      tokenInContract.balanceOf(signerAddress),
-      tokenOutContract.balanceOf(signerAddress),
-    ]);
 
     // const gasEstimate = await integration.estimateGas(
     //   swapMetadata,
