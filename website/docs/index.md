@@ -8,6 +8,7 @@ slug: /
 ## Introduction
 
 Reflex is an on-chain MEV capture - 📖 [**Integration Guide**](./integration/overview) - Step-by-step integration instructions
+
 - 📚 [**API Reference**](./api/reflex-router) - Complete contract documentation
 - 🏗️ [**Architecture**](./architecture) - Understand the system design
 - 🔒 [**Security**](./security/overview) - Security considerations and best practicesne built for any product or protocol that controls trading flow.
@@ -104,7 +105,7 @@ Ready to integrate Reflex into your protocol? Check out our comprehensive guides
 - � [**Integration Guide**](./integration/overview) - Step-by-step integration instructions
 - � [**API Reference**](./api/reflex-router) - Complete contract documentation
 - 🏗️ [**Architecture**](./architecture) - Understand the system design
-- � [**Security**](./security) - Security considerations and best practices
+- � [**Security**](./security/overview.md) - Security considerations and best practices
 
 ## What's Next?
 
