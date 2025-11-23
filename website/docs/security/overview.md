@@ -77,18 +77,11 @@ contract SecureProtocolIntegration {
             params.recipient,
             configId
         ) returns (uint256 profit, address profitToken) {
-            // MEV succeeded - emit event for tracking
-            emit MEVExtracted(profit, profitToken);
-        } catch Error(string memory reason) {
-            // MEV failed with reason - log but don't revert user transaction
-            emit MEVFailed(reason);
-        } catch (bytes memory lowLevelData) {
-            // MEV failed with low-level error - log but don't revert user transaction
-            emit MEVFailedLowLevel(lowLevelData);
+            // MEV succeeded
+        } catch {
+            // don't revert user transaction
         }
 
-        // User transaction completed regardless of MEV outcome
-        emit SwapCompleted(params.recipient, amountOut);
     }
 
     function _executeUserSwap(SwapParams memory params) internal returns (uint256) {
