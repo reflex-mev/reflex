@@ -2,8 +2,8 @@
 pragma solidity >=0.7.6;
 pragma abicoder v2;
 
-import "../interfaces/IReflexQuoter.sol";
-import "@reflex/interfaces/IReflexRouter.sol";
+import "../interfaces/IExecutionQuoter.sol";
+import "@reflex/interfaces/IExecutionRouter.sol";
 import "../utils/GracefulReentrancyGuard.sol";
 import "../libraries/DexTypes.sol";
 import "./ConfigurableRevenueDistributor/ConfigurableRevenueDistributor.sol";
@@ -33,30 +33,30 @@ uint8 constant LOAN_CALLBACK_TYPE_UNI2 = 2; // Initial loan from uniswap v2 or s
 uint8 constant LOAN_CALLBACK_TYPE_UNI3 = 3; // Initial loan from uniswap v3
 
 /**
- * @title ReflexRouter
+ * @title ExecutionRouter
  * @notice A smart contract router for executing arbitrage trades across multiple DEX protocols
  * @dev Implements flash loan arbitrage strategies using UniswapV2, UniswapV3, and other DEX protocols
  * The contract uses flash loans to execute profitable arbitrage opportunities without requiring upfront capital
  * Supports multiple DEX types and handles callback-based flash loan mechanisms
  * Inherits from ConfigurableRevenueDistributor to support profit splitting across multiple configurations
  */
-contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRevenueDistributor {
+contract ExecutionRouter is IExecutionRouter, GracefulReentrancyGuard, ConfigurableRevenueDistributor {
     using SafeERC20 for IERC20;
 
     // ========== Events ==========
 
-    /// @notice Emitted when the ReflexQuoter address is updated
+    /// @notice Emitted when the ExecutionQuoter address is updated
     /// @param oldQuoter The address of the previous quoter contract
     /// @param newQuoter The address of the new quoter contract
-    event ReflexQuoterUpdated(address indexed oldQuoter, address indexed newQuoter);
+    event ExecutionQuoterUpdated(address indexed oldQuoter, address indexed newQuoter);
 
     // ========== State Variables ==========
 
     /// @notice The address of the contract owner/admin
     address public owner;
 
-    /// @notice The address of the ReflexQuoter contract used for price quotes and route calculations
-    address public reflexQuoter;
+    /// @notice The address of the ExecutionQuoter contract used for price quotes and route calculations
+    address public executionQuoter;
 
     /// @dev Internal state variable to track the type of ongoing flash loan callback
     /// Used to route different callback types appropriately during flash loan execution
@@ -88,14 +88,14 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
     }
 
     /**
-     * @notice Sets the address of the ReflexQuoter contract
+     * @notice Sets the address of the ExecutionQuoter contract
      * @dev Only callable by admin. Used to update the quoter contract address
-     * @param _reflexQuoter The address of the new ReflexQuoter contract
+     * @param _executionQuoter The address of the new ExecutionQuoter contract
      */
-    function setReflexQuoter(address _reflexQuoter) public isOwner {
-        address oldQuoter = reflexQuoter;
-        reflexQuoter = _reflexQuoter;
-        emit ReflexQuoterUpdated(oldQuoter, _reflexQuoter);
+    function setExecutionQuoter(address _executionQuoter) public isOwner {
+        address oldQuoter = executionQuoter;
+        executionQuoter = _executionQuoter;
+        emit ExecutionQuoterUpdated(oldQuoter, _executionQuoter);
     }
 
     /**
@@ -109,7 +109,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
 
     /**
      * @notice Executes a backrun arbitrage opportunity on a DEX pool
-     * @dev Gets a quote from ReflexQuoter, executes the swap route if profitable, and distributes profit using revenue distributor
+     * @dev Gets a quote from ExecutionQuoter, executes the swap route if profitable, and distributes profit using revenue distributor
      * @param triggerPoolId The unique identifier of the pool that triggered the backrun opportunity
      * @param swapAmountIn The amount of tokens to use as input for the arbitrage swap
      * @param token0In Whether to use token0 (true) or token1 (false) as the input token
@@ -152,7 +152,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
 
     /**
      * @notice Internal function to execute a backrun arbitrage opportunity on a DEX pool
-     * @dev Gets a quote from ReflexQuoter, executes the swap route if profitable, and distributes profit using revenue distributor
+     * @dev Gets a quote from ExecutionQuoter, executes the swap route if profitable, and distributes profit using revenue distributor
      * @param triggerPoolId The unique identifier of the pool that triggered the backrun opportunity
      * @param swapAmountIn The amount of tokens to use as input for the arbitrage swap
      * @param token0In Whether to use token0 (true) or token1 (false) as the input token
@@ -170,10 +170,10 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
     ) internal returns (uint256 profit, address profitToken) {
         (
             uint256 quoteProfit,
-            IReflexQuoter.SwapDecodedData memory decoded,
+            IExecutionQuoter.SwapDecodedData memory decoded,
             uint256[] memory amountsOut,
             uint256 initialHopIndex
-        ) = IReflexQuoter(reflexQuoter)
+        ) = IExecutionQuoter(executionQuoter)
             .getQuote(address(uint160(uint256(triggerPoolId))), token0In ? 0 : 1, swapAmountIn);
 
         if (quoteProfit == 0) {
@@ -203,8 +203,8 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @return profitTokens Array of tokens in which profits were generated
      */
     function backrunedExecute(
-        IReflexRouter.ExecuteParams calldata executeParams,
-        IReflexRouter.BackrunParams[] calldata backrunParams
+        IExecutionRouter.ExecuteParams calldata executeParams,
+        IExecutionRouter.BackrunParams[] calldata backrunParams
     )
         external
         payable
@@ -250,7 +250,7 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
      * @param valid Array of valid amounts for each hop in the swap route
      * @param index The index of the initial hop to start the swap route
      */
-    function _triggerSwapRoute(IReflexQuoter.SwapDecodedData memory decoded, uint256[] memory valid, uint256 index)
+    function _triggerSwapRoute(IExecutionQuoter.SwapDecodedData memory decoded, uint256[] memory valid, uint256 index)
         internal
     {
         bool isZeroForOne = _decodeIsZeroForOne(decoded.dexMeta[index]);
@@ -475,6 +475,14 @@ contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRev
         assembly {
             addr := mload(add(add(d, 20), 0))
         }
+    }
+
+    /**
+     * @notice Returns the admin/owner address of the Execution router
+     * @return The address of the admin/owner
+     */
+    function getExecutionAdmin() external view override returns (address) {
+        return owner;
     }
 
     /**

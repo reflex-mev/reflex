@@ -3,33 +3,33 @@ pragma solidity =0.8.20;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {ReflexRouter} from "../../src/base/ReflexRouter.sol";
+import {ExecutionRouter} from "../../src/base/ExecutionRouter.sol";
 
 /**
- * @title DeployReflexRouter
- * @notice Deployment script for ReflexRouter contract
- * @dev Run with: forge script script/deploy-reflex-router/DeployReflexRouter.s.sol --rpc-url <RPC_URL> --private-key <PRIVATE_KEY> --broadcast
+ * @title DeployExecutionRouter
+ * @notice Deployment script for ExecutionRouter contract
+ * @dev Run with: forge script script/deploy-execution-router/DeployExecutionRouter.s.sol --rpc-url <RPC_URL> --private-key <PRIVATE_KEY> --broadcast
  *
  * Environment Variables (Optional):
- * - REFLEX_QUOTER_ADDRESS: Address of the ReflexQuoter contract to set after deployment
+ * - EXECUTION_QUOTER_ADDRESS: Address of the ExecutionQuoter contract to set after deployment
  * - VERIFY_CONTRACT: Set to "true" to verify on Etherscan
  * - ETHERSCAN_API_KEY: Required if VERIFY_CONTRACT is true
  * - GAS_PRICE: Gas price in gwei (optional)
  * - GAS_LIMIT: Gas limit (optional)
  *
  * Example Usage:
- * forge script script/deploy-reflex-router/DeployReflexRouter.s.sol \
+ * forge script script/deploy-execution-router/DeployExecutionRouter.s.sol \
  *   --rpc-url https://mainnet.infura.io/v3/YOUR-PROJECT-ID \
  *   --private-key $PRIVATE_KEY \
  *   --broadcast \
  *   --verify
  */
-contract DeployReflexRouter is Script {
+contract DeployExecutionRouter is Script {
     // Contract instance
-    ReflexRouter public reflexRouter;
+    ExecutionRouter public executionRouter;
 
     // Optional configuration
-    address public reflexQuoterAddress;
+    address public executionQuoterAddress;
     bool public shouldVerify;
 
     // Events
@@ -39,11 +39,11 @@ contract DeployReflexRouter is Script {
 
     function setUp() public {
         // Load optional configuration from environment variables
-        try vm.envAddress("REFLEX_QUOTER_ADDRESS") returns (address quoter) {
-            reflexQuoterAddress = quoter;
-            console.log("ReflexQuoter address loaded:", quoter);
+        try vm.envAddress("EXECUTION_QUOTER_ADDRESS") returns (address quoter) {
+            executionQuoterAddress = quoter;
+            console.log("ExecutionQuoter address loaded:", quoter);
         } catch {
-            console.log("No ReflexQuoter address provided, will skip setting quoter");
+            console.log("No ExecutionQuoter address provided, will skip setting quoter");
         }
 
         try vm.envBool("VERIFY_CONTRACT") returns (bool verify) {
@@ -59,7 +59,7 @@ contract DeployReflexRouter is Script {
         // Get deployer from msg.sender or environment
         address deployer = msg.sender;
 
-        console.log("=== ReflexRouter Deployment ===");
+        console.log("=== ExecutionRouter Deployment ===");
         console.log("Deployer address:", deployer);
         console.log("Chain ID:", block.chainid);
         console.log("Block number:", block.number);
@@ -74,47 +74,47 @@ contract DeployReflexRouter is Script {
         // Start broadcasting transactions
         vm.startBroadcast();
 
-        // Deploy ReflexRouter
-        console.log("\n--- Deploying ReflexRouter ---");
-        reflexRouter = new ReflexRouter();
+        // Deploy ExecutionRouter
+        console.log("\n--- Deploying ExecutionRouter ---");
+        executionRouter = new ExecutionRouter();
 
-        console.log("ReflexRouter deployed at:", address(reflexRouter));
-        console.log("Owner set to:", reflexRouter.owner());
+        console.log("ExecutionRouter deployed at:", address(executionRouter));
+        console.log("Owner set to:", executionRouter.owner());
 
-        // Set ReflexQuoter if provided
-        if (reflexQuoterAddress != address(0)) {
-            console.log("\n--- Configuring ReflexQuoter ---");
-            console.log("Setting ReflexQuoter to:", reflexQuoterAddress);
+        // Set ExecutionQuoter if provided
+        if (executionQuoterAddress != address(0)) {
+            console.log("\n--- Configuring ExecutionQuoter ---");
+            console.log("Setting ExecutionQuoter to:", executionQuoterAddress);
 
-            reflexRouter.setReflexQuoter(reflexQuoterAddress);
+            executionRouter.setExecutionQuoter(executionQuoterAddress);
 
-            console.log("ReflexQuoter configured successfully");
-            emit RouterConfigured(address(reflexRouter), reflexQuoterAddress);
+            console.log("ExecutionQuoter configured successfully");
+            emit RouterConfigured(address(executionRouter), executionQuoterAddress);
         }
 
         vm.stopBroadcast();
 
         // Emit deployment event
-        emit RouterDeployed(address(reflexRouter), reflexRouter.owner(), reflexRouter.reflexQuoter());
+        emit RouterDeployed(address(executionRouter), executionRouter.owner(), executionRouter.executionQuoter());
 
         // Log deployment summary
         console.log("\n=== Deployment Summary ===");
-        console.log("ReflexRouter:", address(reflexRouter));
-        console.log("Owner:", reflexRouter.owner());
+        console.log("ExecutionRouter:", address(executionRouter));
+        console.log("Owner:", executionRouter.owner());
 
-        if (reflexRouter.reflexQuoter() != address(0)) {
-            console.log("ReflexQuoter:", reflexRouter.reflexQuoter());
+        if (executionRouter.executionQuoter() != address(0)) {
+            console.log("ExecutionQuoter:", executionRouter.executionQuoter());
         } else {
-            console.log("ReflexQuoter: Not set (can be set later via setReflexQuoter)");
+            console.log("ExecutionQuoter: Not set (can be set later via setExecutionQuoter)");
         }
 
         // Verification instructions
         if (shouldVerify) {
             console.log("\n=== Verification Command ===");
-            console.log("forge verify-contract", address(reflexRouter));
+            console.log("forge verify-contract", address(executionRouter));
             console.log("  --chain-id", block.chainid);
             console.log("  --constructor-args $(cast abi-encode \"constructor()\")");
-            console.log("  src/ReflexRouter.sol:ReflexRouter");
+            console.log("  src/base/ExecutionRouter.sol:ExecutionRouter");
             console.log("  --etherscan-api-key $ETHERSCAN_API_KEY");
         }
 
@@ -122,8 +122,8 @@ contract DeployReflexRouter is Script {
         console.log("\n=== Next Steps ===");
         console.log("1. Verify the contract on Etherscan (if not done automatically)");
 
-        if (reflexRouter.reflexQuoter() == address(0)) {
-            console.log("2. Set ReflexQuoter address via: setReflexQuoter(address)");
+        if (executionRouter.executionQuoter() == address(0)) {
+            console.log("2. Set ExecutionQuoter address via: setExecutionQuoter(address)");
         }
 
         console.log("3. Fund the router if needed for gas costs");
@@ -141,15 +141,15 @@ contract DeployReflexRouter is Script {
     function _saveDeploymentInfo() internal {
         string memory deploymentInfo = string.concat(
             "{\n",
-            '  "contract": "ReflexRouter",\n',
+            '  "contract": "ExecutionRouter",\n',
             '  "address": "',
-            vm.toString(address(reflexRouter)),
+            vm.toString(address(executionRouter)),
             '",\n',
             '  "owner": "',
-            vm.toString(reflexRouter.owner()),
+            vm.toString(executionRouter.owner()),
             '",\n',
             '  "quoter": "',
-            vm.toString(reflexRouter.reflexQuoter()),
+            vm.toString(executionRouter.executionQuoter()),
             '",\n',
             '  "chainId": ',
             vm.toString(block.chainid),
@@ -164,7 +164,7 @@ contract DeployReflexRouter is Script {
         );
 
         string memory filename = string.concat(
-            "deployment-reflex-router-", vm.toString(block.chainid), "-", vm.toString(block.timestamp), ".json"
+            "deployment-execution-router-", vm.toString(block.chainid), "-", vm.toString(block.timestamp), ".json"
         );
 
         vm.writeFile(string.concat("deployments/", filename), deploymentInfo);
@@ -177,15 +177,15 @@ contract DeployReflexRouter is Script {
      * @dev Call this function to verify the deployment
      */
     function verifyDeployment() public view {
-        require(address(reflexRouter) != address(0), "ReflexRouter not deployed");
-        require(reflexRouter.owner() != address(0), "Owner not set");
+        require(address(executionRouter) != address(0), "ExecutionRouter not deployed");
+        require(executionRouter.owner() != address(0), "Owner not set");
 
-        console.log("[SUCCESS] ReflexRouter deployment verified successfully");
-        console.log("Address:", address(reflexRouter));
-        console.log("Owner:", reflexRouter.owner());
+        console.log("[SUCCESS] ExecutionRouter deployment verified successfully");
+        console.log("Address:", address(executionRouter));
+        console.log("Owner:", executionRouter.owner());
 
-        if (reflexRouter.reflexQuoter() != address(0)) {
-            console.log("Quoter:", reflexRouter.reflexQuoter());
+        if (executionRouter.executionQuoter() != address(0)) {
+            console.log("Quoter:", executionRouter.executionQuoter());
         }
     }
 }

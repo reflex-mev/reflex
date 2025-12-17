@@ -3,12 +3,12 @@ pragma solidity >=0.7.6;
 pragma abicoder v2;
 
 /**
- * @title IReflexQuoter
- * @notice Interface for the ReflexQuoter contract that provides price quotes and arbitrage route calculations
+ * @title IExecutionQuoter
+ * @notice Interface for the ExecutionQuoter contract that provides price quotes and arbitrage route calculations
  * @dev This interface defines the contract responsible for analyzing potential arbitrage opportunities
  * and generating the necessary swap data for profitable trades across different DEX protocols
  */
-interface IReflexQuoter {
+interface IExecutionQuoter {
     /**
      * @notice Data structure containing decoded swap route information
      * @dev This struct encapsulates all the necessary information to execute a multi-hop arbitrage swap

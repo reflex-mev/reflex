@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
-import "../../interfaces/IReflexRouter.sol";
+import "../../interfaces/IExecutionRouter.sol";
 
 /// @title ReflexAfterSwap
-/// @notice Abstract contract that integrates with Reflex Router for post-swap profit extraction
+/// @notice Abstract contract that integrates with Execution Router for post-swap profit extraction
 /// @dev Implements failsafe mechanisms to prevent router failures from affecting main swap operations
 /// @dev Profit distribution is handled externally - this contract only extracts profits
 abstract contract ReflexAfterSwap {
     // ========== Events ==========
 
-    /// @notice Emitted when the Reflex router address is updated
+    /// @notice Emitted when the Execution router address is updated
     /// @param oldRouter The address of the previous router contract
     /// @param newRouter The address of the new router contract
-    event ReflexRouterUpdated(address oldRouter, address newRouter);
+    event ExecutionRouterUpdated(address oldRouter, address newRouter);
 
     /// @notice Emitted when the Reflex configuration ID is updated
     /// @param oldConfigId The previous configuration ID
@@ -22,40 +22,40 @@ abstract contract ReflexAfterSwap {
 
     // ========== State Variables ==========
 
-    /// @notice Address of the Reflex router contract
-    address reflexRouter;
+    /// @notice Address of the Execution router contract
+    address executionRouter;
 
     /// @notice Configuration ID for profit distribution
     bytes32 reflexConfigId;
 
     /// @notice Constructor to initialize the ReflexAfterSwap contract
-    /// @param _router Address of the Reflex router contract
+    /// @param _router Address of the Execution router contract
     /// @param _configId Configuration ID for profit distribution
     /// @dev Validates router address and fetches the admin from the router
     constructor(address _router, bytes32 _configId) {
         require(_router != address(0), "Invalid router address");
-        reflexRouter = _router;
+        executionRouter = _router;
         reflexConfigId = _configId;
     }
 
     /// @notice Internal function that must be implemented by child contract to enforce admin access control
     function _onlyReflexAdmin() internal view virtual;
 
-    /// @notice Updates the Reflex router address and refreshes admin
+    /// @notice Updates the Execution router address and refreshes admin
     /// @param _router New router address to set
     /// @dev Only callable by current reflex admin, validates non-zero address, and updates admin from new router
-    function setReflexRouter(address _router) external {
+    function setExecutionRouter(address _router) external {
         _onlyReflexAdmin();
         require(_router != address(0), "Invalid router address");
-        address oldRouter = reflexRouter;
-        reflexRouter = _router;
-        emit ReflexRouterUpdated(oldRouter, _router);
+        address oldRouter = executionRouter;
+        executionRouter = _router;
+        emit ExecutionRouterUpdated(oldRouter, _router);
     }
 
     /// @notice Returns the current router address
-    /// @return The address of the current Reflex router contract
+    /// @return The address of the current Execution router contract
     function getRouter() public view returns (address) {
-        return reflexRouter;
+        return executionRouter;
     }
 
     /// @notice Get the current configuration ID for profit distribution
@@ -95,7 +95,7 @@ abstract contract ReflexAfterSwap {
         uint256 swapAmountIn = uint256(amount0Delta > 0 ? amount0Delta : amount1Delta);
 
         // Failsafe: Use try-catch to prevent router failures from breaking the main swap
-        try IReflexRouter(reflexRouter)
+        try IExecutionRouter(executionRouter)
             .triggerBackrun(triggerPoolId, uint112(swapAmountIn), zeroForOne, recipient, reflexConfigId) returns (
             uint256 backrunProfit, address backrunProfitToken
         ) {
