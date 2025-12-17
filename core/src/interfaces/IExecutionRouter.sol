@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
-interface IReflexRouter {
+interface IExecutionRouter {
     /// @notice Struct for execute call parameters
     /// @param target The address of the contract to call
     /// @param value The amount of ETH (in wei) to send with the call
@@ -53,9 +53,9 @@ interface IReflexRouter {
         payable
         returns (bool success, bytes memory returnData, uint256[] memory profits, address[] memory profitTokens);
 
-    /// @notice Returns the admin/owner address of the Reflex router.
+    /// @notice Returns the admin/owner address of the Execution router.
     /// @return The address of the admin/owner.
-    function getReflexAdmin() external view returns (address);
+    function getExecutionAdmin() external view returns (address);
 
     /// @notice Emitted when a backrun is executed
     /// @param triggerPoolId The pool ID that triggered the backrun

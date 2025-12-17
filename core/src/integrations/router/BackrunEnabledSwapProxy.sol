@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
-import {IReflexRouter} from "../../interfaces/IReflexRouter.sol";
+import {IExecutionRouter} from "../../interfaces/IExecutionRouter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -23,8 +23,8 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
     /// @notice Thrown when an invalid target router address is provided (zero address)
     error InvalidTarget();
 
-    /// @notice Thrown when an invalid Reflex router address is provided (zero address)
-    error InvalidReflexRouter();
+    /// @notice Thrown when an invalid Execution router address is provided (zero address)
+    error InvalidExecutionRouter();
 
     /// @notice Thrown when an invalid token input address is provided (zero address)
     error InvalidTokenIn();
@@ -64,15 +64,15 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
     /// @notice Executes a swap on the target router and then triggers backrun operations
     /// @dev This function is protected by the nonReentrant modifier to prevent reentrancy attacks
     /// @param swapMetadata Struct containing swap metadata (swapMetadata.swapTxCallData, swapMetadata.tokenIn, swapMetadata.amountIn, swapMetadata.tokenOut, swapMetadata.recipient)
-    /// @param reflexRouter The address of the Reflex Router contract for backrun execution
+    /// @param executionRouter The address of the Execution Router contract for backrun execution
     /// @param backrunParams Array of parameters for each backrun operation to execute
     /// @return swapReturnData The raw return data from the swap execution
     /// @return profits Array of profit amounts from each backrun operation (0 if failed)
     /// @return profitTokens Array of profit token addresses from each backrun (zero address if failed)
     function swapWithBackrun(
         SwapMetadata memory swapMetadata,
-        address reflexRouter,
-        IReflexRouter.BackrunParams[] calldata backrunParams
+        address executionRouter,
+        IExecutionRouter.BackrunParams[] calldata backrunParams
     )
         public
         payable
@@ -87,8 +87,8 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
         // Validate that amountIn is not zero
         if (swapMetadata.amountIn == 0) revert InvalidAmountIn();
 
-        // Validate that reflexRouter is not the zero address
-        if (reflexRouter == address(0)) revert InvalidReflexRouter();
+        // Validate that executionRouter is not the zero address
+        if (executionRouter == address(0)) revert InvalidExecutionRouter();
 
         // ============ Token Transfer ============
 
@@ -140,14 +140,14 @@ contract BackrunEnabledSwapProxy is ReentrancyGuard {
 
         // ============ Backrun Execution ============
 
-        // Execute backrun operations via Reflex Router
+        // Execute backrun operations via Execution Router
         // Initialize arrays to store results from each backrun
         profits = new uint256[](backrunParams.length);
         profitTokens = new address[](backrunParams.length);
 
         // Iterate through all backrun parameters and execute each one
         for (uint256 i = 0; i < backrunParams.length; i++) {
-            try IReflexRouter(reflexRouter)
+            try IExecutionRouter(executionRouter)
                 .triggerBackrun(
                     backrunParams[i].triggerPoolId,
                     backrunParams[i].swapAmountIn,
