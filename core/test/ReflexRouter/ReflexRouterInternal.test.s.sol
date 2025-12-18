@@ -2,14 +2,14 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../src/base/ReflexRouter.sol";
+import "../../src/base/ExecutionRouter.sol";
 import "../../src/interfaces/IReflexQuoter.sol";
 import "../../src/libraries/DexTypes.sol";
 import "../utils/TestUtils.sol";
 import "../mocks/MockToken.sol";
 
 // Test contract that exposes internal functions for testing
-contract TestableReflexRouter is ReflexRouter {
+contract TestableReflexRouter is ExecutionRouter {
     function exposedTriggerSwapRoute(
         IReflexQuoter.SwapDecodedData memory decoded,
         uint256[] memory valid,

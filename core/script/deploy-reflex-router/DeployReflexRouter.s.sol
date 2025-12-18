@@ -3,7 +3,7 @@ pragma solidity =0.8.20;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {ReflexRouter} from "../../src/base/ReflexRouter.sol";
+import {ExecutionRouter} from "../../src/base/ExecutionRouter.sol";
 
 /**
  * @title DeployReflexRouter
@@ -26,7 +26,7 @@ import {ReflexRouter} from "../../src/base/ReflexRouter.sol";
  */
 contract DeployReflexRouter is Script {
     // Contract instance
-    ReflexRouter public reflexRouter;
+    ExecutionRouter public reflexRouter;
 
     // Optional configuration
     address public reflexQuoterAddress;
@@ -74,9 +74,9 @@ contract DeployReflexRouter is Script {
         // Start broadcasting transactions
         vm.startBroadcast();
 
-        // Deploy ReflexRouter
-        console.log("\n--- Deploying ReflexRouter ---");
-        reflexRouter = new ReflexRouter();
+        // Deploy ExecutionRouter
+        console.log("\n--- Deploying ExecutionRouter ---");
+        reflexRouter = new ExecutionRouter();
 
         console.log("ReflexRouter deployed at:", address(reflexRouter));
         console.log("Owner set to:", reflexRouter.owner());

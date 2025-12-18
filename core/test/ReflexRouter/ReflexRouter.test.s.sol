@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../src/base/ReflexRouter.sol";
+import "../../src/base/ExecutionRouter.sol";
 import "../../src/interfaces/IReflexRouter.sol";
 import "../../src/interfaces/IReflexQuoter.sol";
 import "../../src/libraries/DexTypes.sol";
@@ -61,7 +61,7 @@ contract MockTargetContract {
 contract ReflexRouterTest is Test {
     using TestUtils for *;
 
-    ReflexRouter public reflexRouter;
+    ExecutionRouter public reflexRouter;
     MockReflexQuoter public mockQuoter;
     MockToken public token0;
     MockToken public token1;
@@ -90,7 +90,7 @@ contract ReflexRouterTest is Test {
 
     function setUp() public {
         // Set up the test environment
-        reflexRouter = new ReflexRouter();
+        reflexRouter = new ExecutionRouter();
 
         // Create mock tokens
         token0 = new MockToken("Token0", "TK0", 1000000 * 10 ** 18);
@@ -119,7 +119,7 @@ contract ReflexRouterTest is Test {
     // =============================================================================
 
     function testConstructor() public {
-        ReflexRouter newRouter = new ReflexRouter();
+        ExecutionRouter newRouter = new ExecutionRouter();
         assertEq(newRouter.owner(), address(this));
         assertEq(newRouter.owner(), address(this));
         assertEq(newRouter.reflexQuoter(), address(0));
