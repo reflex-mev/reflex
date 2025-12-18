@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../src/base/ReflexRouter.sol";
+import "../../src/base/ExecutionRouter.sol";
 import "../../src/interfaces/IReflexQuoter.sol";
 import "../../src/libraries/DexTypes.sol";
 import "../utils/TestUtils.sol";
@@ -10,12 +10,12 @@ import "../mocks/MockToken.sol";
 
 // Malicious contract that attempts reentrancy
 contract MaliciousReentrancyContract {
-    ReflexRouter public target;
+    ExecutionRouter public target;
     uint256 public callCount;
     bool public shouldReenter;
 
     constructor(address payable _target) {
-        target = ReflexRouter(_target);
+        target = ExecutionRouter(_target);
     }
 
     function setShouldReenter(bool _shouldReenter) external {
@@ -168,7 +168,7 @@ contract MaliciousPool {
 contract ReflexRouterSecurityTest is Test {
     using TestUtils for *;
 
-    ReflexRouter public reflexRouter;
+    ExecutionRouter public reflexRouter;
     MaliciousQuoter public maliciousQuoter;
     MockToken public token0;
     MockToken public token1;
@@ -182,7 +182,7 @@ contract ReflexRouterSecurityTest is Test {
     address public attacker = address(0xBAD);
 
     function setUp() public {
-        reflexRouter = new ReflexRouter();
+        reflexRouter = new ExecutionRouter();
 
         token0 = new MockToken("Token0", "TK0", 1000000 * 10 ** 18);
         token1 = new MockToken("Token1", "TK1", 1000000 * 10 ** 18);
@@ -500,7 +500,7 @@ contract ReflexRouterSecurityTest is Test {
     function testUninitializedQuoter() public {
         // Test behavior when quoter is not set
         vm.prank(reflexRouter.owner());
-        ReflexRouter newRouter = new ReflexRouter();
+        ExecutionRouter newRouter = new ExecutionRouter();
 
         bytes32 triggerPoolId = bytes32(uint256(uint160(address(token0))));
 

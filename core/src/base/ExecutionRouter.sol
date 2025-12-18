@@ -33,14 +33,14 @@ uint8 constant LOAN_CALLBACK_TYPE_UNI2 = 2; // Initial loan from uniswap v2 or s
 uint8 constant LOAN_CALLBACK_TYPE_UNI3 = 3; // Initial loan from uniswap v3
 
 /**
- * @title ReflexRouter
+ * @title ExecutionRouter
  * @notice A smart contract router for executing arbitrage trades across multiple DEX protocols
  * @dev Implements flash loan arbitrage strategies using UniswapV2, UniswapV3, and other DEX protocols
  * The contract uses flash loans to execute profitable arbitrage opportunities without requiring upfront capital
  * Supports multiple DEX types and handles callback-based flash loan mechanisms
  * Inherits from ConfigurableRevenueDistributor to support profit splitting across multiple configurations
  */
-contract ReflexRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRevenueDistributor {
+contract ExecutionRouter is IReflexRouter, GracefulReentrancyGuard, ConfigurableRevenueDistributor {
     using SafeERC20 for IERC20;
 
     // ========== Events ==========

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../src/base/ReflexRouter.sol";
+import "../../src/base/ExecutionRouter.sol";
 import "../../src/interfaces/IReflexQuoter.sol";
 import "../../src/libraries/DexTypes.sol";
 import "../utils/TestUtils.sol";
@@ -24,7 +24,7 @@ contract ReflexRouterIntegrationTest is Test {
         address indexed recipient
     );
 
-    ReflexRouter public reflexRouter;
+    ExecutionRouter public reflexRouter;
     SharedMockQuoter public quoter;
 
     MockToken public tokenA;
@@ -48,7 +48,7 @@ contract ReflexRouterIntegrationTest is Test {
 
     function setUp() public {
         // Deploy router
-        reflexRouter = new ReflexRouter();
+        reflexRouter = new ExecutionRouter();
 
         // Deploy shared mocks
         quoter = new SharedMockQuoter();
