@@ -8,6 +8,7 @@
 ![Coverage](https://img.shields.io/badge/Coverage-94%25-brightgreen.svg)
 
 **Reflex** is a sophisticated on-chain MEV (Maximum Extractable Value) capture engine designed for seamless integration into DEX protocols and AMM systems. Instead of letting external actors extract value, Reflex routes that value back into the protocol environment.
+Supported on ETH Mainnet, BSC, HyperliquidEVM, Arbitrum, Base, and designed to deploy on any major EVM compatible chain.
 
 ## 📁 Monorepo Structure
 
