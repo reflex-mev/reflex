@@ -7,11 +7,7 @@ slug: /
 
 ## Introduction
 
-Reflex is an on-chain MEV capture - 📖 [**Integration Guide**](./integration/overview) - Step-by-step integration instructions
-
-- 📚 [**API Reference**](./api/reflex-router) - Complete contract documentation
-- 🏗️ [**Architecture**](./architecture) - Understand the system design
-- 🔒 [**Security**](./security/overview) - Security considerations and best practicesne built for any product or protocol that controls trading flow.
+Reflex is an on-chain MEV capture engine built for any product or protocol that controls trading flow.
 
 If you operate a DEX, an aggregator, an RFQ system, or a smart order router — your flow creates arbitrage opportunities. Today, that arbitrage is captured by external bots and leaves your ecosystem.
 

@@ -41,9 +41,7 @@ const sidebars = {
             {
               type: "category",
               label: "Integrations",
-              items: [
-                "api/sdk/universal-integration",
-              ],
+              items: ["api/sdk/universal-integration"],
             },
           ],
         },
@@ -52,10 +50,7 @@ const sidebars = {
     {
       type: "category",
       label: "Security",
-      items: [
-        "security/overview",
-        "security/audits",
-      ],
+      items: ["security/overview", "security/audits"],
     },
   ],
 };
