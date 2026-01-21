@@ -16,7 +16,7 @@ const config = {
   url: "https://reflex-mev.github.io",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: process.env.NODE_ENV === "production" ? "/" : "/",
+  baseUrl: process.env.NODE_ENV === "production" ? "/reflex" : "/",
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
