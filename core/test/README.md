@@ -9,8 +9,6 @@ test/
 ├── integrations/
 │   ├── algebra/
 │   │   └── BasePluginV3Factory.test.s.sol  # Tests for Algebra plugin factory
-│   ├── FundsSplitter/
-│   │   └── FundsSplitter.test.s.sol         # Tests for fund splitting functionality
 │   └── ReflexAfterSwap.test.s.sol           # Tests for backrun integration
 ├── utils/
 │   ├── TestUtils.sol                        # Shared testing utilities and MockToken
@@ -21,9 +19,9 @@ test/
 
 ## Test Coverage
 
-### Integration Tests (105 tests)
+### Integration Tests
 
-**AlgebraBasePluginV3 Tests (15 tests)**
+**AlgebraBasePluginV3 Tests**
 
 - ✅ AfterSwap hook functionality and integration with ReflexAfterSwap
 - ✅ Router interaction and failsafe behavior when router fails
@@ -34,7 +32,7 @@ test/
 - ✅ Fuzz testing for various input combinations
 - ✅ Edge cases with zero amounts, large amounts, and max values
 
-**BasePluginV3Factory Tests (30 tests)**
+**BasePluginV3Factory Tests**
 
 - ✅ Constructor and initialization
 - ✅ Access control with Algebra factory permissions
@@ -46,17 +44,7 @@ test/
 - ✅ Multiple plugin creation scenarios
 - ✅ Edge cases and error conditions
 
-**FundsSplitter Tests (37 tests)**
-
-- ✅ Basic ERC20/ETH splitting functionality
-- ✅ Dust handling and remainder distribution
-- ✅ Access control and admin functions
-- ✅ Edge cases and error conditions
-- ✅ Fuzz testing for various input combinations
-- ✅ Invariant testing for state consistency
-- ✅ Event emission verification
-
-**ReflexAfterSwap Tests (18 tests)**
+**ReflexAfterSwap Tests**
 
 - ✅ Constructor and initialization
 - ✅ Access control with router admin
@@ -81,7 +69,6 @@ test/
 forge test
 
 # Run specific test suite
-forge test --match-contract FundsSplitterTest
 forge test --match-contract ReflexAfterSwapTest
 forge test --match-contract TestUtilsTest
 

@@ -61,9 +61,6 @@ contract AlgebraBasePluginV1Test is Test {
         // Initialize the plugin by calling the hook
         vm.prank(address(pool));
         plugin.beforeInitialize(address(0), 0);
-
-        // Note: Fund splitting functionality has been moved to ConfigurableRevenueDistributor
-        // ReflexAfterSwap now only handles profit extraction without funds splitting
     } // ========== Constructor Tests ==========
 
     function testConstructor() public view {

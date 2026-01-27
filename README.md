@@ -18,7 +18,7 @@ This repository is structured as a monorepo containing multiple packages:
 reflex/
 ├── core/                   # Core Solidity contracts and Forge project
 │   ├── src/               # Smart contracts
-│   ├── test/              # Comprehensive test suite (373+ tests)
+│   ├── test/              # Comprehensive test suite
 │   ├── script/            # Deployment and maintenance scripts
 │   ├── lib/               # External dependencies (git submodules)
 │   └── README.md          # Core package documentation
@@ -41,11 +41,8 @@ reflex/
 
 The foundational Solidity contracts that power the Reflex MEV system:
 
-- **ReflexRouter**: Main router contract handling MEV capture execution and profit distribution
-- **ConfigurableRevenueDistributor**: Integrated revenue distribution system with basis points precision
-- **GracefulReentrancyGuard**: Custom reentrancy protection that gracefully exits instead of reverting
 - **ReflexAfterSwap**: Integration base contracts for DEX protocols
-- **Comprehensive Test Suite**: 373+ tests ensuring system reliability and security
+- **Comprehensive Test Suite**: Extensive tests ensuring system reliability and security
 
 [→ See Core Documentation](/core/README.md)
 

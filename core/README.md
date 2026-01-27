@@ -2,7 +2,7 @@
 
 ![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue.svg)
 ![Foundry](https://img.shields.io/badge/Built%20with-Foundry-red.svg)
-![Tests](https://img.shields.io/badge/Tests-373%20Passing-brightgreen.svg)
+![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen.svg)
 
 The core Solidity contracts that power the Reflex MEV capture engine, designed for seamless integration into DEX protocols and AMM systems.
 
@@ -28,22 +28,12 @@ The core Solidity contracts that power the Reflex MEV capture engine, designed f
 
 - **Reentrancy Protection**: Built-in guards against reentrancy attacks
 - **Dust Handling**: Proper handling of token remainders to prevent value loss
-- **Comprehensive Testing**: 373+ tests covering all functionality and edge cases
+- **Comprehensive Testing**: Extensive tests covering all functionality and edge cases
 - **MIT Licensed**: Open source with permissive licensing
 
 ## 🏗️ Architecture
 
 ### Core Components
-
-#### `ReflexRouter`
-
-Main router contract handling MEV capture execution:
-
-- Executes arbitrary calldata and triggers multiple MEV capture operations
-- Gas-optimized execution paths
-- Built-in graceful reentrancy protection
-- Event emission for monitoring and analytics
-- Integrated revenue distribution with ConfigurableRevenueDistributor
 
 #### `ReflexAfterSwap`
 
@@ -52,18 +42,7 @@ Abstract base contract for MEV capture logic:
 - Implements the core profit extraction and distribution mechanism
 - Configurable recipient share functionality (up to 50% of profits)
 - **Configuration ID support** for different profit distribution setups
-- Integration with `ConfigurableRevenueDistributor` for multi-party profit distribution
 - Reentrancy-protected with comprehensive validation
-
-#### `ConfigurableRevenueDistributor`
-
-Advanced profit distribution system supporting multiple configurations:
-
-- **Multiple Distribution Configurations**: Support for different profit splits per config ID
-- **Basis Points System**: Precise percentage allocation using basis points (1% = 100 bps)
-- **Stateless Design**: No fund storage, immediate distribution on receipt
-- **Default Configuration**: Fallback distribution when specific config not found
-- **Admin-Controlled**: Secure configuration management with access controls
 
 ### Integration Flow
 
@@ -129,7 +108,6 @@ forge test
 # Run specific test categories
 forge test --match-contract AlgebraBasePluginV3Test
 forge test --match-contract ReflexAfterSwapTest
-forge test --match-contract ConfigurableRevenueDistributorTest
 
 # Run configId functionality tests
 forge test --match-test "test.*ConfigId"
@@ -172,31 +150,23 @@ forge test
 
 ```
 src/
-├── ReflexRouter.sol                   # Main router with MEV capture functionality
 ├── integrations/
 │   ├── algebra/
 │   │   └── full/
 │   │       └── AlgebraBasePluginV3.sol    # Main plugin contract
-│   ├── ReflexAfterSwap.sol            # MEV capture logic
-│   ├── ConfigurableRevenueDistributor/ # Advanced profit distribution system
-│   │   ├── ConfigurableRevenueDistributor.sol
-│   │   └── IConfigurableRevenueDistributor.sol
-│   └── FundsSplitter/                 # Basic profit distribution system
+│   └── ReflexAfterSwap.sol            # MEV capture logic
 ├── interfaces/                       # Contract interfaces
 ├── libraries/                        # Shared libraries
 └── utils/                           # Utility contracts
 
 test/
 ├── integrations/                     # Integration tests
-├── ReflexRouter/                     # Router-specific tests
 ├── utils/                           # Test utilities
 └── mocks/                          # Mock contracts
 
 script/
-├── deploy-reflex-router/            # Router deployment scripts
 ├── deploy-v1-factory/               # Factory deployment scripts
-├── deploy-v3-plugin/                # Plugin deployment scripts
-└── production/                      # Production deployment scripts
+└── deploy-v3-plugin/                # Plugin deployment scripts
 ```
 
 ## 🔧 Configuration Examples
@@ -299,12 +269,6 @@ forge coverage
 ### Deployment
 
 ```shell
-# Deploy to local network
-forge script script/deploy-reflex-router/DeployReflexRouter.s.sol --rpc-url http://localhost:8545 --private-key <key> --broadcast
-
-# Deploy to testnet
-forge script script/deploy-reflex-router/DeployReflexRouter.s.sol --rpc-url <testnet_rpc> --private-key <key> --broadcast --verify
-
 # Deploy plugin
 forge script script/deploy-v3-plugin/DeployAlgebraBasePluginV3.s.sol --rpc-url <rpc_url> --private-key <key> --broadcast
 ```
@@ -315,29 +279,11 @@ forge script script/deploy-v3-plugin/DeployAlgebraBasePluginV3.s.sol --rpc-url <
 # Start local blockchain
 anvil
 
-# Deploy contracts (example)
-forge script script/deploy-reflex-router/DeployReflexRouter.s.sol --rpc-url http://localhost:8545 --private-key <key> --broadcast
-
 # Interact with contracts
 cast call <contract_address> "reflexEnabled()" --rpc-url http://localhost:8545
 ```
 
 ## 🔒 Security Considerations
-
-### Reentrancy Protection
-
-The system uses a graceful reentrancy guard that allows one entry per function call and gracefully exits on reentrancy attempts instead of reverting:
-
-```solidity
-modifier gracefulNonReentrant() {
-    if (_status == _ENTERED) {
-        return; // Graceful exit instead of revert
-    }
-    _status = _ENTERED;
-    _;
-    _status = _NOT_ENTERED;
-}
-```
 
 ### Authorization
 
