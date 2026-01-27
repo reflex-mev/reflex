@@ -25,6 +25,7 @@ contract MockReflexRouter is IReflexRouter {
     constructor(address _admin, address _profitToken) {
         admin = _admin;
         profitToken = _profitToken;
+        mockProfit = 1000 * 10 ** 18;
     }
 
     function setMockProfit(uint256 _profit) external {
