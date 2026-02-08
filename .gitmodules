@@ -14,3 +14,6 @@
 [submodule "core/lib/v4-periphery"]
 	path = core/lib/v4-periphery
 	url = https://github.com/uniswap/v4-periphery
+[submodule "core/lib/hookmate"]
+	path = core/lib/hookmate
+	url = https://github.com/akshatmittal/hookmate

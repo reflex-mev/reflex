@@ -11,6 +11,12 @@
       "rev": "8bbcf6e3f8f62f419e5429a0bd89331c85c37824"
     }
   },
+  "lib/hookmate": {
+    "tag": {
+      "name": "v0.5.0",
+      "rev": "297e4fe6186a7a56bc831bf70a709ed3166afb05"
+    }
+  },
   "lib/openzeppelin-contracts": {
     "tag": {
       "name": "v5.4.0",
@@ -22,5 +28,8 @@
       "name": "v4.0.0",
       "rev": "e50237c43811bd9b526eff40f26772152a42daba"
     }
+  },
+  "lib/v4-periphery": {
+    "rev": "5da22e609fd78c01fb7ddf2a6abb1f2ec7dc2b87"
   }
 }

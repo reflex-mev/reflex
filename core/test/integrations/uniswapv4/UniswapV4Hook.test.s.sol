@@ -52,7 +52,7 @@ contract UniswapV4HookTest is Test {
         // Deploy hook to a flag-compliant address
         deployCodeTo(
             "UniswapV4Hook.sol:UniswapV4Hook",
-            abi.encode(IPoolManager(poolManager), address(reflexRouter), testConfigId),
+            abi.encode(IPoolManager(poolManager), address(reflexRouter), testConfigId, address(this)),
             address(flags)
         );
         hook = UniswapV4Hook(address(flags));
