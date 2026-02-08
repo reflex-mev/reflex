@@ -21,12 +21,9 @@ contract UniswapV4Hook is IHooks, ReflexAfterSwap {
         _;
     }
 
-    constructor(
-        IPoolManager _poolManager,
-        address _reflexRouter,
-        bytes32 _configId,
-        address _owner
-    ) ReflexAfterSwap(_reflexRouter, _configId) {
+    constructor(IPoolManager _poolManager, address _reflexRouter, bytes32 _configId, address _owner)
+        ReflexAfterSwap(_reflexRouter, _configId)
+    {
         require(_owner != address(0), "UniswapV4Hook: Owner cannot be zero address");
         poolManager = _poolManager;
         owner = _owner;

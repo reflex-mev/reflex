@@ -67,8 +67,7 @@ contract DeployHook is UniswapV4BaseScript {
 
         // Compute initcode and mine salt
         bytes memory initcode = abi.encodePacked(
-            type(UniswapV4Hook).creationCode,
-            abi.encode(poolManager, reflexRouterAddress, configId, msg.sender)
+            type(UniswapV4Hook).creationCode, abi.encode(poolManager, reflexRouterAddress, configId, msg.sender)
         );
         bytes32 initcodeHash = keccak256(initcode);
 
@@ -115,17 +114,12 @@ contract DeployHook is UniswapV4BaseScript {
         vm.startBroadcast();
 
         console.log("\n--- Deploying UniswapV4Hook ---");
-        hook = new UniswapV4Hook{salt: minedSalt}(
-            poolManager, reflexRouterAddress, configId, deployer
-        );
+        hook = new UniswapV4Hook{salt: minedSalt}(poolManager, reflexRouterAddress, configId, deployer);
 
         vm.stopBroadcast();
 
         // Verify deployed address matches expected
-        require(
-            address(hook) == expectedHookAddress,
-            "Deployed address does not match expected hook address"
-        );
+        require(address(hook) == expectedHookAddress, "Deployed address does not match expected hook address");
 
         // Verify hook state
         _verifyDeployment();
@@ -211,16 +205,36 @@ contract DeployHook is UniswapV4BaseScript {
         string memory deploymentInfo = string.concat(
             "{\n",
             '  "contract": "UniswapV4Hook",\n',
-            '  "address": "', vm.toString(address(hook)), '",\n',
-            '  "poolManager": "', vm.toString(address(poolManager)), '",\n',
-            '  "reflexRouter": "', vm.toString(reflexRouterAddress), '",\n',
-            '  "configId": "', vm.toString(configId), '",\n',
-            '  "salt": "', vm.toString(minedSalt), '",\n',
-            '  "owner": "', vm.toString(msg.sender), '",\n',
-            '  "chainId": ', vm.toString(block.chainid), ',\n',
-            '  "blockNumber": ', vm.toString(block.number), ',\n',
-            '  "timestamp": ', vm.toString(block.timestamp), ',\n',
-            '  "deployer": "', vm.toString(msg.sender), '"\n',
+            '  "address": "',
+            vm.toString(address(hook)),
+            '",\n',
+            '  "poolManager": "',
+            vm.toString(address(poolManager)),
+            '",\n',
+            '  "reflexRouter": "',
+            vm.toString(reflexRouterAddress),
+            '",\n',
+            '  "configId": "',
+            vm.toString(configId),
+            '",\n',
+            '  "salt": "',
+            vm.toString(minedSalt),
+            '",\n',
+            '  "owner": "',
+            vm.toString(msg.sender),
+            '",\n',
+            '  "chainId": ',
+            vm.toString(block.chainid),
+            ",\n",
+            '  "blockNumber": ',
+            vm.toString(block.number),
+            ",\n",
+            '  "timestamp": ',
+            vm.toString(block.timestamp),
+            ",\n",
+            '  "deployer": "',
+            vm.toString(msg.sender),
+            '"\n',
             "}\n"
         );
 

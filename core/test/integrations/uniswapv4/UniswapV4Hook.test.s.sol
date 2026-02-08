@@ -80,12 +80,12 @@ contract UniswapV4HookTest is Test {
         });
     }
 
-    function _createSwapParams(bool zeroForOne, int256 amountSpecified) internal pure returns (IPoolManager.SwapParams memory) {
-        return IPoolManager.SwapParams({
-            zeroForOne: zeroForOne,
-            amountSpecified: amountSpecified,
-            sqrtPriceLimitX96: 0
-        });
+    function _createSwapParams(bool zeroForOne, int256 amountSpecified)
+        internal
+        pure
+        returns (IPoolManager.SwapParams memory)
+    {
+        return IPoolManager.SwapParams({zeroForOne: zeroForOne, amountSpecified: amountSpecified, sqrtPriceLimitX96: 0});
     }
 
     // ========== Constructor Tests ==========
@@ -258,26 +258,14 @@ contract UniswapV4HookTest is Test {
 
         // First swap - alice
         vm.prank(poolManager);
-        hook.afterSwap(
-            alice,
-            key,
-            _createSwapParams(true, -1000e18),
-            toBalanceDelta(500e6, -250e6),
-            ""
-        );
+        hook.afterSwap(alice, key, _createSwapParams(true, -1000e18), toBalanceDelta(500e6, -250e6), "");
 
         uint256 aliceAfterFirst = profitToken.balanceOf(alice);
         assertTrue(aliceAfterFirst > aliceInitialBalance);
 
         // Second swap - bob
         vm.prank(poolManager);
-        hook.afterSwap(
-            bob,
-            key,
-            _createSwapParams(false, -2000e18),
-            toBalanceDelta(-800e6, 400e6),
-            ""
-        );
+        hook.afterSwap(bob, key, _createSwapParams(false, -2000e18), toBalanceDelta(-800e6, 400e6), "");
 
         // Alice balance unchanged from second swap
         assertEq(profitToken.balanceOf(alice), aliceAfterFirst);

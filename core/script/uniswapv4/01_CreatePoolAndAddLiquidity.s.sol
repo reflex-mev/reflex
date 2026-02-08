@@ -93,11 +93,7 @@ contract CreatePoolAndAddLiquidity is LiquidityHelpers {
 
     function _buildPoolKey() internal view returns (PoolKey memory) {
         return PoolKey({
-            currency0: currency0,
-            currency1: currency1,
-            fee: lpFee,
-            tickSpacing: tickSpacing,
-            hooks: hookContract
+            currency0: currency0, currency1: currency1, fee: lpFee, tickSpacing: tickSpacing, hooks: hookContract
         });
     }
 
