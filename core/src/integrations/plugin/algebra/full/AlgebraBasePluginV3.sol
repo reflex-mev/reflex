@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity =0.8.20;
+pragma solidity ^0.8.20;
 
 import "@cryptoalgebra/core/libraries/Plugins.sol";
 import "@cryptoalgebra/core/interfaces/plugin/IAlgebraPlugin.sol";
