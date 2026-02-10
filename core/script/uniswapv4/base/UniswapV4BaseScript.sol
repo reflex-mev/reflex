@@ -26,6 +26,8 @@ contract UniswapV4BaseScript is Script {
 
     IERC20 public token0;
     IERC20 public token1;
+    bool public token0Set;
+    bool public token1Set;
     Currency public currency0;
     Currency public currency1;
 
@@ -58,17 +60,19 @@ contract UniswapV4BaseScript is Script {
             permit2 = IPermit2(CANONICAL_PERMIT2);
         }
 
-        // Optional: Tokens
+        // Optional: Tokens (address(0) = native ETH)
         try vm.envAddress("TOKEN0_ADDRESS") returns (address addr) {
             token0 = IERC20(addr);
+            token0Set = true;
         } catch {}
         try vm.envAddress("TOKEN1_ADDRESS") returns (address addr) {
             token1 = IERC20(addr);
+            token1Set = true;
         } catch {}
 
-        // Sort currencies
-        if (address(token0) != address(0) && address(token1) != address(0)) {
-            if (address(token0) < address(token1)) {
+        // Sort currencies when at least one token is configured
+        if (token0Set || token1Set) {
+            if (address(token0) <= address(token1)) {
                 currency0 = Currency.wrap(address(token0));
                 currency1 = Currency.wrap(address(token1));
             } else {
@@ -94,7 +98,8 @@ contract UniswapV4BaseScript is Script {
             configId = bytes32(0);
         }
 
-        // Deployer
-        deployerAddress = msg.sender;
+        // Deployer: use wallet from --private-key/--mnemonic, fall back to msg.sender
+        address[] memory wallets = vm.getWallets();
+        deployerAddress = wallets.length > 0 ? wallets[0] : msg.sender;
     }
 }

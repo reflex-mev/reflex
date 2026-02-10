@@ -41,8 +41,7 @@ contract CreatePoolAndAddLiquidity is LiquidityHelpers {
 
     function setUp() public {
         // Validate required addresses
-        require(address(token0) != address(0), "TOKEN0_ADDRESS not set");
-        require(address(token1) != address(0), "TOKEN1_ADDRESS not set");
+        require(token0Set && token1Set, "TOKEN0_ADDRESS and TOKEN1_ADDRESS must be set");
         require(address(hookContract) != address(0), "HOOK_ADDRESS not set");
         require(address(positionManager) != address(0), "POSITION_MANAGER_ADDRESS not set");
         require(address(permit2) != address(0), "PERMIT2_ADDRESS not set");

@@ -121,6 +121,8 @@ contract UniswapV4HookTest is Test {
     function testAfterSwap() public {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        // V4: negative = amount in, positive = amount out
+        // zeroForOne=true: token0 in (negative), token1 out (positive)
         BalanceDelta delta = toBalanceDelta(-500e6, 250e18);
 
         vm.prank(poolManager);
@@ -133,8 +135,7 @@ contract UniswapV4HookTest is Test {
     function testAfterSwapParameterMapping() public {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
-        // zeroForOne=true: user pays token0 (negative), receives token1 (positive)
-        // In V4 convention: negative = user owes, positive = user is owed
+        // V4: zeroForOne=true: token0 in (negative), token1 out (positive)
         BalanceDelta delta = toBalanceDelta(-500e6, 250e18);
 
         vm.prank(poolManager);
@@ -147,6 +148,9 @@ contract UniswapV4HookTest is Test {
         // triggerPoolId should be the keccak256 hash of the pool key
         bytes32 expectedPoolId = PoolId.unwrap(key.toId());
         assertEq(call.triggerPoolId, expectedPoolId);
+
+        // amountIn should be the absolute value of the negative (input) delta
+        assertEq(call.swapAmountIn, uint112(uint256(500e6)));
 
         // zeroForOne should be passed through
         assertTrue(call.token0In);
@@ -161,8 +165,8 @@ contract UniswapV4HookTest is Test {
     function testAfterSwapZeroForOneTrue() public {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
-        // Positive amount0 = token0 going in, negative amount1 = token1 going out
-        BalanceDelta delta = toBalanceDelta(500e6, -250e6);
+        // V4: zeroForOne=true: token0 in (negative), token1 out (positive)
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
 
         uint256 aliceInitialBalance = profitToken.balanceOf(alice);
 
@@ -174,13 +178,14 @@ contract UniswapV4HookTest is Test {
 
         MockReflexRouter.TriggerBackrunCall memory call = reflexRouter.getTriggerBackrunCall(0);
         assertTrue(call.token0In);
+        assertEq(call.swapAmountIn, uint112(uint256(500e6)));
     }
 
     function testAfterSwapZeroForOneFalse() public {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(false, -1000e18);
-        // token1 going in (positive), token0 going out (negative)
-        BalanceDelta delta = toBalanceDelta(-250e6, 500e6);
+        // V4: zeroForOne=false: token1 in (negative), token0 out (positive)
+        BalanceDelta delta = toBalanceDelta(250e6, -500e6);
 
         uint256 aliceInitialBalance = profitToken.balanceOf(alice);
 
@@ -191,12 +196,14 @@ contract UniswapV4HookTest is Test {
 
         MockReflexRouter.TriggerBackrunCall memory call = reflexRouter.getTriggerBackrunCall(0);
         assertFalse(call.token0In);
+        assertEq(call.swapAmountIn, uint112(uint256(500e6)));
     }
 
     function testAfterSwapSenderAsRecipient() public {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
-        BalanceDelta delta = toBalanceDelta(500e6, -250e6);
+        // V4: zeroForOne=true: token0 in (negative), token1 out (positive)
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
 
         // Bob is the sender
         vm.prank(poolManager);
@@ -209,7 +216,7 @@ contract UniswapV4HookTest is Test {
     function testAfterSwapOnlyPoolManager() public {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
-        BalanceDelta delta = toBalanceDelta(500e6, -250e6);
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
 
         vm.prank(attacker);
         vm.expectRevert("UniswapV4Hook: Caller is not the PoolManager");
@@ -221,7 +228,8 @@ contract UniswapV4HookTest is Test {
     function testProfitExtractionFlow() public {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
-        BalanceDelta delta = toBalanceDelta(500e6, -250e6);
+        // V4: zeroForOne=true: token0 in (negative), token1 out (positive)
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
 
         uint256 aliceInitialBalance = profitToken.balanceOf(alice);
 
@@ -238,7 +246,7 @@ contract UniswapV4HookTest is Test {
 
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
-        BalanceDelta delta = toBalanceDelta(500e6, -250e6);
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
 
         uint256 aliceInitialBalance = profitToken.balanceOf(alice);
 
@@ -256,16 +264,16 @@ contract UniswapV4HookTest is Test {
         uint256 aliceInitialBalance = profitToken.balanceOf(alice);
         uint256 bobInitialBalance = profitToken.balanceOf(bob);
 
-        // First swap - alice
+        // First swap - alice, zeroForOne=true: token0 in (negative)
         vm.prank(poolManager);
-        hook.afterSwap(alice, key, _createSwapParams(true, -1000e18), toBalanceDelta(500e6, -250e6), "");
+        hook.afterSwap(alice, key, _createSwapParams(true, -1000e18), toBalanceDelta(-500e6, 250e6), "");
 
         uint256 aliceAfterFirst = profitToken.balanceOf(alice);
         assertTrue(aliceAfterFirst > aliceInitialBalance);
 
-        // Second swap - bob
+        // Second swap - bob, zeroForOne=false: token1 in (negative)
         vm.prank(poolManager);
-        hook.afterSwap(bob, key, _createSwapParams(false, -2000e18), toBalanceDelta(-800e6, 400e6), "");
+        hook.afterSwap(bob, key, _createSwapParams(false, -2000e18), toBalanceDelta(800e6, -400e6), "");
 
         // Alice balance unchanged from second swap
         assertEq(profitToken.balanceOf(alice), aliceAfterFirst);
@@ -316,7 +324,7 @@ contract UniswapV4HookTest is Test {
     function testConfigIdPassedToTriggerBackrun() public {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
-        BalanceDelta delta = toBalanceDelta(500e6, -250e6);
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
 
         vm.prank(poolManager);
         hook.afterSwap(alice, key, params, delta, "");
@@ -363,6 +371,14 @@ contract UniswapV4HookTest is Test {
     // ========== Fuzz Tests ==========
 
     function testFuzzAfterSwap(int128 amount0, int128 amount1, bool zeroForOne) public {
+        // V4: the input token delta must be negative
+        // Ensure the input side is negative to avoid underflow in uint256(-int256(...))
+        if (zeroForOne) {
+            vm.assume(amount0 <= 0);
+        } else {
+            vm.assume(amount1 <= 0);
+        }
+
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(zeroForOne, -1000e18);
         BalanceDelta delta = toBalanceDelta(amount0, amount1);
@@ -395,7 +411,8 @@ contract UniswapV4HookTest is Test {
         });
 
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
-        BalanceDelta delta = toBalanceDelta(500e6, -250e6);
+        // V4: zeroForOne=true: token0 in (negative), token1 out (positive)
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
 
         vm.prank(poolManager);
         (bytes4 selector,) = hook.afterSwap(alice, key, params, delta, "");
@@ -412,12 +429,12 @@ contract UniswapV4HookTest is Test {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(zeroForOne, -1000e18);
 
-        // Create deltas matching swap direction
+        // V4: negative = amount in, positive = amount out
         BalanceDelta delta;
         if (zeroForOne) {
-            delta = toBalanceDelta(absAmount0, -absAmount1);
-        } else {
             delta = toBalanceDelta(-absAmount0, absAmount1);
+        } else {
+            delta = toBalanceDelta(absAmount0, -absAmount1);
         }
 
         vm.prank(poolManager);

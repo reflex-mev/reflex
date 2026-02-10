@@ -114,10 +114,16 @@ contract UniswapV4Hook is IHooks, ReflexAfterSwap {
         bytes calldata
     ) external override onlyPoolManager returns (bytes4, int128) {
         bytes32 triggerPoolId = PoolId.unwrap(key.toId());
-        int256 amount0Delta = int256(delta.amount0());
-        int256 amount1Delta = int256(delta.amount1());
 
-        _reflexAfterSwap(triggerPoolId, amount0Delta, amount1Delta, params.zeroForOne, sender);
+        // In V4, negative delta = tokens transferred into the pool (amount in)
+        uint256 amountIn;
+        if (params.zeroForOne) {
+            amountIn = uint256(-int256(delta.amount0()));
+        } else {
+            amountIn = uint256(-int256(delta.amount1()));
+        }
+
+        _reflexAfterSwap(triggerPoolId, amountIn, params.zeroForOne, sender);
 
         return (IHooks.afterSwap.selector, 0);
     }

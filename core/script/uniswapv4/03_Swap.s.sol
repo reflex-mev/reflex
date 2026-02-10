@@ -33,8 +33,7 @@ contract Swap is UniswapV4BaseScript {
     function setUp() public {
         // Validate required addresses
         require(address(swapRouter) != address(0), "SWAP_ROUTER_ADDRESS not set");
-        require(address(token0) != address(0), "TOKEN0_ADDRESS not set");
-        require(address(token1) != address(0), "TOKEN1_ADDRESS not set");
+        require(token0Set && token1Set, "TOKEN0_ADDRESS and TOKEN1_ADDRESS must be set");
         require(address(hookContract) != address(0), "HOOK_ADDRESS not set");
 
         // Load configurable parameters with defaults
