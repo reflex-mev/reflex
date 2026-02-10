@@ -11,8 +11,6 @@ import {Currency} from "v4-core/src/types/Currency.sol";
 import {IPositionManager} from "v4-periphery/src/interfaces/IPositionManager.sol";
 import {IPermit2} from "permit2/src/interfaces/IPermit2.sol";
 
-import {IUniswapV4Router04} from "hookmate/interfaces/router/IUniswapV4Router04.sol";
-
 /// @notice Shared base script for all UniswapV4 deployment scripts.
 ///         Loads configuration from environment variables.
 contract UniswapV4BaseScript is Script {
@@ -21,7 +19,7 @@ contract UniswapV4BaseScript is Script {
 
     IPoolManager public poolManager;
     IPositionManager public positionManager;
-    IUniswapV4Router04 public swapRouter;
+    address public universalRouter;
     IPermit2 public permit2;
 
     IERC20 public token0;
@@ -48,9 +46,9 @@ contract UniswapV4BaseScript is Script {
             positionManager = IPositionManager(addr);
         } catch {}
 
-        // Optional: Swap Router
-        try vm.envAddress("SWAP_ROUTER_ADDRESS") returns (address addr) {
-            swapRouter = IUniswapV4Router04(payable(addr));
+        // Optional: Universal Router
+        try vm.envAddress("UNIVERSAL_ROUTER_ADDRESS") returns (address addr) {
+            universalRouter = addr;
         } catch {}
 
         // Optional: Permit2 (defaults to canonical)
