@@ -12,7 +12,7 @@ import {UniswapV4BaseScript} from "./base/UniswapV4BaseScript.sol";
  * @title DeployHook
  * @notice Deployment script for UniswapV4Hook with CREATE2 salt mining
  * @dev Uniswap V4 hooks must be deployed at addresses where specific permission bits are set.
- *      For our hook, AFTER_SWAP_FLAG (bit 6 = 0x40) must be set in the bottom 14 bits.
+ *      For our hook, BEFORE_SWAP_FLAG | AFTER_SWAP_FLAG must be set in the bottom 14 bits.
  *      This script mines a CREATE2 salt to find such an address.
  *
  * Run with:
@@ -31,7 +31,7 @@ import {UniswapV4BaseScript} from "./base/UniswapV4BaseScript.sol";
  */
 contract DeployHook is UniswapV4BaseScript {
     // Hook permission flags
-    uint160 constant REQUIRED_FLAGS = Hooks.AFTER_SWAP_FLAG; // 1 << 6 = 0x40
+    uint160 constant REQUIRED_FLAGS = Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG;
     uint160 constant FLAG_MASK = Hooks.ALL_HOOK_MASK; // (1 << 14) - 1 = 0x3FFF
 
     // Contract instance
@@ -80,7 +80,7 @@ contract DeployHook is UniswapV4BaseScript {
         );
         bytes32 initcodeHash = keccak256(initcode);
 
-        // Mine CREATE2 salt: find salt where deployed address has exactly AFTER_SWAP_FLAG set in bottom 14 bits
+        // Mine CREATE2 salt: find salt where deployed address has exactly BEFORE_SWAP_FLAG | AFTER_SWAP_FLAG set in bottom 14 bits
         bool found = false;
         for (uint256 i = 0; i < type(uint256).max; i++) {
             bytes32 salt = bytes32(i);

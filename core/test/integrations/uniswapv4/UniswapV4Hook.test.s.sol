@@ -11,6 +11,7 @@ import {BalanceDelta, toBalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {BeforeSwapDelta} from "v4-core/src/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/src/types/Currency.sol";
 import {Hooks} from "v4-core/src/libraries/Hooks.sol";
+import {LPFeeLibrary} from "v4-core/src/libraries/LPFeeLibrary.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../utils/TestUtils.sol";
 import "../../mocks/MockToken.sol";
@@ -48,9 +49,8 @@ contract UniswapV4HookTest is Test {
         poolManager = makeAddr("poolManager");
         wethAddr = makeAddr("weth");
 
-        // Compute hook address with AFTER_SWAP_FLAG set in the last 14 bits
-        // AFTER_SWAP_FLAG = 1 << 6 = 0x40
-        uint160 flags = uint160(Hooks.AFTER_SWAP_FLAG);
+        // Compute hook address with BEFORE_SWAP_FLAG | AFTER_SWAP_FLAG set in the last 14 bits
+        uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG);
 
         // Deploy hook to a flag-compliant address
         deployCodeTo(
@@ -107,9 +107,9 @@ contract UniswapV4HookTest is Test {
 
     function testHookPermissions() public view {
         address hookAddr = address(hook);
-        // Only AFTER_SWAP_FLAG should be set
+        // BEFORE_SWAP_FLAG and AFTER_SWAP_FLAG should be set
         assertTrue(_hasPermission(hookAddr, Hooks.AFTER_SWAP_FLAG));
-        assertFalse(_hasPermission(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertTrue(_hasPermission(hookAddr, Hooks.BEFORE_SWAP_FLAG));
         assertFalse(_hasPermission(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(_hasPermission(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
         assertFalse(_hasPermission(hookAddr, Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
@@ -351,10 +351,29 @@ contract UniswapV4HookTest is Test {
         assertEq(selector, IHooks.afterInitialize.selector);
     }
 
-    function testBeforeSwapNoOp() public view {
+    function testBeforeSwapNonRouterNoOverride() public view {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
         (bytes4 selector, BeforeSwapDelta beforeDelta, uint24 fee) = hook.beforeSwap(address(0), key, params, "");
+        assertEq(selector, IHooks.beforeSwap.selector);
+        assertEq(BeforeSwapDelta.unwrap(beforeDelta), 0);
+        assertEq(fee, 0);
+    }
+
+    function testBeforeSwapRouterGets100PctDiscount() public view {
+        PoolKey memory key = _createPoolKey();
+        IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        (bytes4 selector, BeforeSwapDelta beforeDelta, uint24 fee) =
+            hook.beforeSwap(address(reflexRouter), key, params, "");
+        assertEq(selector, IHooks.beforeSwap.selector);
+        assertEq(BeforeSwapDelta.unwrap(beforeDelta), 0);
+        assertEq(fee, LPFeeLibrary.OVERRIDE_FEE_FLAG);
+    }
+
+    function testBeforeSwapArbitrarySenderNoDiscount() public view {
+        PoolKey memory key = _createPoolKey();
+        IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        (bytes4 selector, BeforeSwapDelta beforeDelta, uint24 fee) = hook.beforeSwap(alice, key, params, "");
         assertEq(selector, IHooks.beforeSwap.selector);
         assertEq(BeforeSwapDelta.unwrap(beforeDelta), 0);
         assertEq(fee, 0);
@@ -457,7 +476,7 @@ contract UniswapV4HookTest is Test {
     {
         donateRouter = MockReflexRouter(TestUtils.createMockReflexRouter(admin, _profitTokenAddr));
 
-        uint160 flags = uint160(Hooks.AFTER_SWAP_FLAG);
+        uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG);
         deployCodeTo(
             "UniswapV4Hook.sol:UniswapV4Hook",
             abi.encode(IPoolManager(poolManager), address(donateRouter), testConfigId, address(this), wethAddr),
@@ -546,7 +565,7 @@ contract UniswapV4HookTest is Test {
         address wethToken = address(profitToken);
         MockReflexRouter wethRouter = MockReflexRouter(TestUtils.createMockReflexRouter(admin, wethToken));
 
-        uint160 flags = uint160(Hooks.AFTER_SWAP_FLAG);
+        uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG);
         deployCodeTo(
             "UniswapV4Hook.sol:UniswapV4Hook",
             abi.encode(IPoolManager(poolManager), address(wethRouter), testConfigId, address(this), wethToken),

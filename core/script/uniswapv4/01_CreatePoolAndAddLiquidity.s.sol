@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {CurrencyLibrary, Currency} from "v4-core/src/types/Currency.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
+import {LPFeeLibrary} from "v4-core/src/libraries/LPFeeLibrary.sol";
 
 import {LiquidityAmounts} from "v4-periphery/src/libraries/LiquidityAmounts.sol";
 
@@ -24,7 +25,7 @@ import {LiquidityHelpers} from "./base/LiquidityHelpers.sol";
  * - TOKEN0_ADDRESS, TOKEN1_ADDRESS, HOOK_ADDRESS
  *
  * Environment Variables (Optional):
- * - LP_FEE: Pool fee in pips (default: 3000 = 0.30%)
+ * - LP_FEE: Pool fee in pips (default: DYNAMIC_FEE_FLAG for hook fee overrides)
  * - TICK_SPACING: Tick spacing (default: 60)
  * - STARTING_PRICE: sqrtPriceX96 (default: 2^96 = price 1:1)
  * - TOKEN0_AMOUNT: Initial token0 liquidity (default: 100e18)
@@ -50,7 +51,7 @@ contract CreatePoolAndAddLiquidity is LiquidityHelpers {
         try vm.envUint("LP_FEE") returns (uint256 fee) {
             lpFee = uint24(fee);
         } catch {
-            lpFee = 3000;
+            lpFee = uint24(LPFeeLibrary.DYNAMIC_FEE_FLAG);
         }
 
         try vm.envInt("TICK_SPACING") returns (int256 ts) {

@@ -9,6 +9,7 @@ import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {BeforeSwapDelta} from "v4-core/src/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/src/types/Currency.sol";
 import {Hooks} from "v4-core/src/libraries/Hooks.sol";
+import {LPFeeLibrary} from "v4-core/src/libraries/LPFeeLibrary.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
@@ -46,7 +47,7 @@ contract UniswapV4Hook is IHooks, ReflexAfterSwap {
                 afterAddLiquidity: false,
                 beforeRemoveLiquidity: false,
                 afterRemoveLiquidity: false,
-                beforeSwap: false,
+                beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: false,
                 afterDonate: false,
@@ -106,13 +107,14 @@ contract UniswapV4Hook is IHooks, ReflexAfterSwap {
         return (IHooks.afterRemoveLiquidity.selector, BalanceDelta.wrap(0));
     }
 
-    function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata)
+    function beforeSwap(address sender, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata)
         external
-        pure
+        view
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
-        return (IHooks.beforeSwap.selector, BeforeSwapDelta.wrap(0), 0);
+        uint24 lpFeeOverride = sender == getRouter() ? LPFeeLibrary.OVERRIDE_FEE_FLAG : 0;
+        return (IHooks.beforeSwap.selector, BeforeSwapDelta.wrap(0), lpFeeOverride);
     }
 
     function afterSwap(
