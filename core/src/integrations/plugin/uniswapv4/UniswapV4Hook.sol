@@ -111,6 +111,7 @@ contract UniswapV4Hook is IHooks, ReflexAfterSwap {
         external
         view
         override
+        onlyPoolManager
         returns (bytes4, BeforeSwapDelta, uint24)
     {
         uint24 lpFeeOverride = sender == getRouter() ? LPFeeLibrary.OVERRIDE_FEE_FLAG : 0;

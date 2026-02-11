@@ -351,18 +351,20 @@ contract UniswapV4HookTest is Test {
         assertEq(selector, IHooks.afterInitialize.selector);
     }
 
-    function testBeforeSwapNonRouterNoOverride() public view {
+    function testBeforeSwapNonRouterNoOverride() public {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        vm.prank(poolManager);
         (bytes4 selector, BeforeSwapDelta beforeDelta, uint24 fee) = hook.beforeSwap(address(0), key, params, "");
         assertEq(selector, IHooks.beforeSwap.selector);
         assertEq(BeforeSwapDelta.unwrap(beforeDelta), 0);
         assertEq(fee, 0);
     }
 
-    function testBeforeSwapRouterGets100PctDiscount() public view {
+    function testBeforeSwapRouterGets100PctDiscount() public {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        vm.prank(poolManager);
         (bytes4 selector, BeforeSwapDelta beforeDelta, uint24 fee) =
             hook.beforeSwap(address(reflexRouter), key, params, "");
         assertEq(selector, IHooks.beforeSwap.selector);
@@ -370,13 +372,22 @@ contract UniswapV4HookTest is Test {
         assertEq(fee, LPFeeLibrary.OVERRIDE_FEE_FLAG);
     }
 
-    function testBeforeSwapArbitrarySenderNoDiscount() public view {
+    function testBeforeSwapArbitrarySenderNoDiscount() public {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        vm.prank(poolManager);
         (bytes4 selector, BeforeSwapDelta beforeDelta, uint24 fee) = hook.beforeSwap(alice, key, params, "");
         assertEq(selector, IHooks.beforeSwap.selector);
         assertEq(BeforeSwapDelta.unwrap(beforeDelta), 0);
         assertEq(fee, 0);
+    }
+
+    function testBeforeSwapOnlyPoolManager() public {
+        PoolKey memory key = _createPoolKey();
+        IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        vm.prank(attacker);
+        vm.expectRevert("UniswapV4Hook: Caller is not the PoolManager");
+        hook.beforeSwap(alice, key, params, "");
     }
 
     function testBeforeDonateNoOp() public view {
