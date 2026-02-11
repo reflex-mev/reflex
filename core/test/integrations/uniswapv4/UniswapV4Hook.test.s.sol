@@ -11,6 +11,7 @@ import {BalanceDelta, toBalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {BeforeSwapDelta} from "v4-core/src/types/BeforeSwapDelta.sol";
 import {Currency} from "v4-core/src/types/Currency.sol";
 import {Hooks} from "v4-core/src/libraries/Hooks.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../utils/TestUtils.sol";
 import "../../mocks/MockToken.sol";
 import "../../mocks/MockReflexRouter.sol";
@@ -32,6 +33,7 @@ contract UniswapV4HookTest is Test {
     // Test pool key components
     address public token0 = address(0x1111);
     address public token1 = address(0x2222);
+    address public wethAddr;
 
     bytes32 public testConfigId = keccak256("uniswapv4-config");
 
@@ -44,6 +46,7 @@ contract UniswapV4HookTest is Test {
 
         // Use a mock address for pool manager
         poolManager = makeAddr("poolManager");
+        wethAddr = makeAddr("weth");
 
         // Compute hook address with AFTER_SWAP_FLAG set in the last 14 bits
         // AFTER_SWAP_FLAG = 1 << 6 = 0x40
@@ -52,10 +55,10 @@ contract UniswapV4HookTest is Test {
         // Deploy hook to a flag-compliant address
         deployCodeTo(
             "UniswapV4Hook.sol:UniswapV4Hook",
-            abi.encode(IPoolManager(poolManager), address(reflexRouter), testConfigId, address(this)),
+            abi.encode(IPoolManager(poolManager), address(reflexRouter), testConfigId, address(this), wethAddr),
             address(flags)
         );
-        hook = UniswapV4Hook(address(flags));
+        hook = UniswapV4Hook(payable(address(flags)));
     }
 
     // ========== Helper Functions ==========
@@ -95,6 +98,7 @@ contract UniswapV4HookTest is Test {
         assertEq(hook.getRouter(), address(reflexRouter));
         assertEq(hook.getConfigId(), testConfigId);
         assertEq(address(hook.poolManager()), poolManager);
+        assertEq(hook.weth(), wethAddr);
     }
 
     function _hasPermission(address hookAddr, uint160 flag) internal pure returns (bool) {
@@ -138,7 +142,7 @@ contract UniswapV4HookTest is Test {
         // V4: zeroForOne=true: token0 in (negative), token1 out (positive)
         BalanceDelta delta = toBalanceDelta(-500e6, 250e18);
 
-        vm.prank(poolManager);
+        vm.prank(poolManager, alice);
         hook.afterSwap(alice, key, params, delta, "");
 
         // Verify triggerBackrun was called with correct parameters
@@ -155,7 +159,7 @@ contract UniswapV4HookTest is Test {
         // zeroForOne should be passed through
         assertTrue(call.token0In);
 
-        // recipient should be the sender
+        // recipient should be tx.origin
         assertEq(call.recipient, alice);
 
         // configId should match
@@ -170,10 +174,10 @@ contract UniswapV4HookTest is Test {
 
         uint256 aliceInitialBalance = profitToken.balanceOf(alice);
 
-        vm.prank(poolManager);
+        vm.prank(poolManager, alice);
         hook.afterSwap(alice, key, params, delta, "");
 
-        // Alice should receive profit
+        // Alice (tx.origin) should receive profit
         assertTrue(profitToken.balanceOf(alice) > aliceInitialBalance);
 
         MockReflexRouter.TriggerBackrunCall memory call = reflexRouter.getTriggerBackrunCall(0);
@@ -189,7 +193,7 @@ contract UniswapV4HookTest is Test {
 
         uint256 aliceInitialBalance = profitToken.balanceOf(alice);
 
-        vm.prank(poolManager);
+        vm.prank(poolManager, alice);
         hook.afterSwap(alice, key, params, delta, "");
 
         assertTrue(profitToken.balanceOf(alice) > aliceInitialBalance);
@@ -199,15 +203,15 @@ contract UniswapV4HookTest is Test {
         assertEq(call.swapAmountIn, uint112(uint256(500e6)));
     }
 
-    function testAfterSwapSenderAsRecipient() public {
+    function testAfterSwapTxOriginAsRecipient() public {
         PoolKey memory key = _createPoolKey();
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
         // V4: zeroForOne=true: token0 in (negative), token1 out (positive)
         BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
 
-        // Bob is the sender
-        vm.prank(poolManager);
-        hook.afterSwap(bob, key, params, delta, "");
+        // Bob is tx.origin — profits go to tx.origin
+        vm.prank(poolManager, bob);
+        hook.afterSwap(alice, key, params, delta, "");
 
         MockReflexRouter.TriggerBackrunCall memory call = reflexRouter.getTriggerBackrunCall(0);
         assertEq(call.recipient, bob);
@@ -233,7 +237,7 @@ contract UniswapV4HookTest is Test {
 
         uint256 aliceInitialBalance = profitToken.balanceOf(alice);
 
-        vm.prank(poolManager);
+        vm.prank(poolManager, alice);
         hook.afterSwap(alice, key, params, delta, "");
 
         uint256 aliceFinalBalance = profitToken.balanceOf(alice);
@@ -251,7 +255,7 @@ contract UniswapV4HookTest is Test {
         uint256 aliceInitialBalance = profitToken.balanceOf(alice);
 
         // Should not revert even if router fails
-        vm.prank(poolManager);
+        vm.prank(poolManager, alice);
         (bytes4 selector,) = hook.afterSwap(alice, key, params, delta, "");
 
         assertEq(selector, IHooks.afterSwap.selector);
@@ -264,15 +268,15 @@ contract UniswapV4HookTest is Test {
         uint256 aliceInitialBalance = profitToken.balanceOf(alice);
         uint256 bobInitialBalance = profitToken.balanceOf(bob);
 
-        // First swap - alice, zeroForOne=true: token0 in (negative)
-        vm.prank(poolManager);
+        // First swap - alice is tx.origin, zeroForOne=true: token0 in (negative)
+        vm.prank(poolManager, alice);
         hook.afterSwap(alice, key, _createSwapParams(true, -1000e18), toBalanceDelta(-500e6, 250e6), "");
 
         uint256 aliceAfterFirst = profitToken.balanceOf(alice);
         assertTrue(aliceAfterFirst > aliceInitialBalance);
 
-        // Second swap - bob, zeroForOne=false: token1 in (negative)
-        vm.prank(poolManager);
+        // Second swap - bob is tx.origin, zeroForOne=false: token1 in (negative)
+        vm.prank(poolManager, bob);
         hook.afterSwap(bob, key, _createSwapParams(false, -2000e18), toBalanceDelta(800e6, -400e6), "");
 
         // Alice balance unchanged from second swap
@@ -326,7 +330,7 @@ contract UniswapV4HookTest is Test {
         IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
         BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
 
-        vm.prank(poolManager);
+        vm.prank(poolManager, alice);
         hook.afterSwap(alice, key, params, delta, "");
 
         MockReflexRouter.TriggerBackrunCall memory call = reflexRouter.getTriggerBackrunCall(0);
@@ -385,7 +389,7 @@ contract UniswapV4HookTest is Test {
 
         uint256 aliceInitialBalance = profitToken.balanceOf(alice);
 
-        vm.prank(poolManager);
+        vm.prank(poolManager, alice);
         (bytes4 selector, int128 hookDelta) = hook.afterSwap(alice, key, params, delta, "");
 
         assertEq(selector, IHooks.afterSwap.selector);
@@ -414,7 +418,7 @@ contract UniswapV4HookTest is Test {
         // V4: zeroForOne=true: token0 in (negative), token1 out (positive)
         BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
 
-        vm.prank(poolManager);
+        vm.prank(poolManager, alice);
         (bytes4 selector,) = hook.afterSwap(alice, key, params, delta, "");
         assertEq(selector, IHooks.afterSwap.selector);
 
@@ -437,10 +441,264 @@ contract UniswapV4HookTest is Test {
             delta = toBalanceDelta(absAmount0, -absAmount1);
         }
 
-        vm.prank(poolManager);
+        vm.prank(poolManager, alice);
         hook.afterSwap(alice, key, params, delta, "");
 
         MockReflexRouter.TriggerBackrunCall memory call = reflexRouter.getTriggerBackrunCall(0);
         assertEq(call.token0In, zeroForOne);
+    }
+
+    // ========== Donate to LP Tests ==========
+
+    /// @notice Helper: deploy a hook where profitToken matches a pool currency for donate tests
+    function _setupDonateHook(address _profitTokenAddr)
+        internal
+        returns (UniswapV4Hook donateHook, MockReflexRouter donateRouter)
+    {
+        donateRouter = MockReflexRouter(TestUtils.createMockReflexRouter(admin, _profitTokenAddr));
+
+        uint160 flags = uint160(Hooks.AFTER_SWAP_FLAG);
+        deployCodeTo(
+            "UniswapV4Hook.sol:UniswapV4Hook",
+            abi.encode(IPoolManager(poolManager), address(donateRouter), testConfigId, address(this), wethAddr),
+            address(flags)
+        );
+        donateHook = UniswapV4Hook(payable(address(flags)));
+    }
+
+    /// @notice Helper: mock PoolManager donate/sync/settle for ERC20 donations
+    function _mockPoolManagerForDonate(uint256 donateAmount, bool) internal {
+        // Mock donate to return BalanceDelta
+        vm.mockCall(poolManager, abi.encodeWithSelector(IPoolManager.donate.selector), abi.encode(int256(0)));
+
+        // Mock sync
+        vm.mockCall(poolManager, abi.encodeWithSelector(IPoolManager.sync.selector), "");
+
+        // Mock settle (no value — ERC20 path)
+        vm.mockCall(poolManager, 0, abi.encodeWithSelector(IPoolManager.settle.selector), abi.encode(donateAmount));
+    }
+
+    function testAfterSwapDonatesProfitToLps() public {
+        // Use profitToken as currency1 so it matches the pool
+        address otherToken = address(0x0001);
+        // profitToken address > otherToken, so currency0=otherToken, currency1=profitToken
+        require(address(profitToken) > otherToken, "test setup: need profitToken > otherToken");
+
+        (UniswapV4Hook donateHook, MockReflexRouter donateRouter) = _setupDonateHook(address(profitToken));
+
+        uint256 lpShare = 200e18;
+        donateRouter.setMockLpShare(lpShare);
+
+        _mockPoolManagerForDonate(lpShare, false);
+
+        PoolKey memory key = PoolKey({
+            currency0: Currency.wrap(otherToken),
+            currency1: Currency.wrap(address(profitToken)),
+            fee: 3000,
+            tickSpacing: 60,
+            hooks: IHooks(address(donateHook))
+        });
+        IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
+
+        vm.prank(poolManager, alice);
+        donateHook.afterSwap(alice, key, params, delta, "");
+
+        // Hook should have donated its entire LP share — balance should be 0
+        assertEq(profitToken.balanceOf(address(donateHook)), 0);
+        // poolManager should have received the tokens via safeTransfer
+        assertEq(profitToken.balanceOf(poolManager), lpShare);
+    }
+
+    function testAfterSwapProfitTokenMatchesCurrency0() public {
+        // Use profitToken as currency0
+        address otherToken = address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
+        // profitToken address < otherToken
+        require(address(profitToken) < otherToken, "test setup: need profitToken < otherToken");
+
+        (UniswapV4Hook donateHook, MockReflexRouter donateRouter) = _setupDonateHook(address(profitToken));
+
+        uint256 lpShare = 300e18;
+        donateRouter.setMockLpShare(lpShare);
+
+        _mockPoolManagerForDonate(lpShare, true);
+
+        PoolKey memory key = PoolKey({
+            currency0: Currency.wrap(address(profitToken)),
+            currency1: Currency.wrap(otherToken),
+            fee: 3000,
+            tickSpacing: 60,
+            hooks: IHooks(address(donateHook))
+        });
+        IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
+
+        vm.prank(poolManager, alice);
+        donateHook.afterSwap(alice, key, params, delta, "");
+
+        // Hook donated everything
+        assertEq(profitToken.balanceOf(address(donateHook)), 0);
+        assertEq(profitToken.balanceOf(poolManager), lpShare);
+    }
+
+    function testAfterSwapDonatesWethAsNativeEth() public {
+        // Deploy hook with profitToken acting as WETH
+        address wethToken = address(profitToken);
+        MockReflexRouter wethRouter = MockReflexRouter(TestUtils.createMockReflexRouter(admin, wethToken));
+
+        uint160 flags = uint160(Hooks.AFTER_SWAP_FLAG);
+        deployCodeTo(
+            "UniswapV4Hook.sol:UniswapV4Hook",
+            abi.encode(IPoolManager(poolManager), address(wethRouter), testConfigId, address(this), wethToken),
+            address(flags)
+        );
+        UniswapV4Hook wethHook = UniswapV4Hook(payable(address(flags)));
+
+        uint256 lpShare = 100e18;
+        wethRouter.setMockLpShare(lpShare);
+
+        // Pool with native ETH (address(0)) as currency0
+        PoolKey memory key = PoolKey({
+            currency0: Currency.wrap(address(0)),
+            currency1: Currency.wrap(address(0x3333)),
+            fee: 3000,
+            tickSpacing: 60,
+            hooks: IHooks(address(wethHook))
+        });
+
+        // Mock donate
+        vm.mockCall(poolManager, abi.encodeWithSelector(IPoolManager.donate.selector), abi.encode(int256(0)));
+
+        // Mock WETH withdraw
+        vm.mockCall(wethToken, abi.encodeWithSelector(bytes4(keccak256("withdraw(uint256)"))), "");
+
+        // Give hook ETH for settlement (since mocked withdraw won't actually unwrap)
+        vm.deal(address(wethHook), lpShare);
+
+        // Mock settle with value (native ETH path)
+        vm.mockCall(poolManager, lpShare, abi.encodeWithSelector(IPoolManager.settle.selector), abi.encode(lpShare));
+
+        // Verify the WETH path is taken: withdraw called, then settle with ETH value
+        vm.expectCall(wethToken, abi.encodeWithSelector(bytes4(keccak256("withdraw(uint256)")), lpShare));
+        vm.expectCall(poolManager, lpShare, abi.encodeWithSelector(IPoolManager.settle.selector));
+
+        IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
+
+        vm.prank(poolManager, alice);
+        wethHook.afterSwap(alice, key, params, delta, "");
+    }
+
+    function testAfterSwapProfitTokenDoesNotMatchPool() public {
+        // profitToken doesn't match either pool currency — should transfer to tx.origin
+        (UniswapV4Hook donateHook, MockReflexRouter donateRouter) = _setupDonateHook(address(profitToken));
+
+        uint256 lpShare = 150e18;
+        donateRouter.setMockLpShare(lpShare);
+
+        // Pool currencies are 0x1111 and 0x2222 — neither matches profitToken
+        PoolKey memory key = PoolKey({
+            currency0: Currency.wrap(token0),
+            currency1: Currency.wrap(token1),
+            fee: 3000,
+            tickSpacing: 60,
+            hooks: IHooks(address(donateHook))
+        });
+
+        uint256 aliceInitialBalance = profitToken.balanceOf(alice);
+
+        IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
+
+        vm.prank(poolManager, alice);
+        donateHook.afterSwap(alice, key, params, delta, "");
+
+        // Hook should have 0 balance — LP share sent to tx.origin (alice)
+        assertEq(profitToken.balanceOf(address(donateHook)), 0);
+        // alice gets both user share (mockProfit) and LP share (since no match)
+        assertEq(profitToken.balanceOf(alice) - aliceInitialBalance, donateRouter.mockProfit() + lpShare);
+    }
+
+    function testAfterSwapDonateFailsFallbackToSender() public {
+        // profitToken matches currency1, but donate reverts
+        address otherToken = address(0x0001);
+        require(address(profitToken) > otherToken, "test setup: need profitToken > otherToken");
+
+        (UniswapV4Hook donateHook, MockReflexRouter donateRouter) = _setupDonateHook(address(profitToken));
+
+        uint256 lpShare = 250e18;
+        donateRouter.setMockLpShare(lpShare);
+
+        // Mock donate to REVERT (e.g., no in-range liquidity)
+        vm.mockCallRevert(poolManager, abi.encodeWithSelector(IPoolManager.donate.selector), "no in-range liquidity");
+
+        PoolKey memory key = PoolKey({
+            currency0: Currency.wrap(otherToken),
+            currency1: Currency.wrap(address(profitToken)),
+            fee: 3000,
+            tickSpacing: 60,
+            hooks: IHooks(address(donateHook))
+        });
+
+        uint256 aliceInitialBalance = profitToken.balanceOf(alice);
+
+        IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
+
+        vm.prank(poolManager, alice);
+        donateHook.afterSwap(alice, key, params, delta, "");
+
+        // Hook should have 0 balance — LP share fell back to tx.origin
+        assertEq(profitToken.balanceOf(address(donateHook)), 0);
+        // alice gets both user share and LP share (fallback)
+        assertEq(profitToken.balanceOf(alice) - aliceInitialBalance, donateRouter.mockProfit() + lpShare);
+    }
+
+    function testAfterSwapRouterFailsSwapStillWorks() public {
+        // Router reverts but swap should still complete — same as testRouterFailureFailsafe
+        // but with LP share configured (should have no effect since router fails)
+        reflexRouter.setShouldRevert(true);
+        reflexRouter.setMockLpShare(500e18);
+
+        PoolKey memory key = _createPoolKey();
+        IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
+
+        uint256 aliceInitialBalance = profitToken.balanceOf(alice);
+
+        vm.prank(poolManager, alice);
+        (bytes4 selector,) = hook.afterSwap(alice, key, params, delta, "");
+
+        assertEq(selector, IHooks.afterSwap.selector);
+        // No tokens moved since router reverted
+        assertEq(profitToken.balanceOf(alice), aliceInitialBalance);
+        assertEq(profitToken.balanceOf(address(hook)), 0);
+    }
+
+    function testAfterSwapZeroProfitNoAction() public {
+        // Set mock profit and LP share to 0
+        reflexRouter.setMockProfit(0);
+        reflexRouter.setMockLpShare(0);
+
+        PoolKey memory key = _createPoolKey();
+        IPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+        BalanceDelta delta = toBalanceDelta(-500e6, 250e6);
+
+        uint256 aliceInitialBalance = profitToken.balanceOf(alice);
+
+        vm.prank(poolManager, alice);
+        (bytes4 selector,) = hook.afterSwap(alice, key, params, delta, "");
+
+        assertEq(selector, IHooks.afterSwap.selector);
+        // No tokens moved
+        assertEq(profitToken.balanceOf(alice), aliceInitialBalance);
+        assertEq(profitToken.balanceOf(address(hook)), 0);
+    }
+
+    function testDonateToPoolOnlySelfCall() public {
+        PoolKey memory key = _createPoolKey();
+
+        vm.expectRevert("UniswapV4Hook: Only self-call");
+        hook._donateToPool(key, token0, true, 100);
     }
 }

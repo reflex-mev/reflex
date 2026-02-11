@@ -86,11 +86,8 @@ contract Swap is UniswapV4BaseScript {
         bool inputIsNative = inputCurrency.isAddressZero();
 
         // --- Build V4 actions (processed inside PoolManager.unlock callback) ---
-        bytes memory actions = abi.encodePacked(
-            uint8(Actions.SWAP_EXACT_IN_SINGLE),
-            uint8(Actions.SETTLE_ALL),
-            uint8(Actions.TAKE_ALL)
-        );
+        bytes memory actions =
+            abi.encodePacked(uint8(Actions.SWAP_EXACT_IN_SINGLE), uint8(Actions.SETTLE_ALL), uint8(Actions.TAKE_ALL));
 
         bytes[] memory params = new bytes[](3);
         // SWAP_EXACT_IN_SINGLE params

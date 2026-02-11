@@ -104,12 +104,10 @@ abstract contract ReflexAfterSwap {
     /// @param recipient Address that should receive the extracted profits
     /// @return profit Amount of profit extracted
     /// @return profitToken Address of the token in which profit was extracted
-    function _reflexAfterSwap(
-        bytes32 triggerPoolId,
-        uint256 amountIn,
-        bool zeroForOne,
-        address recipient
-    ) internal returns (uint256 profit, address profitToken) {
+    function _reflexAfterSwap(bytes32 triggerPoolId, uint256 amountIn, bool zeroForOne, address recipient)
+        internal
+        returns (uint256 profit, address profitToken)
+    {
         // Failsafe: Use try-catch to prevent router failures from breaking the main swap
         try IReflexRouter(reflexRouter)
             .triggerBackrun(triggerPoolId, uint112(amountIn), zeroForOne, recipient, reflexConfigId) returns (

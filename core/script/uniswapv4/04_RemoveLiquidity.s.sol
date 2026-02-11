@@ -39,9 +39,7 @@ contract RemoveLiquidity is UniswapV4BaseScript {
     }
 
     function run() external {
-        bytes memory actions = abi.encodePacked(
-            uint8(Actions.BURN_POSITION), uint8(Actions.TAKE_PAIR)
-        );
+        bytes memory actions = abi.encodePacked(uint8(Actions.BURN_POSITION), uint8(Actions.TAKE_PAIR));
 
         bytes[] memory params = new bytes[](2);
         // BURN_POSITION: (tokenId, amount0Min, amount1Min, hookData)

@@ -23,6 +23,7 @@ import {UniswapV4BaseScript} from "./base/UniswapV4BaseScript.sol";
  * Environment Variables (Required):
  * - POOL_MANAGER_ADDRESS: Address of the deployed Uniswap V4 PoolManager
  * - REFLEX_ROUTER_ADDRESS: Address of the deployed Reflex Router
+ * - WETH_ADDRESS: Address of the WETH contract (for LP donate via native ETH pools)
  *
  * Environment Variables (Optional):
  * - CONFIG_ID: bytes32 config ID (defaults to bytes32(0))
@@ -35,6 +36,9 @@ contract DeployHook is UniswapV4BaseScript {
 
     // Contract instance
     UniswapV4Hook public hook;
+
+    // WETH address
+    address public wethAddress;
 
     // Configuration
     bool public shouldVerify;
@@ -58,6 +62,10 @@ contract DeployHook is UniswapV4BaseScript {
         require(address(poolManager) != address(0), "POOL_MANAGER_ADDRESS not set");
         require(reflexRouterAddress != address(0), "REFLEX_ROUTER_ADDRESS not set");
 
+        // Load WETH address
+        wethAddress = vm.envAddress("WETH_ADDRESS");
+        require(wethAddress != address(0), "WETH_ADDRESS not set");
+
         // Load optional verification flag
         try vm.envBool("VERIFY_CONTRACT") returns (bool verify) {
             shouldVerify = verify;
@@ -67,7 +75,8 @@ contract DeployHook is UniswapV4BaseScript {
 
         // Compute initcode and mine salt
         bytes memory initcode = abi.encodePacked(
-            type(UniswapV4Hook).creationCode, abi.encode(poolManager, reflexRouterAddress, configId, msg.sender)
+            type(UniswapV4Hook).creationCode,
+            abi.encode(poolManager, reflexRouterAddress, configId, msg.sender, wethAddress)
         );
         bytes32 initcodeHash = keccak256(initcode);
 
@@ -114,7 +123,7 @@ contract DeployHook is UniswapV4BaseScript {
         vm.startBroadcast();
 
         console.log("\n--- Deploying UniswapV4Hook ---");
-        hook = new UniswapV4Hook{salt: minedSalt}(poolManager, reflexRouterAddress, configId, deployer);
+        hook = new UniswapV4Hook{salt: minedSalt}(poolManager, reflexRouterAddress, configId, deployer, wethAddress);
 
         vm.stopBroadcast();
 
@@ -146,6 +155,7 @@ contract DeployHook is UniswapV4BaseScript {
         console.log("Deployment Parameters:");
         console.log("- Pool Manager:", address(poolManager));
         console.log("- Reflex Router:", reflexRouterAddress);
+        console.log("- WETH:", wethAddress);
         console.log("- Config ID:", vm.toString(configId));
         console.log("- Mined Salt:", vm.toString(minedSalt));
         console.log("- Expected Address:", expectedHookAddress);
@@ -158,6 +168,7 @@ contract DeployHook is UniswapV4BaseScript {
         require(hook.getRouter() == reflexRouterAddress, "Router mismatch");
         require(hook.getConfigId() == configId, "Config ID mismatch");
         require(hook.owner() == msg.sender, "Owner mismatch");
+        require(hook.weth() == wethAddress, "WETH mismatch");
 
         // Verify hook flags
         uint160 hookFlags = uint160(address(hook)) & FLAG_MASK;
@@ -171,6 +182,7 @@ contract DeployHook is UniswapV4BaseScript {
         console.log("UniswapV4Hook:", address(hook));
         console.log("Pool Manager:", address(hook.poolManager()));
         console.log("Reflex Router:", hook.getRouter());
+        console.log("WETH:", hook.weth());
         console.log("Config ID:", vm.toString(hook.getConfigId()));
         console.log("Owner:", hook.owner());
         console.log("Salt:", vm.toString(minedSalt));
@@ -184,11 +196,12 @@ contract DeployHook is UniswapV4BaseScript {
         console.log("forge verify-contract", address(hook));
         console.log("  --chain-id", block.chainid);
         console.log(
-            "  --constructor-args $(cast abi-encode \"constructor(address,address,bytes32,address)\"",
+            "  --constructor-args $(cast abi-encode \"constructor(address,address,bytes32,address,address)\"",
             address(poolManager),
             reflexRouterAddress
         );
-        console.log("    ", vm.toString(configId), msg.sender, ")");
+        console.log("    ", vm.toString(configId), msg.sender);
+        console.log("    ", wethAddress, ")");
         console.log("  src/integrations/plugin/uniswapv4/UniswapV4Hook.sol:UniswapV4Hook");
         console.log("  --etherscan-api-key $ETHERSCAN_API_KEY");
     }
@@ -213,6 +226,9 @@ contract DeployHook is UniswapV4BaseScript {
             '",\n',
             '  "reflexRouter": "',
             vm.toString(reflexRouterAddress),
+            '",\n',
+            '  "weth": "',
+            vm.toString(wethAddress),
             '",\n',
             '  "configId": "',
             vm.toString(configId),
