@@ -17,6 +17,12 @@
       "rev": "297e4fe6186a7a56bc831bf70a709ed3166afb05"
     }
   },
+  "lib/infinity-core": {
+    "rev": "7c04695faeab8b06570cf6c277d9a9717136fb26"
+  },
+  "lib/infinity-periphery": {
+    "rev": "04585d106d55d5d3bdf1d79ec5c4275a01caa0a6"
+  },
   "lib/openzeppelin-contracts": {
     "tag": {
       "name": "v5.4.0",

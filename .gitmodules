@@ -17,3 +17,12 @@
 [submodule "core/lib/hookmate"]
 	path = core/lib/hookmate
 	url = https://github.com/akshatmittal/hookmate
+[submodule "core/lib/infinity-core"]
+	path = core/lib/infinity-core
+	url = https://github.com/pancakeswap/infinity-core
+[submodule "core/lib/infinity-periphery"]
+	path = core/lib/infinity-periphery
+	url = https://github.com/pancakeswap/infinity-periphery
+[submodule "core/lib/infinity-universal-router"]
+	path = core/lib/infinity-universal-router
+	url = https://github.com/pancakeswap/infinity-universal-router
