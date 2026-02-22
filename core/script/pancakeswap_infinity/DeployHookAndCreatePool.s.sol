@@ -197,17 +197,13 @@ contract DeployHookAndCreatePool is Script {
 
         // Build mint actions: CL_MINT_POSITION + SETTLE_PAIR + SWEEP + SWEEP
         bytes memory actions = abi.encodePacked(
-            uint8(Actions.CL_MINT_POSITION),
-            uint8(Actions.SETTLE_PAIR),
-            uint8(Actions.SWEEP),
-            uint8(Actions.SWEEP)
+            uint8(Actions.CL_MINT_POSITION), uint8(Actions.SETTLE_PAIR), uint8(Actions.SWEEP), uint8(Actions.SWEEP)
         );
 
         address deployer = msg.sender;
         bytes[] memory mintParams = new bytes[](4);
-        mintParams[0] = abi.encode(
-            poolKey, tickLower, tickUpper, liquidity, amount0Max, amount1Max, deployer, new bytes(0)
-        );
+        mintParams[0] =
+            abi.encode(poolKey, tickLower, tickUpper, liquidity, amount0Max, amount1Max, deployer, new bytes(0));
         mintParams[1] = abi.encode(poolKey.currency0, poolKey.currency1);
         mintParams[2] = abi.encode(poolKey.currency0, deployer);
         mintParams[3] = abi.encode(poolKey.currency1, deployer);
@@ -215,9 +211,7 @@ contract DeployHookAndCreatePool is Script {
         params = new bytes[](2);
         params[0] = abi.encodeWithSelector(CL_POSITION_MANAGER.initializePool.selector, poolKey, startingPrice);
         params[1] = abi.encodeWithSelector(
-            CL_POSITION_MANAGER.modifyLiquidities.selector,
-            abi.encode(actions, mintParams),
-            block.timestamp + 3600
+            CL_POSITION_MANAGER.modifyLiquidities.selector, abi.encode(actions, mintParams), block.timestamp + 3600
         );
     }
 
@@ -271,9 +265,8 @@ contract DeployHookAndCreatePool is Script {
 
         string memory dirpath = "deployments";
         vm.createDir(dirpath, true);
-        string memory filepath = string.concat(
-            dirpath, "/deployment-pancakeswap-infinity-bnb-usdt-", vm.toString(block.chainid), ".json"
-        );
+        string memory filepath =
+            string.concat(dirpath, "/deployment-pancakeswap-infinity-bnb-usdt-", vm.toString(block.chainid), ".json");
         vm.writeFile(filepath, deploymentInfo);
         console.log("\nDeployment info saved to:", filepath);
     }

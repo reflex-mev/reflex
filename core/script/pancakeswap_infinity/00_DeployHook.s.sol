@@ -34,11 +34,7 @@ contract DeployHook is PancakeSwapInfinityBaseScript {
     bool public shouldVerify;
 
     event HookDeployed(
-        address indexed hook,
-        address indexed poolManager,
-        address indexed reflexRouter,
-        bytes32 configId,
-        address owner
+        address indexed hook, address indexed poolManager, address indexed reflexRouter, bytes32 configId, address owner
     );
 
     function setUp() public {

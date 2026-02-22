@@ -2,8 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import {PancakeSwapInfinityHook} from
-    "@reflex/integrations/plugin/pancakeswap_infinity/PancakeSwapInfinityHook.sol";
+import {PancakeSwapInfinityHook} from "@reflex/integrations/plugin/pancakeswap_infinity/PancakeSwapInfinityHook.sol";
 import {
     ICLHooks,
     HOOKS_BEFORE_SWAP_OFFSET,
@@ -115,7 +114,8 @@ contract PancakeSwapInfinityHookTest is Test {
         pure
         returns (ICLPoolManager.SwapParams memory)
     {
-        return ICLPoolManager.SwapParams({zeroForOne: zeroForOne, amountSpecified: amountSpecified, sqrtPriceLimitX96: 0});
+        return
+            ICLPoolManager.SwapParams({zeroForOne: zeroForOne, amountSpecified: amountSpecified, sqrtPriceLimitX96: 0});
     }
 
     // ========== Constructor Tests ==========
@@ -143,9 +143,7 @@ contract PancakeSwapInfinityHookTest is Test {
         assertTrue(
             bitmap & (1 << HOOKS_BEFORE_REMOVE_LIQUIDITY_OFFSET) == 0, "beforeRemoveLiquidity should be disabled"
         );
-        assertTrue(
-            bitmap & (1 << HOOKS_AFTER_REMOVE_LIQUIDITY_OFFSET) == 0, "afterRemoveLiquidity should be disabled"
-        );
+        assertTrue(bitmap & (1 << HOOKS_AFTER_REMOVE_LIQUIDITY_OFFSET) == 0, "afterRemoveLiquidity should be disabled");
         assertTrue(bitmap & (1 << HOOKS_BEFORE_DONATE_OFFSET) == 0, "beforeDonate should be disabled");
         assertTrue(bitmap & (1 << HOOKS_AFTER_DONATE_OFFSET) == 0, "afterDonate should be disabled");
     }
@@ -153,7 +151,9 @@ contract PancakeSwapInfinityHookTest is Test {
     function testConstructorZeroOwnerReverts() public {
         vm.mockCall(poolManager, abi.encodeWithSelector(IProtocolFees.vault.selector), abi.encode(vaultAddr));
         vm.expectRevert("PancakeSwapInfinityHook: Owner cannot be zero address");
-        new PancakeSwapInfinityHook(ICLPoolManager(poolManager), address(reflexRouter), configIdFixture, address(0), wethAddr);
+        new PancakeSwapInfinityHook(
+            ICLPoolManager(poolManager), address(reflexRouter), configIdFixture, address(0), wethAddr
+        );
     }
 
     // ========== afterSwap Tests ==========
@@ -692,9 +692,7 @@ contract PancakeSwapInfinityHookTest is Test {
         donateRouter.setMockLpShare(lpShare);
 
         // Mock donate to REVERT (e.g., no in-range liquidity)
-        vm.mockCallRevert(
-            poolManager, abi.encodeWithSelector(ICLPoolManager.donate.selector), "no in-range liquidity"
-        );
+        vm.mockCallRevert(poolManager, abi.encodeWithSelector(ICLPoolManager.donate.selector), "no in-range liquidity");
 
         bytes32 parameters = bytes32(uint256(EXPECTED_BITMAP));
         parameters = CLPoolParametersHelper.setTickSpacing(parameters, 60);

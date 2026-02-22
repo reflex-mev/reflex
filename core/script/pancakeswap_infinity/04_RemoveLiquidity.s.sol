@@ -41,8 +41,7 @@ contract RemoveLiquidity is PancakeSwapInfinityBaseScript {
     }
 
     function run() external {
-        bytes memory actions =
-            abi.encodePacked(uint8(Actions.CL_BURN_POSITION), uint8(Actions.TAKE_PAIR));
+        bytes memory actions = abi.encodePacked(uint8(Actions.CL_BURN_POSITION), uint8(Actions.TAKE_PAIR));
 
         bytes[] memory params = new bytes[](2);
         // CL_BURN_POSITION: (tokenId, amount0Min, amount1Min, hookData)

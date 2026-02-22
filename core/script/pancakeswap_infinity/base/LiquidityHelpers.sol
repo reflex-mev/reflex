@@ -22,15 +22,11 @@ contract LiquidityHelpers is PancakeSwapInfinityBaseScript {
         bytes memory hookData
     ) internal pure returns (bytes memory, bytes[] memory) {
         bytes memory actions = abi.encodePacked(
-            uint8(Actions.CL_MINT_POSITION),
-            uint8(Actions.SETTLE_PAIR),
-            uint8(Actions.SWEEP),
-            uint8(Actions.SWEEP)
+            uint8(Actions.CL_MINT_POSITION), uint8(Actions.SETTLE_PAIR), uint8(Actions.SWEEP), uint8(Actions.SWEEP)
         );
 
         bytes[] memory params = new bytes[](4);
-        params[0] =
-            abi.encode(poolKey, _tickLower, _tickUpper, liquidity, amount0Max, amount1Max, recipient, hookData);
+        params[0] = abi.encode(poolKey, _tickLower, _tickUpper, liquidity, amount0Max, amount1Max, recipient, hookData);
         params[1] = abi.encode(poolKey.currency0, poolKey.currency1);
         params[2] = abi.encode(poolKey.currency0, recipient);
         params[3] = abi.encode(poolKey.currency1, recipient);
