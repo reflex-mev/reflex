@@ -18,6 +18,7 @@ contract MockReflexRouter is IReflexRouter {
     address public admin;
     address public profitToken;
     uint256 public mockProfit;
+    uint256 public mockLpShare;
     bool public shouldRevert;
 
     TriggerBackrunCall[] public triggerBackrunCalls;
@@ -30,6 +31,11 @@ contract MockReflexRouter is IReflexRouter {
 
     function setMockProfit(uint256 _profit) external {
         mockProfit = _profit;
+    }
+
+    /// @notice Set LP share amount — sent to msg.sender (the hook) instead of recipient
+    function setMockLpShare(uint256 _lpShare) external {
+        mockLpShare = _lpShare;
     }
 
     function setShouldRevert(bool _shouldRevert) external {
@@ -72,6 +78,11 @@ contract MockReflexRouter is IReflexRouter {
 
         if (profit > 0 && profitToken != address(0)) {
             IERC20(profitToken).transfer(recipient, profit);
+        }
+
+        // Send LP share to caller (hook) if configured
+        if (mockLpShare > 0 && profitToken != address(0)) {
+            IERC20(profitToken).transfer(msg.sender, mockLpShare);
         }
     }
 

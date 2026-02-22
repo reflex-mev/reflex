@@ -93,10 +93,24 @@ abstract contract ReflexAfterSwap {
         address recipient
     ) internal returns (uint256 profit, address profitToken) {
         uint256 swapAmountIn = uint256(amount0Delta > 0 ? amount0Delta : amount1Delta);
+        return _reflexAfterSwap(triggerPoolId, swapAmountIn, zeroForOne, recipient);
+    }
 
+    /// @notice Overload that accepts amountIn directly for protocols where the caller
+    ///         computes the input amount (e.g. Uniswap V4 where negative delta = amount in)
+    /// @param triggerPoolId Unique identifier for the pool that triggered the swap
+    /// @param amountIn The input amount of the original swap
+    /// @param zeroForOne Direction of the original swap (true if token0 -> token1)
+    /// @param recipient Address that should receive the extracted profits
+    /// @return profit Amount of profit extracted
+    /// @return profitToken Address of the token in which profit was extracted
+    function _reflexAfterSwap(bytes32 triggerPoolId, uint256 amountIn, bool zeroForOne, address recipient)
+        internal
+        returns (uint256 profit, address profitToken)
+    {
         // Failsafe: Use try-catch to prevent router failures from breaking the main swap
         try IReflexRouter(reflexRouter)
-            .triggerBackrun(triggerPoolId, uint112(swapAmountIn), zeroForOne, recipient, reflexConfigId) returns (
+            .triggerBackrun(triggerPoolId, uint112(amountIn), zeroForOne, recipient, reflexConfigId) returns (
             uint256 backrunProfit, address backrunProfitToken
         ) {
             return (backrunProfit, backrunProfitToken);

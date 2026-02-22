@@ -8,3 +8,21 @@
 	path = core/lib/Algebra
 	url = https://github.com/cryptoalgebra/Algebra
 	branch = integral-v1.2.2
+[submodule "core/lib/v4-core"]
+	path = core/lib/v4-core
+	url = https://github.com/uniswap/v4-core
+[submodule "core/lib/v4-periphery"]
+	path = core/lib/v4-periphery
+	url = https://github.com/uniswap/v4-periphery
+[submodule "core/lib/hookmate"]
+	path = core/lib/hookmate
+	url = https://github.com/akshatmittal/hookmate
+[submodule "core/lib/infinity-core"]
+	path = core/lib/infinity-core
+	url = https://github.com/pancakeswap/infinity-core
+[submodule "core/lib/infinity-periphery"]
+	path = core/lib/infinity-periphery
+	url = https://github.com/pancakeswap/infinity-periphery
+[submodule "core/lib/infinity-universal-router"]
+	path = core/lib/infinity-universal-router
+	url = https://github.com/pancakeswap/infinity-universal-router
