@@ -119,9 +119,7 @@ abstract contract ReflexAfterSwap {
     /// @param sender The sender address (e.g. router contract calling poolManager.swap)
     /// @return True if the address has a fee discount
     function _hasDiscount(bytes32 poolId, address sender) internal view returns (bool) {
-        return poolFeeDiscount[poolId][sender]
-            || globalFeeDiscount[sender]
-            || poolFeeDiscount[poolId][tx.origin]
+        return poolFeeDiscount[poolId][sender] || globalFeeDiscount[sender] || poolFeeDiscount[poolId][tx.origin]
             || globalFeeDiscount[tx.origin];
     }
 

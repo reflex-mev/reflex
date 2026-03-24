@@ -827,7 +827,7 @@ contract PancakeSwapInfinityHookTest is Test {
 
         // alice as sender gets discount
         vm.prank(poolManager);
-        (, , uint24 fee) = hook.beforeSwap(alice, key, params, "");
+        (,, uint24 fee) = hook.beforeSwap(alice, key, params, "");
         assertEq(fee, LPFeeLibrary.OVERRIDE_FEE_FLAG);
     }
 
@@ -840,7 +840,7 @@ contract PancakeSwapInfinityHookTest is Test {
 
         // alice as sender gets pool-specific discount
         vm.prank(poolManager);
-        (, , uint24 fee) = hook.beforeSwap(alice, key, params, "");
+        (,, uint24 fee) = hook.beforeSwap(alice, key, params, "");
         assertEq(fee, LPFeeLibrary.OVERRIDE_FEE_FLAG);
     }
 
@@ -856,7 +856,7 @@ contract PancakeSwapInfinityHookTest is Test {
 
         // alice has no discount on the other pool
         vm.prank(poolManager);
-        (, , uint24 fee) = hook.beforeSwap(alice, otherKey, params, "");
+        (,, uint24 fee) = hook.beforeSwap(alice, otherKey, params, "");
         assertEq(fee, 0);
     }
 
@@ -866,7 +866,7 @@ contract PancakeSwapInfinityHookTest is Test {
 
         // bob has no discount
         vm.prank(poolManager);
-        (, , uint24 fee) = hook.beforeSwap(bob, key, params, "");
+        (,, uint24 fee) = hook.beforeSwap(bob, key, params, "");
         assertEq(fee, 0);
     }
 
@@ -878,7 +878,7 @@ contract PancakeSwapInfinityHookTest is Test {
 
         // sender is bob (no discount), but tx.origin is alice (has discount)
         vm.prank(poolManager, alice);
-        (, , uint24 fee) = hook.beforeSwap(bob, key, params, "");
+        (,, uint24 fee) = hook.beforeSwap(bob, key, params, "");
         assertEq(fee, LPFeeLibrary.OVERRIDE_FEE_FLAG);
     }
 
@@ -891,7 +891,7 @@ contract PancakeSwapInfinityHookTest is Test {
 
         // sender is bob (no discount), but tx.origin is alice (has pool discount)
         vm.prank(poolManager, alice);
-        (, , uint24 fee) = hook.beforeSwap(bob, key, params, "");
+        (,, uint24 fee) = hook.beforeSwap(bob, key, params, "");
         assertEq(fee, LPFeeLibrary.OVERRIDE_FEE_FLAG);
     }
 
