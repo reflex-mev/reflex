@@ -765,4 +765,162 @@ contract PancakeSwapInfinityHookTest is Test {
         vm.expectRevert("PancakeSwapInfinityHook: Only self-call");
         hook._donateToPool(key, token0, true, 100);
     }
+
+    // ========== Fee Discount Tests ==========
+
+    function testRouterGetsGlobalDiscountByDefault() public view {
+        assertTrue(hook.globalFeeDiscount(address(reflexRouter)));
+    }
+
+    function testSetGlobalFeeDiscount() public {
+        hook.setGlobalFeeDiscount(alice, true);
+        assertTrue(hook.globalFeeDiscount(alice));
+    }
+
+    function testSetGlobalFeeDiscountUnauthorized() public {
+        vm.prank(attacker);
+        vm.expectRevert("PancakeSwapInfinityHook: Caller is not the owner");
+        hook.setGlobalFeeDiscount(alice, true);
+    }
+
+    function testRemoveGlobalFeeDiscount() public {
+        hook.setGlobalFeeDiscount(alice, true);
+        assertTrue(hook.globalFeeDiscount(alice));
+
+        hook.setGlobalFeeDiscount(alice, false);
+        assertFalse(hook.globalFeeDiscount(alice));
+    }
+
+    function testSetPoolFeeDiscount() public {
+        PoolKey memory key = _createPoolKey();
+        bytes32 poolId = PoolId.unwrap(key.toId());
+
+        hook.setPoolFeeDiscount(poolId, alice, true);
+        assertTrue(hook.poolFeeDiscount(poolId, alice));
+    }
+
+    function testSetPoolFeeDiscountUnauthorized() public {
+        PoolKey memory key = _createPoolKey();
+        bytes32 poolId = PoolId.unwrap(key.toId());
+
+        vm.prank(attacker);
+        vm.expectRevert("PancakeSwapInfinityHook: Caller is not the owner");
+        hook.setPoolFeeDiscount(poolId, alice, true);
+    }
+
+    function testRemovePoolFeeDiscount() public {
+        PoolKey memory key = _createPoolKey();
+        bytes32 poolId = PoolId.unwrap(key.toId());
+
+        hook.setPoolFeeDiscount(poolId, alice, true);
+        assertTrue(hook.poolFeeDiscount(poolId, alice));
+
+        hook.setPoolFeeDiscount(poolId, alice, false);
+        assertFalse(hook.poolFeeDiscount(poolId, alice));
+    }
+
+    function testBeforeSwapGlobalDiscount() public {
+        hook.setGlobalFeeDiscount(alice, true);
+
+        PoolKey memory key = _createPoolKey();
+        ICLPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+
+        // alice as sender gets discount
+        vm.prank(poolManager);
+        (,, uint24 fee) = hook.beforeSwap(alice, key, params, "");
+        assertEq(fee, LPFeeLibrary.OVERRIDE_FEE_FLAG);
+    }
+
+    function testBeforeSwapPoolDiscount() public {
+        PoolKey memory key = _createPoolKey();
+        bytes32 poolId = PoolId.unwrap(key.toId());
+        hook.setPoolFeeDiscount(poolId, alice, true);
+
+        ICLPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+
+        // alice as sender gets pool-specific discount
+        vm.prank(poolManager);
+        (,, uint24 fee) = hook.beforeSwap(alice, key, params, "");
+        assertEq(fee, LPFeeLibrary.OVERRIDE_FEE_FLAG);
+    }
+
+    function testBeforeSwapPoolDiscountDoesNotAffectOtherPools() public {
+        PoolKey memory key = _createPoolKey();
+        bytes32 poolId = PoolId.unwrap(key.toId());
+        hook.setPoolFeeDiscount(poolId, alice, true);
+
+        // Create a different pool key
+        PoolKey memory otherKey = _createPoolKey(address(0x3333), address(0x4444));
+
+        ICLPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+
+        // alice has no discount on the other pool
+        vm.prank(poolManager);
+        (,, uint24 fee) = hook.beforeSwap(alice, otherKey, params, "");
+        assertEq(fee, 0);
+    }
+
+    function testBeforeSwapNoDiscount() public {
+        PoolKey memory key = _createPoolKey();
+        ICLPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+
+        // bob has no discount
+        vm.prank(poolManager);
+        (,, uint24 fee) = hook.beforeSwap(bob, key, params, "");
+        assertEq(fee, 0);
+    }
+
+    function testBeforeSwapGlobalDiscountViaTxOrigin() public {
+        hook.setGlobalFeeDiscount(alice, true);
+
+        PoolKey memory key = _createPoolKey();
+        ICLPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+
+        // sender is bob (no discount), but tx.origin is alice (has discount)
+        vm.prank(poolManager, alice);
+        (,, uint24 fee) = hook.beforeSwap(bob, key, params, "");
+        assertEq(fee, LPFeeLibrary.OVERRIDE_FEE_FLAG);
+    }
+
+    function testBeforeSwapPoolDiscountViaTxOrigin() public {
+        PoolKey memory key = _createPoolKey();
+        bytes32 poolId = PoolId.unwrap(key.toId());
+        hook.setPoolFeeDiscount(poolId, alice, true);
+
+        ICLPoolManager.SwapParams memory params = _createSwapParams(true, -1000e18);
+
+        // sender is bob (no discount), but tx.origin is alice (has pool discount)
+        vm.prank(poolManager, alice);
+        (,, uint24 fee) = hook.beforeSwap(bob, key, params, "");
+        assertEq(fee, LPFeeLibrary.OVERRIDE_FEE_FLAG);
+    }
+
+    function testSetReflexRouterMigratesDiscount() public {
+        // Router should have global discount initially
+        assertTrue(hook.globalFeeDiscount(address(reflexRouter)));
+
+        address newRouter = makeAddr("newRouter");
+        hook.setReflexRouter(newRouter);
+
+        // Old router loses discount, new router gets it
+        assertFalse(hook.globalFeeDiscount(address(reflexRouter)));
+        assertTrue(hook.globalFeeDiscount(newRouter));
+    }
+
+    function testGlobalFeeDiscountSetEvent() public {
+        vm.expectEmit(true, false, false, true);
+        emit GlobalFeeDiscountSet(alice, true);
+        hook.setGlobalFeeDiscount(alice, true);
+    }
+
+    function testPoolFeeDiscountSetEvent() public {
+        bytes32 poolId = keccak256("test-pool");
+        vm.expectEmit(true, true, false, true);
+        emit PoolFeeDiscountSet(poolId, alice, true);
+        hook.setPoolFeeDiscount(poolId, alice, true);
+    }
+
+    // Re-declare events for expectEmit
+    event GlobalFeeDiscountSet(address indexed user, bool discount);
+    event PoolFeeDiscountSet(bytes32 indexed poolId, address indexed user, bool discount);
 }

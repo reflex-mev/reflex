@@ -20,6 +20,17 @@ abstract contract ReflexAfterSwap {
     /// @param newConfigId The new configuration ID
     event ReflexConfigIdUpdated(bytes32 oldConfigId, bytes32 newConfigId);
 
+    /// @notice Emitted when a global fee discount is set or removed
+    /// @param user The address receiving (or losing) the discount
+    /// @param discount Whether the discount is active
+    event GlobalFeeDiscountSet(address indexed user, bool discount);
+
+    /// @notice Emitted when a pool-specific fee discount is set or removed
+    /// @param poolId The pool ID the discount applies to
+    /// @param user The address receiving (or losing) the discount
+    /// @param discount Whether the discount is active
+    event PoolFeeDiscountSet(bytes32 indexed poolId, address indexed user, bool discount);
+
     // ========== State Variables ==========
 
     /// @notice Address of the Reflex router contract
@@ -27,6 +38,12 @@ abstract contract ReflexAfterSwap {
 
     /// @notice Configuration ID for profit distribution
     bytes32 reflexConfigId;
+
+    /// @notice Global fee discounts — address gets 100% fee discount on all pools
+    mapping(address => bool) public globalFeeDiscount;
+
+    /// @notice Per-pool fee discounts — address gets 100% fee discount on a specific pool
+    mapping(bytes32 => mapping(address => bool)) public poolFeeDiscount;
 
     /// @notice Constructor to initialize the ReflexAfterSwap contract
     /// @param _router Address of the Reflex router contract
@@ -36,6 +53,7 @@ abstract contract ReflexAfterSwap {
         require(_router != address(0), "Invalid router address");
         reflexRouter = _router;
         reflexConfigId = _configId;
+        globalFeeDiscount[_router] = true;
     }
 
     /// @notice Internal function that must be implemented by child contract to enforce admin access control
@@ -48,7 +66,9 @@ abstract contract ReflexAfterSwap {
         _onlyReflexAdmin();
         require(_router != address(0), "Invalid router address");
         address oldRouter = reflexRouter;
+        globalFeeDiscount[oldRouter] = false;
         reflexRouter = _router;
+        globalFeeDiscount[_router] = true;
         emit ReflexRouterUpdated(oldRouter, _router);
     }
 
@@ -72,6 +92,35 @@ abstract contract ReflexAfterSwap {
         bytes32 oldConfigId = reflexConfigId;
         reflexConfigId = _configId;
         emit ReflexConfigIdUpdated(oldConfigId, _configId);
+    }
+
+    /// @notice Sets or removes a global fee discount for an address (applies to all pools)
+    /// @param user The address to set the discount for
+    /// @param discount Whether the discount is active
+    function setGlobalFeeDiscount(address user, bool discount) external {
+        _onlyReflexAdmin();
+        globalFeeDiscount[user] = discount;
+        emit GlobalFeeDiscountSet(user, discount);
+    }
+
+    /// @notice Sets or removes a pool-specific fee discount for an address
+    /// @param poolId The pool ID the discount applies to
+    /// @param user The address to set the discount for
+    /// @param discount Whether the discount is active
+    function setPoolFeeDiscount(bytes32 poolId, address user, bool discount) external {
+        _onlyReflexAdmin();
+        poolFeeDiscount[poolId][user] = discount;
+        emit PoolFeeDiscountSet(poolId, user, discount);
+    }
+
+    /// @notice Checks if an address has a fee discount for a given pool
+    /// @dev Checks pool-specific first, then global; checks sender first, then tx.origin
+    /// @param poolId The pool ID to check
+    /// @param sender The sender address (e.g. router contract calling poolManager.swap)
+    /// @return True if the address has a fee discount
+    function _hasDiscount(bytes32 poolId, address sender) internal view returns (bool) {
+        return poolFeeDiscount[poolId][sender] || globalFeeDiscount[sender] || poolFeeDiscount[poolId][tx.origin]
+            || globalFeeDiscount[tx.origin];
     }
 
     /// @notice Main entry point for post-swap profit extraction via backrunning

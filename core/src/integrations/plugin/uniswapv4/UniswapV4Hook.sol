@@ -107,14 +107,15 @@ contract UniswapV4Hook is IHooks, ReflexAfterSwap {
         return (IHooks.afterRemoveLiquidity.selector, BalanceDelta.wrap(0));
     }
 
-    function beforeSwap(address sender, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata)
+    function beforeSwap(address sender, PoolKey calldata key, IPoolManager.SwapParams calldata, bytes calldata)
         external
         view
         override
         onlyPoolManager
         returns (bytes4, BeforeSwapDelta, uint24)
     {
-        uint24 lpFeeOverride = sender == getRouter() ? LPFeeLibrary.OVERRIDE_FEE_FLAG : 0;
+        bytes32 poolId = PoolId.unwrap(key.toId());
+        uint24 lpFeeOverride = _hasDiscount(poolId, sender) ? LPFeeLibrary.OVERRIDE_FEE_FLAG : 0;
         return (IHooks.beforeSwap.selector, BeforeSwapDelta.wrap(0), lpFeeOverride);
     }
 
