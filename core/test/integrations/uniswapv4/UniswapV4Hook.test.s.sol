@@ -50,7 +50,7 @@ contract UniswapV4HookTest is Test {
         wethAddr = makeAddr("weth");
 
         // Compute hook address with BEFORE_SWAP_FLAG | AFTER_SWAP_FLAG set in the last 14 bits
-        uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG);
+        uint160 flags = uint160(Hooks.AFTER_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG);
 
         // Deploy hook to a flag-compliant address
         deployCodeTo(
@@ -107,11 +107,11 @@ contract UniswapV4HookTest is Test {
 
     function testHookPermissions() public view {
         address hookAddr = address(hook);
-        // BEFORE_SWAP_FLAG and AFTER_SWAP_FLAG should be set
+        // AFTER_INITIALIZE_FLAG, BEFORE_SWAP_FLAG, and AFTER_SWAP_FLAG should be set
         assertTrue(_hasPermission(hookAddr, Hooks.AFTER_SWAP_FLAG));
         assertTrue(_hasPermission(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertTrue(_hasPermission(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
         assertFalse(_hasPermission(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
-        assertFalse(_hasPermission(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
         assertFalse(_hasPermission(hookAddr, Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
         assertFalse(_hasPermission(hookAddr, Hooks.AFTER_ADD_LIQUIDITY_FLAG));
         assertFalse(_hasPermission(hookAddr, Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
@@ -345,10 +345,37 @@ contract UniswapV4HookTest is Test {
         assertEq(selector, IHooks.beforeInitialize.selector);
     }
 
-    function testAfterInitializeNoOp() public view {
-        PoolKey memory key = _createPoolKey();
-        bytes4 selector = hook.afterInitialize(address(0), key, 0, 0);
+    function testAfterInitializeRequiresDynamicFeeFlag() public {
+        PoolKey memory staticFeeKey = _createPoolKey();
+        vm.prank(poolManager);
+        vm.expectRevert("UniswapV4Hook: Dynamic-fee pool required");
+        hook.afterInitialize(address(0), staticFeeKey, 0, 0);
+    }
+
+    function testAfterInitializeAcceptsDynamicFeePool() public {
+        PoolKey memory dynamicFeeKey = PoolKey({
+            currency0: Currency.wrap(token0),
+            currency1: Currency.wrap(token1),
+            fee: LPFeeLibrary.DYNAMIC_FEE_FLAG,
+            tickSpacing: 60,
+            hooks: IHooks(address(hook))
+        });
+        vm.prank(poolManager);
+        bytes4 selector = hook.afterInitialize(address(0), dynamicFeeKey, 0, 0);
         assertEq(selector, IHooks.afterInitialize.selector);
+    }
+
+    function testAfterInitializeOnlyPoolManager() public {
+        PoolKey memory dynamicFeeKey = PoolKey({
+            currency0: Currency.wrap(token0),
+            currency1: Currency.wrap(token1),
+            fee: LPFeeLibrary.DYNAMIC_FEE_FLAG,
+            tickSpacing: 60,
+            hooks: IHooks(address(hook))
+        });
+        vm.prank(attacker);
+        vm.expectRevert("UniswapV4Hook: Caller is not the PoolManager");
+        hook.afterInitialize(address(0), dynamicFeeKey, 0, 0);
     }
 
     function testBeforeSwapNonRouterNoOverride() public {
@@ -487,7 +514,7 @@ contract UniswapV4HookTest is Test {
     {
         donateRouter = MockReflexRouter(TestUtils.createMockReflexRouter(admin, _profitTokenAddr));
 
-        uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG);
+        uint160 flags = uint160(Hooks.AFTER_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG);
         deployCodeTo(
             "UniswapV4Hook.sol:UniswapV4Hook",
             abi.encode(IPoolManager(poolManager), address(donateRouter), testConfigId, address(this), wethAddr),
@@ -576,7 +603,7 @@ contract UniswapV4HookTest is Test {
         address wethToken = address(profitToken);
         MockReflexRouter wethRouter = MockReflexRouter(TestUtils.createMockReflexRouter(admin, wethToken));
 
-        uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG);
+        uint160 flags = uint160(Hooks.AFTER_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG);
         deployCodeTo(
             "UniswapV4Hook.sol:UniswapV4Hook",
             abi.encode(IPoolManager(poolManager), address(wethRouter), testConfigId, address(this), wethToken),
@@ -729,7 +756,7 @@ contract UniswapV4HookTest is Test {
         PoolKey memory key = _createPoolKey();
 
         vm.expectRevert("UniswapV4Hook: Only self-call");
-        hook._donateToPool(key, token0, true, 100);
+        hook.donateToPool(key, token0, true, 100);
     }
 
     // ========== Fee Discount Tests ==========

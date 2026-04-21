@@ -12,15 +12,15 @@ import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 import {LPFeeLibrary} from "v4-core/src/libraries/LPFeeLibrary.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IWETH9} from "v4-periphery/src/interfaces/external/IWETH9.sol";
 import "../ReflexAfterSwap.sol";
 
-contract UniswapV4Hook is IHooks, ReflexAfterSwap {
+contract UniswapV4Hook is IHooks, ReflexAfterSwap, Ownable2Step {
     using PoolIdLibrary for PoolKey;
     using SafeERC20 for IERC20;
 
     IPoolManager public immutable poolManager;
-    address public immutable owner;
     address public immutable weth;
 
     modifier onlyPoolManager() {
@@ -32,17 +32,16 @@ contract UniswapV4Hook is IHooks, ReflexAfterSwap {
 
     constructor(IPoolManager _poolManager, address _reflexRouter, bytes32 _configId, address _owner, address _weth)
         ReflexAfterSwap(_reflexRouter, _configId)
+        Ownable(_owner)
     {
-        require(_owner != address(0), "UniswapV4Hook: Owner cannot be zero address");
         poolManager = _poolManager;
-        owner = _owner;
         weth = _weth;
 
         Hooks.validateHookPermissions(
             IHooks(address(this)),
             Hooks.Permissions({
                 beforeInitialize: false,
-                afterInitialize: false,
+                afterInitialize: true,
                 beforeAddLiquidity: false,
                 afterAddLiquidity: false,
                 beforeRemoveLiquidity: false,
@@ -63,7 +62,18 @@ contract UniswapV4Hook is IHooks, ReflexAfterSwap {
         return IHooks.beforeInitialize.selector;
     }
 
-    function afterInitialize(address, PoolKey calldata, uint160, int24) external pure override returns (bytes4) {
+    /// @notice Rejects pool initialization unless the pool is configured with V4's dynamic-fee flag.
+    /// @dev The hook's fee-discount mechanism overrides the LP fee via beforeSwap, which is only
+    ///      honored by PoolManager on dynamic-fee pools. Without this check, the hook would
+    ///      silently no-op on static-fee pools.
+    function afterInitialize(address, PoolKey calldata key, uint160, int24)
+        external
+        view
+        override
+        onlyPoolManager
+        returns (bytes4)
+    {
+        require(LPFeeLibrary.isDynamicFee(key.fee), "UniswapV4Hook: Dynamic-fee pool required");
         return IHooks.afterInitialize.selector;
     }
 
@@ -157,7 +167,7 @@ contract UniswapV4Hook is IHooks, ReflexAfterSwap {
         bool matchesCurrency1 = _matchesCurrency(profitToken, key.currency1);
 
         if (matchesCurrency0 || matchesCurrency1) {
-            try this._donateToPool(key, profitToken, matchesCurrency0, lpAmount) {}
+            try this.donateToPool(key, profitToken, matchesCurrency0, lpAmount) {}
             catch {
                 // Donate failed (e.g., no in-range liquidity) — send to tx.origin as fallback
                 IERC20(profitToken).safeTransfer(tx.origin, lpAmount);
@@ -181,7 +191,7 @@ contract UniswapV4Hook is IHooks, ReflexAfterSwap {
     /// @param profitToken The profit token address (may be WETH for native ETH pools)
     /// @param isCurrency0 Whether the profit token matches currency0 (false = currency1)
     /// @param amount The amount to donate
-    function _donateToPool(PoolKey calldata key, address profitToken, bool isCurrency0, uint256 amount) external {
+    function donateToPool(PoolKey calldata key, address profitToken, bool isCurrency0, uint256 amount) external {
         require(msg.sender == address(this), "UniswapV4Hook: Only self-call");
 
         Currency currency = isCurrency0 ? key.currency0 : key.currency1;
@@ -221,6 +231,6 @@ contract UniswapV4Hook is IHooks, ReflexAfterSwap {
 
     /// @inheritdoc ReflexAfterSwap
     function _onlyReflexAdmin() internal view override {
-        require(msg.sender == owner, "UniswapV4Hook: Caller is not the owner");
+        require(msg.sender == owner(), "UniswapV4Hook: Caller is not the owner");
     }
 }
