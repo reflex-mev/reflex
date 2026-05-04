@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {
     ICLHooks,
+    HOOKS_AFTER_INITIALIZE_OFFSET,
     HOOKS_BEFORE_SWAP_OFFSET,
     HOOKS_AFTER_SWAP_OFFSET
 } from "infinity-core/src/pool-cl/interfaces/ICLHooks.sol";
@@ -16,6 +17,7 @@ import {Currency} from "infinity-core/src/types/Currency.sol";
 import {LPFeeLibrary} from "infinity-core/src/libraries/LPFeeLibrary.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "../ReflexAfterSwap.sol";
 
 interface IWETH9 {
@@ -23,13 +25,12 @@ interface IWETH9 {
     function withdraw(uint256) external;
 }
 
-contract PancakeSwapInfinityHook is ICLHooks, ReflexAfterSwap {
+contract PancakeSwapInfinityHook is ICLHooks, ReflexAfterSwap, Ownable2Step {
     using PoolIdLibrary for PoolKey;
     using SafeERC20 for IERC20;
 
     ICLPoolManager public immutable poolManager;
     IVault public immutable vault;
-    address public immutable owner;
     address public immutable weth;
 
     modifier onlyPoolManager() {
@@ -41,25 +42,38 @@ contract PancakeSwapInfinityHook is ICLHooks, ReflexAfterSwap {
 
     constructor(ICLPoolManager _poolManager, address _reflexRouter, bytes32 _configId, address _owner, address _weth)
         ReflexAfterSwap(_reflexRouter, _configId)
+        Ownable(_owner)
     {
-        require(_owner != address(0), "PancakeSwapInfinityHook: Owner cannot be zero address");
         poolManager = _poolManager;
         vault = _poolManager.vault();
-        owner = _owner;
         weth = _weth;
     }
 
     /// @notice Returns the hook registration bitmap for PancakeSwap Infinity
-    /// @dev Enables beforeSwap (bit 6) and afterSwap (bit 7)
+    /// @dev Enables afterInitialize (bit 1), beforeSwap (bit 6), afterSwap (bit 7)
     function getHooksRegistrationBitmap() external pure override returns (uint16) {
-        return uint16((1 << HOOKS_BEFORE_SWAP_OFFSET) | (1 << HOOKS_AFTER_SWAP_OFFSET));
+        return
+            uint16(
+                (1 << HOOKS_AFTER_INITIALIZE_OFFSET) | (1 << HOOKS_BEFORE_SWAP_OFFSET) | (1 << HOOKS_AFTER_SWAP_OFFSET)
+            );
     }
 
     function beforeInitialize(address, PoolKey calldata, uint160) external pure override returns (bytes4) {
         return this.beforeInitialize.selector;
     }
 
-    function afterInitialize(address, PoolKey calldata, uint160, int24) external pure override returns (bytes4) {
+    /// @notice Rejects pool initialization unless the pool is configured with the dynamic-fee flag.
+    /// @dev The hook's fee-discount mechanism overrides the LP fee via beforeSwap, which is only
+    ///      honored by the pool manager on dynamic-fee pools. Without this check, the hook would
+    ///      silently no-op on static-fee pools.
+    function afterInitialize(address, PoolKey calldata key, uint160, int24)
+        external
+        view
+        override
+        onlyPoolManager
+        returns (bytes4)
+    {
+        require(LPFeeLibrary.isDynamicLPFee(key.fee), "PancakeSwapInfinityHook: Dynamic-fee pool required");
         return this.afterInitialize.selector;
     }
 
@@ -153,7 +167,7 @@ contract PancakeSwapInfinityHook is ICLHooks, ReflexAfterSwap {
         bool matchesCurrency1 = _matchesCurrency(profitToken, key.currency1);
 
         if (matchesCurrency0 || matchesCurrency1) {
-            try this._donateToPool(key, profitToken, matchesCurrency0, lpAmount) {}
+            try this.donateToPool(key, profitToken, matchesCurrency0, lpAmount) {}
             catch {
                 // Donate failed (e.g., no in-range liquidity) — send to tx.origin as fallback
                 IERC20(profitToken).safeTransfer(tx.origin, lpAmount);
@@ -173,7 +187,7 @@ contract PancakeSwapInfinityHook is ICLHooks, ReflexAfterSwap {
     /// @notice Donates profit tokens to in-range LPs via PoolManager.donate()
     /// @dev Must be external so it can be called via try-catch from afterSwap.
     ///      Only callable by this contract itself.
-    function _donateToPool(PoolKey calldata key, address profitToken, bool isCurrency0, uint256 amount) external {
+    function donateToPool(PoolKey calldata key, address profitToken, bool isCurrency0, uint256 amount) external {
         require(msg.sender == address(this), "PancakeSwapInfinityHook: Only self-call");
 
         Currency currency = isCurrency0 ? key.currency0 : key.currency1;
@@ -213,6 +227,6 @@ contract PancakeSwapInfinityHook is ICLHooks, ReflexAfterSwap {
 
     /// @inheritdoc ReflexAfterSwap
     function _onlyReflexAdmin() internal view override {
-        require(msg.sender == owner, "PancakeSwapInfinityHook: Caller is not the owner");
+        require(msg.sender == owner(), "PancakeSwapInfinityHook: Caller is not the owner");
     }
 }

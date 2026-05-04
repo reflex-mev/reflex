@@ -29,6 +29,7 @@ import {IProtocolFees} from "infinity-core/src/interfaces/IProtocolFees.sol";
 import {CLPoolParametersHelper} from "infinity-core/src/pool-cl/libraries/CLPoolParametersHelper.sol";
 import {LPFeeLibrary} from "infinity-core/src/libraries/LPFeeLibrary.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "../../utils/TestUtils.sol";
 import "../../mocks/MockToken.sol";
 import "../../mocks/MockReflexRouter.sol";
@@ -55,8 +56,9 @@ contract PancakeSwapInfinityHookTest is Test {
 
     bytes32 public configIdFixture = keccak256("pancakeswap-infinity-config");
 
-    // Hook bitmap for beforeSwap + afterSwap
-    uint16 constant EXPECTED_BITMAP = uint16((1 << HOOKS_BEFORE_SWAP_OFFSET) | (1 << HOOKS_AFTER_SWAP_OFFSET));
+    // Hook bitmap for afterInitialize + beforeSwap + afterSwap
+    uint16 constant EXPECTED_BITMAP =
+        uint16((1 << HOOKS_AFTER_INITIALIZE_OFFSET) | (1 << HOOKS_BEFORE_SWAP_OFFSET) | (1 << HOOKS_AFTER_SWAP_OFFSET));
 
     function setUp() public {
         admin = address(this);
@@ -136,8 +138,8 @@ contract PancakeSwapInfinityHookTest is Test {
         // Verify specific bits
         assertTrue(bitmap & (1 << HOOKS_BEFORE_SWAP_OFFSET) != 0, "beforeSwap should be enabled");
         assertTrue(bitmap & (1 << HOOKS_AFTER_SWAP_OFFSET) != 0, "afterSwap should be enabled");
+        assertTrue(bitmap & (1 << HOOKS_AFTER_INITIALIZE_OFFSET) != 0, "afterInitialize should be enabled");
         assertTrue(bitmap & (1 << HOOKS_BEFORE_INITIALIZE_OFFSET) == 0, "beforeInitialize should be disabled");
-        assertTrue(bitmap & (1 << HOOKS_AFTER_INITIALIZE_OFFSET) == 0, "afterInitialize should be disabled");
         assertTrue(bitmap & (1 << HOOKS_BEFORE_ADD_LIQUIDITY_OFFSET) == 0, "beforeAddLiquidity should be disabled");
         assertTrue(bitmap & (1 << HOOKS_AFTER_ADD_LIQUIDITY_OFFSET) == 0, "afterAddLiquidity should be disabled");
         assertTrue(
@@ -150,7 +152,7 @@ contract PancakeSwapInfinityHookTest is Test {
 
     function testConstructorZeroOwnerReverts() public {
         vm.mockCall(poolManager, abi.encodeWithSelector(IProtocolFees.vault.selector), abi.encode(vaultAddr));
-        vm.expectRevert("PancakeSwapInfinityHook: Owner cannot be zero address");
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, address(0)));
         new PancakeSwapInfinityHook(
             ICLPoolManager(poolManager), address(reflexRouter), configIdFixture, address(0), wethAddr
         );
@@ -374,10 +376,27 @@ contract PancakeSwapInfinityHookTest is Test {
         assertEq(selector, hook.beforeInitialize.selector);
     }
 
-    function testAfterInitializeNoOp() public view {
+    function testAfterInitializeRequiresDynamicFeeFlag() public {
+        PoolKey memory staticFeeKey = _createPoolKey();
+        vm.prank(poolManager);
+        vm.expectRevert("PancakeSwapInfinityHook: Dynamic-fee pool required");
+        hook.afterInitialize(address(0), staticFeeKey, 0, 0);
+    }
+
+    function testAfterInitializeAcceptsDynamicFeePool() public {
         PoolKey memory key = _createPoolKey();
+        key.fee = LPFeeLibrary.DYNAMIC_FEE_FLAG;
+        vm.prank(poolManager);
         bytes4 selector = hook.afterInitialize(address(0), key, 0, 0);
         assertEq(selector, hook.afterInitialize.selector);
+    }
+
+    function testAfterInitializeOnlyPoolManager() public {
+        PoolKey memory key = _createPoolKey();
+        key.fee = LPFeeLibrary.DYNAMIC_FEE_FLAG;
+        vm.prank(attacker);
+        vm.expectRevert("PancakeSwapInfinityHook: Caller is not the PoolManager");
+        hook.afterInitialize(address(0), key, 0, 0);
     }
 
     function testBeforeSwapNonRouterNoOverride() public {
@@ -763,7 +782,7 @@ contract PancakeSwapInfinityHookTest is Test {
         PoolKey memory key = _createPoolKey();
 
         vm.expectRevert("PancakeSwapInfinityHook: Only self-call");
-        hook._donateToPool(key, token0, true, 100);
+        hook.donateToPool(key, token0, true, 100);
     }
 
     // ========== Fee Discount Tests ==========
